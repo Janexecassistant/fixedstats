@@ -467,7 +467,12 @@
     <!-- Navigation -->
     <nav class="navbar">
         <div class="navbar-content">
-            <div class="navbar-title">Dyer <span>Service Intelligence</span></div>
+            <div class="navbar-title">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgNzAiIHdpZHRoPSIyMDAiIGhlaWdodD0iNzAiPgogIDx0ZXh0IHg9IjUiIHk9IjQ4IiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEltcGFjdCwgc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjkwMCIgZm9udC1zaXplPSI1MiIgZmlsbD0iI2ZmZmZmZiIgbGV0dGVyLXNwYWNpbmc9Ii0yIj5EeWVyPC90ZXh0PgogIDx0ZXh0IHg9IjE1NSIgeT0iNDgiIGZvbnQtZmFtaWx5PSJBcmlhbCBCbGFjaywgSW1wYWN0LCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjUyIiBmaWxsPSIjY2MwMDAwIj4hPC90ZXh0PgogIDx0ZXh0IHg9IjUiIHk9IjY0IiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI3MDAiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTk5OTkiPmR5ZXJhdXRvLmNvbTwvdGV4dD4KPC9zdmc+Cg==" alt="Dyer Auto" style="height:40px;vertical-align:middle;">
+            </div>
+            <select id="globalStoreSelect" style="background:#222;color:white;border:1px solid #444;border-radius:6px;padding:8px 14px;font-size:14px;font-weight:600;margin:0 16px;min-width:200px;cursor:pointer;">
+                <option value="all">All Stores</option>
+            </select>
             <ul class="nav-tabs">
                 <li class="nav-tab"><button class="nav-btn active" data-tab="daily">Daily Entry</button></li>
                 <li class="nav-tab"><button class="nav-btn" data-tab="dashboard">Store Dashboard</button></li>
@@ -486,12 +491,6 @@
             <div class="card">
                 <h2 class="card-title">Daily Entry</h2>
                 <div class="controls">
-                    <div class="control-group">
-                        <label>Store</label>
-                        <select id="dailyStoreSelect">
-                            <option value="">Select a store...</option>
-                        </select>
-                    </div>
                     <div class="control-group">
                         <label>Date</label>
                         <input type="date" id="dailyDatePicker">
@@ -580,14 +579,6 @@
 
         <!-- TAB 2: STORE DASHBOARD -->
         <div id="dashboard" class="tab-content">
-            <div class="controls">
-                <div class="control-group">
-                    <label>Store</label>
-                    <select id="dashboardStoreSelect">
-                        <option value="">Select a store...</option>
-                    </select>
-                </div>
-            </div>
 
             <div class="kpi-grid" id="dashboardKpis">
             </div>
@@ -719,12 +710,6 @@
         <!-- TAB 6: CAPACITY & ROSTER -->
         <div id="roster" class="tab-content">
             <div class="controls">
-                <div class="control-group">
-                    <label>Store</label>
-                    <select id="rosterStoreSelect">
-                        <option value="">Select a store...</option>
-                    </select>
-                </div>
                 <div class="control-group">
                     <label>Week Starting</label>
                     <input type="date" id="rosterWeekPicker">
@@ -900,14 +885,6 @@
         <div id="staff" class="tab-content">
             <div class="card">
                 <h2 class="card-title">Manage Advisors</h2>
-                <div class="controls">
-                    <div class="control-group">
-                        <label>Store</label>
-                        <select id="staffStoreSelect">
-                            <option value="">Select a store...</option>
-                        </select>
-                    </div>
-                </div>
                 <div style="overflow-x: auto;">
                     <table id="staffAdvisorTable">
                         <thead>
@@ -995,6 +972,10 @@
         // ============================================================================
         // UTILITY FUNCTIONS
         // ============================================================================
+        function getSelectedStore() {
+            return document.getElementById('globalStoreSelect').value;
+        }
+
         function formatCurrency(value) {
             return new Intl.NumberFormat('en-US', {
                 style: 'currency',
@@ -1238,28 +1219,16 @@
         }
 
         function populateStoreSelects() {
-            const selects = [
-                'dailyStoreSelect',
-                'dashboardStoreSelect',
-                'goalsStoreSelect',
-                'rosterStoreSelect',
-                'staffStoreSelect'
-            ];
-
-            selects.forEach(selectId => {
-                const select = document.getElementById(selectId);
-                if (!select) return;
-
-                const currentValue = select.value;
-                select.innerHTML = '<option value="">Select a store...</option>';
-                stores.forEach(store => {
-                    const option = document.createElement('option');
-                    option.value = store.id;
-                    option.textContent = `${store.code} - ${store.name}`;
-                    select.appendChild(option);
-                });
-                if (currentValue) select.value = currentValue;
+            const select = document.getElementById('globalStoreSelect');
+            const currentValue = select.value;
+            select.innerHTML = '<option value="all">All Stores</option>';
+            stores.forEach(store => {
+                const option = document.createElement('option');
+                option.value = store.id;
+                option.textContent = `${store.code} - ${store.name}`;
+                select.appendChild(option);
             });
+            if (currentValue) select.value = currentValue;
         }
 
         function populateAdvisorSelect() {
@@ -1292,8 +1261,19 @@
         // EVENT LISTENERS
         // ============================================================================
         function setupEventListeners() {
+            // Global store selector — reloads current active tab
+            document.getElementById('globalStoreSelect').addEventListener('change', () => {
+                const activeTab = document.querySelector('.nav-btn.active')?.dataset.tab;
+                if (activeTab === 'daily') loadDailyEntry();
+                else if (activeTab === 'dashboard') loadDashboard();
+                else if (activeTab === 'executive') loadExecutive();
+                else if (activeTab === 'advisor') loadAdvisor();
+                else if (activeTab === 'goals') loadGoals();
+                else if (activeTab === 'roster') loadRoster();
+                else if (activeTab === 'staff') loadStaffManagement();
+            });
+
             // Daily Entry
-            document.getElementById('dailyStoreSelect').addEventListener('change', loadDailyEntry);
             document.getElementById('dailyDatePicker').addEventListener('change', () => {
                 const date = document.getElementById('dailyDatePicker').valueAsDate;
                 document.getElementById('dailyDayNumber').value = date.getDate();
@@ -1306,14 +1286,10 @@
             document.getElementById('partsDay').addEventListener('input', updateDailyCalculations);
             document.getElementById('saveDailyBtn').addEventListener('click', saveDailyEntry);
 
-            // Dashboard
-            document.getElementById('dashboardStoreSelect').addEventListener('change', loadDashboard);
-
             // Goals
             document.getElementById('saveGoalsBtn').addEventListener('click', saveGoals);
 
             // Roster
-            document.getElementById('rosterStoreSelect').addEventListener('change', loadRoster);
             document.getElementById('rosterWeekPicker').addEventListener('change', loadRoster);
 
             // Advisor
@@ -1334,7 +1310,6 @@
             document.getElementById('rosterToMonth')?.addEventListener('change', loadRoster);
 
             // Staff management
-            document.getElementById('staffStoreSelect').addEventListener('change', loadStaffManagement);
             document.getElementById('addAdvisorBtn').addEventListener('click', addNewAdvisor);
             document.getElementById('addTechnicianBtn').addEventListener('click', addNewTechnician);
             document.getElementById('addTechBtn').addEventListener('click', addNewTech);
@@ -1343,12 +1318,26 @@
         // ============================================================================
         // TAB 1: DAILY ENTRY
         // ============================================================================
+        function isAllStores() { return getSelectedStore() === 'all'; }
+
+        function getStoreIds() {
+            if (isAllStores()) return stores.map(s => s.id);
+            return [getSelectedStore()];
+        }
+
         async function loadDailyEntry() {
-            const storeId = document.getElementById('dailyStoreSelect').value;
+            const storeId = getSelectedStore();
             const date = document.getElementById('dailyDatePicker').valueAsDate;
 
             if (!storeId) {
                 document.getElementById('dailyAdvisorBody').innerHTML = '';
+                return;
+            }
+
+            if (isAllStores()) {
+                document.getElementById('dailyAdvisorBody').innerHTML = '<tr><td colspan="11" style="text-align:center;padding:24px;color:#888;">Select a specific store to enter daily data</td></tr>';
+                document.getElementById('laborDay').value = '';
+                document.getElementById('partsDay').value = '';
                 return;
             }
 
@@ -1415,7 +1404,7 @@
         async function updateDailyCalculations() {
             const laborDay = parseFloat(document.getElementById('laborDay').value) || 0;
             const partsDay = parseFloat(document.getElementById('partsDay').value) || 0;
-            const storeId = document.getElementById('dailyStoreSelect').value;
+            const storeId = getSelectedStore();
             const date = document.getElementById('dailyDatePicker').valueAsDate;
             const dayNum = parseInt(document.getElementById('dailyDayNumber').value) || 0;
             const daysInMonth = parseInt(document.getElementById('dailyDaysInMonth').value) || 0;
@@ -1481,15 +1470,15 @@
         }
 
         async function saveDailyEntry() {
-            const storeId = document.getElementById('dailyStoreSelect').value;
+            const storeId = getSelectedStore();
             const date = document.getElementById('dailyDatePicker').valueAsDate;
             const dayNum = parseInt(document.getElementById('dailyDayNumber').value);
             const daysInMonth = parseInt(document.getElementById('dailyDaysInMonth').value);
             const laborDay = parseFloat(document.getElementById('laborDay').value) || 0;
             const partsDay = parseFloat(document.getElementById('partsDay').value) || 0;
 
-            if (!storeId) {
-                showToast('Please select a store', 'error');
+            if (!storeId || isAllStores()) {
+                showToast('Select a specific store to save', 'error');
                 return;
             }
 
@@ -1543,44 +1532,62 @@
         // ============================================================================
         // TAB 2: STORE DASHBOARD
         // ============================================================================
+        // Helper: apply store filter to a Supabase query (skips filter for 'all')
+        function filterByStore(query, storeId) {
+            if (storeId && storeId !== 'all') return query.eq('store_id', storeId);
+            return query;
+        }
+
         async function loadDashboard() {
-            const storeId = document.getElementById('dashboardStoreSelect').value;
+            const storeId = getSelectedStore();
             if (!storeId) return;
+            const allMode = isAllStores();
 
             try {
                 const { month, year } = getMonthYear(new Date());
 
-                // Fetch goals
-                const { data: goalsData } = await db
-                    .from('goals')
-                    .select('*')
-                    .eq('store_id', storeId)
-                    .eq('month', month)
-                    .eq('year', year)
-                    .single();
+                // Fetch goals (aggregate all stores if allMode)
+                let goalsData = null;
+                if (allMode) {
+                    const { data: allGoals } = await db
+                        .from('goals')
+                        .select('*')
+                        .eq('month', month)
+                        .eq('year', year);
+                    if (allGoals && allGoals.length > 0) {
+                        goalsData = {
+                            labor_goal: allGoals.reduce((s, g) => s + (g.labor_goal || 0), 0),
+                            parts_goal: allGoals.reduce((s, g) => s + (g.parts_goal || 0), 0),
+                            total_gross_goal: allGoals.reduce((s, g) => s + (g.total_gross_goal || 0), 0)
+                        };
+                    }
+                } else {
+                    const { data } = await db
+                        .from('goals')
+                        .select('*')
+                        .eq('store_id', storeId)
+                        .eq('month', month)
+                        .eq('year', year)
+                        .single();
+                    goalsData = data;
+                }
 
                 // Fetch daily entries
                 const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
                 const monthEnd = dateToString(new Date(year, month, 0));
 
-                const { data: dailyData } = await db
-                    .from('daily_entries')
-                    .select('*')
-                    .eq('store_id', storeId)
-                    .gte('entry_date', monthStart)
-                    .lte('entry_date', monthEnd);
+                let dailyQuery = db.from('daily_entries').select('*').gte('entry_date', monthStart).lte('entry_date', monthEnd);
+                dailyQuery = filterByStore(dailyQuery, storeId);
+                const { data: dailyData } = await dailyQuery;
 
                 const laborMtd = dailyData?.reduce((sum, d) => sum + (d.labor_day || 0), 0) || 0;
                 const partsMtd = dailyData?.reduce((sum, d) => sum + (d.parts_day || 0), 0) || 0;
                 const totalGrossMtd = laborMtd + partsMtd;
 
                 // Fetch advisor entries
-                const { data: advisorData } = await db
-                    .from('advisor_entries')
-                    .select('*')
-                    .eq('store_id', storeId)
-                    .gte('entry_date', monthStart)
-                    .lte('entry_date', monthEnd);
+                let advQuery = db.from('advisor_entries').select('*').gte('entry_date', monthStart).lte('entry_date', monthEnd);
+                advQuery = filterByStore(advQuery, storeId);
+                const { data: advisorData } = await advQuery;
 
                 let avgGrossPerRo = 0;
                 if (advisorData && advisorData.length > 0) {
@@ -1607,8 +1614,9 @@
 
                 // Load rankings
                 const advisorMap = {};
-                advisors.filter(a => a.store_id === storeId).forEach(a => {
-                    advisorMap[a.id] = a.name;
+                const filteredAdvisors = allMode ? advisors : advisors.filter(a => a.store_id === storeId);
+                filteredAdvisors.forEach(a => {
+                    advisorMap[a.id] = a.name + (allMode ? ` (${stores.find(s => s.id === a.store_id)?.name || ''})` : '');
                 });
 
                 const advisorStats = {};
@@ -2113,8 +2121,9 @@
         let facilityConfig = loadPersistedFacility();
 
         async function loadRoster() {
-            const storeId = document.getElementById('rosterStoreSelect').value;
+            const storeId = getSelectedStore();
             const weekDate = document.getElementById('rosterWeekPicker').valueAsDate;
+            const allMode = isAllStores();
 
             if (!storeId) {
                 document.getElementById('rosterBody').innerHTML = '';
@@ -2137,9 +2146,19 @@
                 const currentMonth = now.getMonth() + 1;
                 const currentYear = now.getFullYear();
 
-                // Load facility config (only bays is stored)
-                const fc = facilityConfig[storeId] || { bays: 0 };
-                document.getElementById('facilityBays').value = fc.bays || '';
+                // Load facility config
+                let totalBays = 0;
+                if (allMode) {
+                    stores.forEach(s => { totalBays += (facilityConfig[s.id]?.bays || 0); });
+                    document.getElementById('facilityBays').value = totalBays || '';
+                    document.getElementById('facilityBays').disabled = true;
+                } else {
+                    const fc = facilityConfig[storeId] || { bays: 0 };
+                    totalBays = fc.bays || 0;
+                    document.getElementById('facilityBays').value = totalBays || '';
+                    document.getElementById('facilityBays').disabled = false;
+                }
+                const fc = allMode ? { bays: totalBays } : (facilityConfig[storeId] || { bays: 0 });
 
                 // Auto-calculate schedule
                 const weekWd = getWorkingDaysInWeek(weekStart);
@@ -2154,10 +2173,10 @@
                     <div><strong>Monthly Hrs/Tech:</strong> (${monthWd.weekdays}×${WEEKDAY_HOURS}) + (${monthWd.saturdays}×${SATURDAY_HOURS}) = <strong>${monthHrs}h</strong></div>
                 `;
 
-                // Count staff
-                const storeAdvisors = advisors.filter(a => a.store_id === storeId && a.is_active !== false);
-                const storeTechs = technicians.filter(t => t.store_id === storeId && t.is_active !== false);
-                const storeLubes = lubeTechs.filter(t => t.store_id === storeId && t.is_active !== false);
+                // Count staff — aggregate all stores when in allMode
+                const storeAdvisors = allMode ? advisors.filter(a => a.is_active !== false) : advisors.filter(a => a.store_id === storeId && a.is_active !== false);
+                const storeTechs = allMode ? technicians.filter(t => t.is_active !== false) : technicians.filter(t => t.store_id === storeId && t.is_active !== false);
+                const storeLubes = allMode ? lubeTechs.filter(t => t.is_active !== false) : lubeTechs.filter(t => t.store_id === storeId && t.is_active !== false);
                 const totalTechHeadcount = storeTechs.length + storeLubes.length;
 
                 // Available hours
@@ -2201,11 +2220,9 @@
                 `;
 
                 // Fetch advisor roster entries
-                const { data: rosterData } = await db
-                    .from('roster_entries')
-                    .select('*')
-                    .eq('store_id', storeId)
-                    .eq('week_start', wsKey);
+                let rosterQuery = db.from('roster_entries').select('*').eq('week_start', wsKey);
+                rosterQuery = filterByStore(rosterQuery, storeId);
+                const { data: rosterData } = await rosterQuery;
 
                 // Build advisor roster rows — collect data first for ranking
                 const advEntryData = storeAdvisors.map(advisor => {
@@ -2226,7 +2243,7 @@
                     const rankColor = rank === 1 ? '#10b981' : rank === ranked.length && rank !== '—' ? '#ef4444' : '#1a1a1a';
                     advHtml += `
                         <tr data-advisor="${advisor.id}">
-                            <td style="font-weight:600">${advisor.name}</td>
+                            <td style="font-weight:600">${advisor.name}${allMode ? ' <span style="color:#888;font-weight:400;font-size:12px">(' + (stores.find(s=>s.id===advisor.store_id)?.name||'') + ')</span>' : ''}</td>
                             <td><select class="roster-training" data-advisor="${advisor.id}">
                                 <option value="">-</option>
                                 <option value="Complete" ${entry.training_status === 'Complete' ? 'selected' : ''}>Complete</option>
@@ -2256,7 +2273,7 @@
                 let techHtml = '';
                 let techTotals = { ros: 0, hrsTurned: 0, clockHrs: 0 };
                 storeTechs.forEach(tech => {
-                    const key = `${storeId}_${wsKey}_tech_${tech.id}`;
+                    const key = `${tech.store_id}_${wsKey}_tech_${tech.id}`;
                     const d = techWeeklyData[key] || {};
                     const hrsTurned = d.hours_turned || 0;
                     const clockHrs = d.clock_hours || 0;
@@ -2269,7 +2286,7 @@
 
                     techHtml += `
                         <tr data-tech-id="${tech.id}" data-tech-type="tech">
-                            <td style="font-weight:600">${tech.name}</td>
+                            <td style="font-weight:600">${tech.name}${allMode ? ' <span style="color:#888;font-weight:400;font-size:12px">(' + (stores.find(s=>s.id===tech.store_id)?.name||'') + ')</span>' : ''}</td>
                             <td>${tech.specialty || '—'}</td>
                             <td><select class="tw-training">
                                 <option value="">-</option>
@@ -2311,7 +2328,7 @@
                 let lubeHtml = '';
                 let lubeTotals = { ros: 0, hrsTurned: 0, clockHrs: 0 };
                 storeLubes.forEach(tech => {
-                    const key = `${storeId}_${wsKey}_lube_${tech.id}`;
+                    const key = `${tech.store_id}_${wsKey}_lube_${tech.id}`;
                     const d = techWeeklyData[key] || {};
                     const hrsTurned = d.hours_turned || 0;
                     const clockHrs = d.clock_hours || 0;
@@ -2324,7 +2341,7 @@
 
                     lubeHtml += `
                         <tr data-tech-id="${tech.id}" data-tech-type="lube">
-                            <td style="font-weight:600">${tech.name}</td>
+                            <td style="font-weight:600">${tech.name}${allMode ? ' <span style="color:#888;font-weight:400;font-size:12px">(' + (stores.find(s=>s.id===tech.store_id)?.name||'') + ')</span>' : ''}</td>
                             <td><select class="tw-training">
                                 <option value="">-</option>
                                 <option value="Complete" ${d.training === 'Complete' ? 'selected' : ''}>Complete</option>
@@ -2421,10 +2438,10 @@
         }
 
         function saveTechWeekly(tableBodyId, techType) {
-            const storeId = document.getElementById('rosterStoreSelect').value;
+            const storeId = getSelectedStore();
             const weekDate = document.getElementById('rosterWeekPicker').valueAsDate;
             const wsKey = dateToString(getWeekStart(weekDate));
-            if (!storeId) { showToast('Select a store', 'error'); return; }
+            if (!storeId || isAllStores()) { showToast('Select a specific store to save', 'error'); return; }
 
             // Get month/year for monthly compilation
             const ws = new Date(wsKey);
@@ -2501,9 +2518,10 @@
             const periodAvailPerTech = rangeInfo.hours;
 
             // Aggregate from techWeeklyData
+            const allMode = isAllStores();
             const perfMap = {};
             Object.values(techWeeklyData).forEach(d => {
-                if (d.store_id !== storeId) return;
+                if (!allMode && d.store_id !== storeId) return;
                 const entryDate = new Date(d.week_start);
                 if (entryDate < rangeStart || entryDate > rangeEnd) return;
 
@@ -2521,9 +2539,10 @@
             });
 
             // Build all techs
+            const filterFn = allMode ? (t => t.is_active !== false) : (t => t.store_id === storeId && t.is_active !== false);
             const allStaff = [
-                ...technicians.filter(t => t.store_id === storeId && t.is_active !== false).map(t => ({ ...t, staffType: 'tech' })),
-                ...lubeTechs.filter(t => t.store_id === storeId && t.is_active !== false).map(t => ({ ...t, staffType: 'lube' }))
+                ...technicians.filter(filterFn).map(t => ({ ...t, staffType: 'tech' })),
+                ...lubeTechs.filter(filterFn).map(t => ({ ...t, staffType: 'lube' }))
             ];
 
             let html = '';
@@ -2539,7 +2558,7 @@
 
                 html += `
                     <tr>
-                        <td style="font-weight:600">${s.name}</td>
+                        <td style="font-weight:600">${s.name}${allMode ? ' <span style="color:#888;font-weight:400;font-size:12px">(' + (stores.find(st=>st.id===s.store_id)?.name||'') + ')</span>' : ''}</td>
                         <td>${s.staffType === 'tech' ? 'Technician' : 'Lube Tech'}</td>
                         <td>${s.specialty || '—'}</td>
                         <td>${p.training || '—'}</td>
@@ -2635,12 +2654,12 @@
         }
 
         async function saveRoster() {
-            const storeId = document.getElementById('rosterStoreSelect').value;
+            const storeId = getSelectedStore();
             const weekDate = document.getElementById('rosterWeekPicker').valueAsDate;
             const weekStart = getWeekStart(weekDate);
 
-            if (!storeId) {
-                showToast('Please select a store', 'error');
+            if (!storeId || isAllStores()) {
+                showToast('Select a specific store to save roster', 'error');
                 return;
             }
 
@@ -2686,8 +2705,8 @@
         }
 
         function saveFacilityConfig() {
-            const storeId = document.getElementById('rosterStoreSelect').value;
-            if (!storeId) { showToast('Select a store first', 'error'); return; }
+            const storeId = getSelectedStore();
+            if (!storeId || isAllStores()) { showToast('Select a specific store to save facility config', 'error'); return; }
             facilityConfig[storeId] = {
                 bays: parseInt(document.getElementById('facilityBays').value) || 0
             };
@@ -2700,7 +2719,8 @@
         // TAB 7: STAFF MANAGEMENT
         // ============================================================================
         function loadStaffManagement() {
-            const storeId = document.getElementById('staffStoreSelect').value;
+            const storeId = getSelectedStore();
+            const allMode = isAllStores();
             if (!storeId) {
                 document.getElementById('staffAdvisorBody').innerHTML = '';
                 document.getElementById('staffTechnicianBody').innerHTML = '';
@@ -2708,13 +2728,15 @@
                 return;
             }
 
-            // Advisors for this store
-            const storeAdvisors = advisors.filter(a => a.store_id === storeId);
+            const getStoreName = (sid) => stores.find(s => s.id === sid)?.name || '';
+
+            // Advisors for this store (or all)
+            const storeAdvisors = allMode ? advisors : advisors.filter(a => a.store_id === storeId);
             let advHtml = '';
             storeAdvisors.forEach(adv => {
                 advHtml += `
                     <tr data-id="${adv.id}" data-type="advisor">
-                        <td><input type="text" class="staff-name" value="${adv.name}" style="font-weight:600"></td>
+                        <td><input type="text" class="staff-name" value="${adv.name}" style="font-weight:600">${allMode ? ' <span style="color:#888;font-size:11px">'+getStoreName(adv.store_id)+'</span>' : ''}</td>
                         <td><input type="text" class="staff-empid" value="${adv.employee_id || ''}" placeholder="—"></td>
                         <td>
                             <select class="staff-status">
@@ -2731,8 +2753,8 @@
             });
             document.getElementById('staffAdvisorBody').innerHTML = advHtml;
 
-            // Technicians for this store
-            const storeTechnicians = technicians.filter(t => t.store_id === storeId);
+            // Technicians for this store (or all)
+            const storeTechnicians = allMode ? technicians : technicians.filter(t => t.store_id === storeId);
             let technicianHtml = '';
             storeTechnicians.forEach(tech => {
                 technicianHtml += `
@@ -2756,7 +2778,7 @@
             document.getElementById('staffTechnicianBody').innerHTML = technicianHtml;
 
             // Lube Techs for this store
-            const storeTechs = lubeTechs.filter(t => t.store_id === storeId);
+            const storeTechs = allMode ? lubeTechs : lubeTechs.filter(t => t.store_id === storeId);
             let techHtml = '';
             storeTechs.forEach(tech => {
                 techHtml += `
@@ -2786,7 +2808,7 @@
             const name = row.querySelector('.staff-name').value.trim();
             const empId = row.querySelector('.staff-empid').value.trim() || null;
             const isActive = row.querySelector('.staff-status').value === 'true';
-            const storeId = document.getElementById('staffStoreSelect').value;
+            const storeId = getSelectedStore();
 
             if (!name) { showToast('Name is required', 'error'); return; }
 
@@ -2863,8 +2885,8 @@
         }
 
         function addNewAdvisor() {
-            const storeId = document.getElementById('staffStoreSelect').value;
-            if (!storeId) { showToast('Select a store first', 'error'); return; }
+            const storeId = getSelectedStore();
+            if (!storeId || isAllStores()) { showToast('Select a specific store to add staff', 'error'); return; }
 
             const tbody = document.getElementById('staffAdvisorBody');
             const row = document.createElement('tr');
@@ -2889,8 +2911,8 @@
         }
 
         function addNewTechnician() {
-            const storeId = document.getElementById('staffStoreSelect').value;
-            if (!storeId) { showToast('Select a store first', 'error'); return; }
+            const storeId = getSelectedStore();
+            if (!storeId || isAllStores()) { showToast('Select a specific store to add staff', 'error'); return; }
 
             const tbody = document.getElementById('staffTechnicianBody');
             const row = document.createElement('tr');
@@ -2916,8 +2938,8 @@
         }
 
         function addNewTech() {
-            const storeId = document.getElementById('staffStoreSelect').value;
-            if (!storeId) { showToast('Select a store first', 'error'); return; }
+            const storeId = getSelectedStore();
+            if (!storeId || isAllStores()) { showToast('Select a specific store to add staff', 'error'); return; }
 
             const tbody = document.getElementById('staffTechBody');
             const row = document.createElement('tr');
