@@ -791,6 +791,28 @@
             </div>
 
             <div class="card">
+                <h2 class="card-title">Manage Technicians</h2>
+                <div style="overflow-x: auto;">
+                    <table id="staffTechnicianTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Employee ID</th>
+                                <th>Specialty</th>
+                                <th>Status</th>
+                                <th style="width:120px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staffTechnicianBody">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="btn-group">
+                    <button class="btn" id="addTechnicianBtn">+ Add Technician</button>
+                </div>
+            </div>
+
+            <div class="card">
                 <h2 class="card-title">Manage Lube Techs</h2>
                 <div style="overflow-x: auto;">
                     <table id="staffTechTable">
@@ -829,6 +851,7 @@
         let stores = [];
         let advisors = [];
         let lubeTechs = [];
+        let technicians = [];
         let currentDate = new Date();
         let charts = {};
 
@@ -953,6 +976,56 @@
             { id: 20, store_id: 'mazda', name: 'Corey Alexander', employee_id: null, pay_plan: null, is_active: true },
             { id: 21, store_id: 'mazda', name: 'Anthony Trepiccione', employee_id: null, pay_plan: null, is_active: true }
         ];
+        const FALLBACK_TECHNICIANS = [
+            { id: 1, store_id: 'kia', name: 'Keith Martell', employee_id: '5217', specialty: 'B', is_active: true },
+            { id: 2, store_id: 'kia', name: 'Joseph Dorval', employee_id: '5840', specialty: 'A', is_active: true },
+            { id: 3, store_id: 'kia', name: 'Leo Velez', employee_id: '5096', specialty: 'A', is_active: true },
+            { id: 4, store_id: 'kia', name: 'Andres Estronza', employee_id: '5149', specialty: 'A', is_active: true },
+            { id: 5, store_id: 'kia', name: 'Don Hendricks', employee_id: '5068', specialty: 'A', is_active: true },
+            { id: 6, store_id: 'kia', name: 'Robert VanOrden', employee_id: '5889', specialty: 'A', is_active: true },
+            { id: 7, store_id: 'kia', name: 'Manuel Diaz', employee_id: '5326', specialty: 'B', is_active: true },
+            { id: 8, store_id: 'kia', name: 'Miranda Beeson', employee_id: '6416', specialty: 'B', is_active: true },
+            { id: 9, store_id: 'kia', name: 'Jacques Dorval', employee_id: null, specialty: 'Apprentice', is_active: true },
+            { id: 10, store_id: 'dcvb', name: 'Todd Maxted', employee_id: '34', specialty: 'A', is_active: true },
+            { id: 11, store_id: 'dcvb', name: 'Michael Furphy', employee_id: '225', specialty: 'Used Cars', is_active: true },
+            { id: 12, store_id: 'dcvb', name: 'Brian Roth', employee_id: '247', specialty: 'A', is_active: true },
+            { id: 13, store_id: 'dcvb', name: 'Ed Rodriguez', employee_id: '359', specialty: 'B', is_active: true },
+            { id: 14, store_id: 'dcvb', name: 'Ricky Vela', employee_id: '783', specialty: 'C', is_active: true },
+            { id: 15, store_id: 'dcvb', name: 'Randy Adams', employee_id: '931', specialty: 'Transmission', is_active: true },
+            { id: 16, store_id: 'dcvb', name: 'Thomas Sgroi', employee_id: '1049', specialty: 'B', is_active: true },
+            { id: 17, store_id: 'dcvb', name: 'David Hernandez', employee_id: '4225', specialty: 'Used Cars', is_active: true },
+            { id: 18, store_id: 'dcvb', name: 'Trey Walker', employee_id: '4281', specialty: 'C', is_active: true },
+            { id: 19, store_id: 'dclw', name: 'James Kirkland', employee_id: '6105', specialty: 'Trans B', is_active: true },
+            { id: 20, store_id: 'dclw', name: 'Will Martinez', employee_id: '6329', specialty: 'A', is_active: true },
+            { id: 21, store_id: 'dclw', name: 'Dustin Osteen', employee_id: null, specialty: 'A', is_active: true },
+            { id: 22, store_id: 'dclw', name: 'James Lloyd', employee_id: '6189', specialty: 'B', is_active: true },
+            { id: 23, store_id: 'dclw', name: 'Jessen Sierra', employee_id: '6360', specialty: 'A', is_active: true },
+            { id: 24, store_id: 'dclw', name: 'Miguel Penso', employee_id: '6443', specialty: 'B', is_active: true },
+            { id: 25, store_id: 'dclw', name: 'Pablo Colon', employee_id: null, specialty: 'Apprentice', is_active: true },
+            { id: 26, store_id: 'dcfp', name: 'Christopher Brewer', employee_id: '10125', specialty: 'Trans B', is_active: true },
+            { id: 27, store_id: 'dcfp', name: 'Kurt Ustinowich', employee_id: '531', specialty: 'A', is_active: true },
+            { id: 28, store_id: 'dcfp', name: 'Chuck Eamello', employee_id: '653', specialty: 'A Transmission', is_active: true },
+            { id: 29, store_id: 'dcfp', name: 'Wecker Vallejo', employee_id: '3076', specialty: 'B', is_active: true },
+            { id: 30, store_id: 'dcfp', name: 'Iverson Louidor', employee_id: '886', specialty: 'B', is_active: true },
+            { id: 31, store_id: 'dcfp', name: 'Mike Bozied', employee_id: '10061', specialty: 'A', is_active: true },
+            { id: 32, store_id: 'dcfp', name: 'Chris Galasso', employee_id: '10202', specialty: 'A', is_active: true },
+            { id: 33, store_id: 'dcfp', name: 'Nicholas Petruska', employee_id: '3223', specialty: 'B', is_active: true },
+            { id: 34, store_id: 'subaru', name: 'George Tredor', employee_id: '124', specialty: 'A', is_active: true },
+            { id: 35, store_id: 'subaru', name: 'Victor Vargas', employee_id: '879', specialty: 'A', is_active: true },
+            { id: 36, store_id: 'subaru', name: 'Kyle Proctor', employee_id: '2074', specialty: 'A', is_active: true },
+            { id: 37, store_id: 'subaru', name: 'Mike Tredor', employee_id: '2075', specialty: 'A', is_active: true },
+            { id: 38, store_id: 'subaru', name: 'Kameron Ginder', employee_id: '2091', specialty: 'B', is_active: true },
+            { id: 39, store_id: 'subaru', name: 'Gavin Holmes', employee_id: '4098', specialty: 'B', is_active: true },
+            { id: 40, store_id: 'subaru', name: 'AJ Trumpower', employee_id: '4215', specialty: 'Tint', is_active: true },
+            { id: 41, store_id: 'subaru', name: 'Zach Burden', employee_id: '1318', specialty: 'New Car Prep', is_active: true },
+            { id: 42, store_id: 'mazda', name: 'George Tredor', employee_id: '124', specialty: 'A', is_active: true },
+            { id: 43, store_id: 'mazda', name: 'Victor Vargas', employee_id: '879', specialty: 'A', is_active: true },
+            { id: 44, store_id: 'mazda', name: 'Mike Tredor', employee_id: '2075', specialty: 'A', is_active: true },
+            { id: 45, store_id: 'mazda', name: 'Kameron Ginder', employee_id: '2091', specialty: 'B', is_active: true },
+            { id: 46, store_id: 'mazda', name: 'Gavin Holmes', employee_id: '4098', specialty: 'B', is_active: true },
+            { id: 47, store_id: 'mazda', name: 'Zach Burden', employee_id: '1318', specialty: 'New Car Prep', is_active: true },
+            { id: 48, store_id: 'mazda', name: 'AJ Trumpower', employee_id: '4215', specialty: 'Tint', is_active: true }
+        ];
         let useSupabase = true;
 
         // ============================================================================
@@ -972,6 +1045,7 @@
                     stores = FALLBACK_STORES;
                     advisors = FALLBACK_ADVISORS;
                     lubeTechs = FALLBACK_TECHS;
+                    technicians = FALLBACK_TECHNICIANS;
                 } else {
                     stores = storesData;
                     const { data: advisorsData } = await db
@@ -986,6 +1060,7 @@
                         .eq('is_active', true)
                         .order('name');
                     lubeTechs = techsData || FALLBACK_TECHS;
+                    technicians = FALLBACK_TECHNICIANS; // Local data until DB table created
                 }
 
                 // Set default date to today
@@ -1014,6 +1089,7 @@
                 stores = FALLBACK_STORES;
                 advisors = FALLBACK_ADVISORS;
                 lubeTechs = FALLBACK_TECHS;
+                technicians = FALLBACK_TECHNICIANS;
                 document.getElementById('dailyDatePicker').valueAsDate = new Date();
                 document.getElementById('dailyDayNumber').value = new Date().getDate();
                 document.getElementById('dailyDaysInMonth').value = getDaysInMonth(new Date());
@@ -1112,6 +1188,7 @@
             // Staff management
             document.getElementById('staffStoreSelect').addEventListener('change', loadStaffManagement);
             document.getElementById('addAdvisorBtn').addEventListener('click', addNewAdvisor);
+            document.getElementById('addTechnicianBtn').addEventListener('click', addNewTechnician);
             document.getElementById('addTechBtn').addEventListener('click', addNewTech);
         }
 
@@ -1830,6 +1907,10 @@
                 const recommendedAdvisors = staffingData?.recommended_advisors || currentAdvisors;
                 const recommendedTechs = staffingData?.recommended_techs || 0;
 
+                // Count techs
+                const storeTechCount = technicians.filter(t => t.store_id === storeId && t.is_active !== false).length;
+                const storeLubeCount = lubeTechs.filter(t => t.store_id === storeId && t.is_active !== false).length;
+
                 // Build staffing cards
                 document.getElementById('rosterStaffingCards').innerHTML = `
                     <div class="kpi-card">
@@ -1841,9 +1922,14 @@
                         </div>
                     </div>
                     <div class="kpi-card">
+                        <div class="kpi-label">Technicians</div>
+                        <div class="kpi-value">${storeTechCount}</div>
+                        <div class="kpi-subtext">A/B/C & Specialty</div>
+                    </div>
+                    <div class="kpi-card">
                         <div class="kpi-label">Lube Techs</div>
-                        <div class="kpi-value">${recommendedTechs}</div>
-                        <div class="kpi-subtext">Recommended</div>
+                        <div class="kpi-value">${storeLubeCount}</div>
+                        <div class="kpi-subtext">Recommended: ${recommendedTechs || storeLubeCount}</div>
                     </div>
                 `;
 
@@ -1937,6 +2023,7 @@
             const storeId = document.getElementById('staffStoreSelect').value;
             if (!storeId) {
                 document.getElementById('staffAdvisorBody').innerHTML = '';
+                document.getElementById('staffTechnicianBody').innerHTML = '';
                 document.getElementById('staffTechBody').innerHTML = '';
                 return;
             }
@@ -1964,7 +2051,31 @@
             });
             document.getElementById('staffAdvisorBody').innerHTML = advHtml;
 
-            // Techs for this store
+            // Technicians for this store
+            const storeTechnicians = technicians.filter(t => t.store_id === storeId);
+            let technicianHtml = '';
+            storeTechnicians.forEach(tech => {
+                technicianHtml += `
+                    <tr data-id="${tech.id}" data-type="technician">
+                        <td><input type="text" class="staff-name" value="${tech.name}" style="font-weight:600"></td>
+                        <td><input type="text" class="staff-empid" value="${tech.employee_id || ''}" placeholder="—"></td>
+                        <td><input type="text" class="staff-specialty" value="${tech.specialty || ''}" placeholder="A/B/C"></td>
+                        <td>
+                            <select class="staff-status">
+                                <option value="true" ${tech.is_active !== false ? 'selected' : ''}>Active</option>
+                                <option value="false" ${tech.is_active === false ? 'selected' : ''}>Inactive</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="btn" style="padding:6px 12px;font-size:12px;" onclick="saveStaffRow(this, 'technician')">Save</button>
+                            <button class="btn btn-danger" style="padding:6px 12px;font-size:12px;" onclick="removeStaffRow(this, 'technician')">Remove</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            document.getElementById('staffTechnicianBody').innerHTML = technicianHtml;
+
+            // Lube Techs for this store
             const storeTechs = lubeTechs.filter(t => t.store_id === storeId);
             let techHtml = '';
             storeTechs.forEach(tech => {
@@ -1999,11 +2110,14 @@
 
             if (!name) { showToast('Name is required', 'error'); return; }
 
-            const table = type === 'advisor' ? 'advisors' : 'lube_techs';
+            const table = type === 'advisor' ? 'advisors' : type === 'technician' ? 'technicians' : 'lube_techs';
             const record = { name, employee_id: empId, is_active: isActive, store_id: storeId };
 
             if (type === 'tech') {
                 record.pay_plan = row.querySelector('.staff-payplan')?.value.trim() || null;
+            }
+            if (type === 'technician') {
+                record.specialty = row.querySelector('.staff-specialty')?.value.trim() || null;
             }
 
             try {
@@ -2013,22 +2127,22 @@
                         await db.from(table).upsert(record);
                     }
                     // Update local data
-                    const arr = type === 'advisor' ? advisors : lubeTechs;
+                    const arr = type === 'advisor' ? advisors : type === 'technician' ? technicians : lubeTechs;
                     const idx = arr.findIndex(a => a.id === parseInt(id));
                     if (idx >= 0) Object.assign(arr[idx], record);
                 } else {
-                    if (useSupabase) {
+                    if (useSupabase && type !== 'technician') {
                         const { data } = await db.from(table).insert(record).select().single();
                         if (data) {
                             record.id = data.id;
                             row.dataset.id = data.id;
                         }
                     } else {
-                        const arr = type === 'advisor' ? advisors : lubeTechs;
+                        const arr = type === 'advisor' ? advisors : type === 'technician' ? technicians : lubeTechs;
                         record.id = Math.max(0, ...arr.map(a => a.id)) + 1;
                         row.dataset.id = record.id;
                     }
-                    const arr = type === 'advisor' ? advisors : lubeTechs;
+                    const arr = type === 'advisor' ? advisors : type === 'technician' ? technicians : lubeTechs;
                     arr.push(record);
                 }
 
@@ -2049,13 +2163,13 @@
             if (!confirm(`Remove ${name}? This will deactivate them.`)) return;
 
             try {
-                const table = type === 'advisor' ? 'advisors' : 'lube_techs';
-                if (useSupabase && id && id !== 'new') {
+                const table = type === 'advisor' ? 'advisors' : type === 'technician' ? 'technicians' : 'lube_techs';
+                if (useSupabase && type !== 'technician' && id && id !== 'new') {
                     await db.from(table).update({ is_active: false }).eq('id', parseInt(id));
                 }
 
                 // Update local data
-                const arr = type === 'advisor' ? advisors : lubeTechs;
+                const arr = type === 'advisor' ? advisors : type === 'technician' ? technicians : lubeTechs;
                 const idx = arr.findIndex(a => a.id === parseInt(id));
                 if (idx >= 0) arr[idx].is_active = false;
 
@@ -2087,6 +2201,33 @@
                 </td>
                 <td>
                     <button class="btn" style="padding:6px 12px;font-size:12px;" onclick="saveStaffRow(this, 'advisor')">Save</button>
+                    <button class="btn btn-danger" style="padding:6px 12px;font-size:12px;" onclick="this.closest('tr').remove()">Cancel</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+            row.querySelector('.staff-name').focus();
+        }
+
+        function addNewTechnician() {
+            const storeId = document.getElementById('staffStoreSelect').value;
+            if (!storeId) { showToast('Select a store first', 'error'); return; }
+
+            const tbody = document.getElementById('staffTechnicianBody');
+            const row = document.createElement('tr');
+            row.dataset.id = 'new';
+            row.dataset.type = 'technician';
+            row.innerHTML = `
+                <td><input type="text" class="staff-name" value="" placeholder="Enter name..." style="font-weight:600"></td>
+                <td><input type="text" class="staff-empid" value="" placeholder="Employee ID"></td>
+                <td><input type="text" class="staff-specialty" value="" placeholder="A/B/C"></td>
+                <td>
+                    <select class="staff-status">
+                        <option value="true" selected>Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </td>
+                <td>
+                    <button class="btn" style="padding:6px 12px;font-size:12px;" onclick="saveStaffRow(this, 'technician')">Save</button>
                     <button class="btn btn-danger" style="padding:6px 12px;font-size:12px;" onclick="this.closest('tr').remove()">Cancel</button>
                 </td>
             `;
