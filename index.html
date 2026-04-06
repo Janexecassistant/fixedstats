@@ -586,23 +586,27 @@
             </div>
 
             <div class="card">
-                <h3 class="card-title">Advisor Rankings</h3>
+                <h3 class="card-title">Daily Performance — <span id="dashDailyMonth"></span></h3>
                 <div style="overflow-x: auto;">
-                    <table id="dashboardRankingsTable">
+                    <table>
                         <thead>
                             <tr>
-                                <th>Rank</th>
-                                <th>Advisor</th>
-                                <th>Total Gross MTD</th>
-                                <th>Gross/RO</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">Day</th>
+                                <th>Date</th>
+                                <th>Day Type</th>
+                                <th>Labor ($)</th>
+                                <th>Parts ($)</th>
+                                <th>Total Gross ($)</th>
                                 <th>RO Count</th>
-                                <th>CSI Avg</th>
-                                <th>MPVI Avg</th>
-                                <th>vs Goal %</th>
+                                <th>Hours</th>
+                                <th>Gross/RO</th>
+                                <th>Running Total ($)</th>
                             </tr>
                         </thead>
-                        <tbody id="dashboardRankingsBody">
+                        <tbody id="dashDailyBody">
                         </tbody>
+                        <tfoot id="dashDailyFooter">
+                        </tfoot>
                     </table>
                 </div>
             </div>
@@ -1831,65 +1835,97 @@
                     ${createKpiCard('Avg Gross/RO', formatCurrency(avgGrossPerRo), 'All advisors', 100)}
                 `;
 
-                // Load rankings
-                const advisorMap = {};
-                const filteredAdvisors = allMode ? advisors : advisors.filter(a => a.store_id === storeId);
-                filteredAdvisors.forEach(a => {
-                    advisorMap[a.id] = a.name + (allMode ? ` (${stores.find(s => s.id === a.store_id)?.name || ''})` : '');
+                // Build daily performance table — every day of the month
+                const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+                document.getElementById('dashDailyMonth').textContent = `${monthNames[month - 1]} ${year}`;
+
+                const daysInMonthCount = new Date(year, month, 0).getDate();
+                const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+                // Index daily entries by date for quick lookup
+                const dailyByDate = {};
+                dailyData.forEach(d => {
+                    if (!dailyByDate[d.entry_date]) dailyByDate[d.entry_date] = { labor: 0, parts: 0, gross: 0 };
+                    dailyByDate[d.entry_date].labor += (d.labor_day || d.total_labor || 0);
+                    dailyByDate[d.entry_date].parts += (d.parts_day || d.total_parts || 0);
+                    dailyByDate[d.entry_date].gross += (d.labor_day || d.total_labor || 0) + (d.parts_day || d.total_parts || 0);
+                });
+                // Also aggregate advisor entries by date for RO count and hours
+                const advByDate = {};
+                advisorData.forEach(d => {
+                    if (!advByDate[d.entry_date]) advByDate[d.entry_date] = { roCount: 0, hours: 0, gross: 0 };
+                    advByDate[d.entry_date].roCount += (d.ro_count || 0);
+                    advByDate[d.entry_date].hours += (d.hours || 0);
+                    advByDate[d.entry_date].gross += (d.total_gross || 0);
                 });
 
+                let dailyHtml = '';
+                let runningTotal = 0;
+                let totLabor = 0, totParts = 0, totGross = 0, totRo = 0, totHours = 0;
+                const today = new Date();
+                const isCurrentMonth = today.getFullYear() === year && (today.getMonth() + 1) === month;
+
+                for (let d = 1; d <= daysInMonthCount; d++) {
+                    const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                    const dayOfWeek = new Date(year, month - 1, d).getDay();
+                    const dayName = dayNames[dayOfWeek];
+                    const isSunday = dayOfWeek === 0;
+                    const isSaturday = dayOfWeek === 6;
+                    const isToday = isCurrentMonth && d === today.getDate();
+                    const isFuture = isCurrentMonth && d > today.getDate();
+
+                    const dep = dailyByDate[dateStr] || { labor: 0, parts: 0, gross: 0 };
+                    const adv = advByDate[dateStr] || { roCount: 0, hours: 0, gross: 0 };
+                    const dayGross = dep.gross || adv.gross || 0;
+                    const grossPerRo = adv.roCount > 0 ? dayGross / adv.roCount : 0;
+                    runningTotal += dayGross;
+
+                    totLabor += dep.labor; totParts += dep.parts; totGross += dayGross;
+                    totRo += adv.roCount; totHours += adv.hours;
+
+                    const dayType = isSunday ? 'Closed' : isSaturday ? 'Saturday' : 'Weekday';
+                    const rowStyle = isSunday ? 'opacity:0.35;' : isToday ? 'background:#fff3cd;font-weight:700;' : isFuture ? 'opacity:0.4;' : '';
+                    const hasData = dep.labor > 0 || dep.parts > 0 || adv.roCount > 0;
+
+                    dailyHtml += `<tr style="${rowStyle}">
+                        <td style="font-weight:700;${isToday ? 'color:#cc0000;' : ''}">${d}</td>
+                        <td>${dayName} ${month}/${d}</td>
+                        <td>${dayType}</td>
+                        <td>${hasData ? formatCurrency(dep.labor) : '—'}</td>
+                        <td>${hasData ? formatCurrency(dep.parts) : '—'}</td>
+                        <td>${hasData ? formatCurrency(dayGross) : '—'}</td>
+                        <td>${hasData ? adv.roCount : '—'}</td>
+                        <td>${hasData ? adv.hours.toFixed(1) : '—'}</td>
+                        <td>${hasData && grossPerRo > 0 ? formatCurrency(grossPerRo) : '—'}</td>
+                        <td style="font-weight:600;">${runningTotal > 0 ? formatCurrency(runningTotal) : '—'}</td>
+                    </tr>`;
+                }
+                document.getElementById('dashDailyBody').innerHTML = dailyHtml;
+
+                const avgGrossRo = totRo > 0 ? totGross / totRo : 0;
+                document.getElementById('dashDailyFooter').innerHTML = `
+                    <tr style="background:#1a1a1a;color:white;font-weight:700;">
+                        <td colspan="3">TOTALS</td>
+                        <td>${formatCurrency(totLabor)}</td>
+                        <td>${formatCurrency(totParts)}</td>
+                        <td>${formatCurrency(totGross)}</td>
+                        <td>${totRo}</td>
+                        <td>${totHours.toFixed(1)}</td>
+                        <td>${formatCurrency(avgGrossRo)}</td>
+                        <td>${formatCurrency(runningTotal)}</td>
+                    </tr>`;
+
+                // Advisor comparison chart — only active advisors with data
+                const filteredAdvisors = (allMode ? advisors : advisors.filter(a => a.store_id === storeId)).filter(a => a.is_active !== false);
                 const advisorStats = {};
                 advisorData?.forEach(entry => {
-                    if (!advisorStats[entry.advisor_id]) {
-                        advisorStats[entry.advisor_id] = {
-                            totalGross: 0,
-                            roCount: 0,
-                            csiCount: 0,
-                            csiSum: 0,
-                            mpviCount: 0,
-                            mpviSum: 0
-                        };
-                    }
+                    if (!advisorStats[entry.advisor_id]) advisorStats[entry.advisor_id] = { totalGross: 0 };
                     advisorStats[entry.advisor_id].totalGross += entry.total_gross || 0;
-                    advisorStats[entry.advisor_id].roCount += entry.ro_count || 0;
-                    if (entry.csi_score) {
-                        advisorStats[entry.advisor_id].csiCount++;
-                        advisorStats[entry.advisor_id].csiSum += entry.csi_score;
-                    }
-                    if (entry.mpvi_pct) {
-                        advisorStats[entry.advisor_id].mpviCount++;
-                        advisorStats[entry.advisor_id].mpviSum += entry.mpvi_pct;
-                    }
                 });
-
-                const rankings = Object.keys(advisorStats).map(advId => ({
-                    advId: parseInt(advId),
-                    name: advisorMap[advId],
-                    totalGross: advisorStats[advId].totalGross,
-                    roCount: advisorStats[advId].roCount,
-                    grossRo: advisorStats[advId].roCount > 0 ? advisorStats[advId].totalGross / advisorStats[advId].roCount : 0,
-                    csiAvg: advisorStats[advId].csiCount > 0 ? advisorStats[advId].csiSum / advisorStats[advId].csiCount : 0,
-                    mpviAvg: advisorStats[advId].mpviCount > 0 ? advisorStats[advId].mpviSum / advisorStats[advId].mpviCount : 0
-                })).sort((a, b) => b.totalGross - a.totalGross);
-
-                let html = '';
-                rankings.forEach((r, idx) => {
-                    const vsGoal = totalGrossGoal > 0 ? (r.totalGross / (totalGrossGoal / rankings.length)) * 100 : 0;
-                    const rowClass = idx === 0 ? 'rank-good' : idx === rankings.length - 1 ? 'rank-bad' : '';
-                    html += `
-                        <tr class="${rowClass}">
-                            <td>${idx + 1}</td>
-                            <td>${r.name}</td>
-                            <td>${formatCurrency(r.totalGross)}</td>
-                            <td>${formatCurrency(r.grossRo)}</td>
-                            <td>${r.roCount}</td>
-                            <td>${r.csiAvg.toFixed(1)}</td>
-                            <td>${r.mpviAvg.toFixed(1)}%</td>
-                            <td>${vsGoal.toFixed(0)}%</td>
-                        </tr>
-                    `;
-                });
-                document.getElementById('dashboardRankingsBody').innerHTML = html;
+                const rankings = filteredAdvisors
+                    .filter(a => advisorStats[a.id]?.totalGross > 0)
+                    .map(a => ({ name: a.name, totalGross: advisorStats[a.id].totalGross }))
+                    .sort((a, b) => b.totalGross - a.totalGross);
 
                 // Charts
                 const dailyLabels = dailyData?.map(d => new Date(d.entry_date).getDate()).sort((a, b) => a - b) || [];
