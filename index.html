@@ -731,11 +731,39 @@
                 </div>
             </div>
 
+            <!-- FACILITY & CAPACITY -->
+            <div class="card">
+                <h3 class="card-title">Facility & Capacity Configuration</h3>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:16px;">
+                    <div class="control-group">
+                        <label>Total Bays</label>
+                        <input type="number" id="facilityBays" min="1" max="100" placeholder="0">
+                    </div>
+                    <div class="control-group">
+                        <label>Hours/Day per Tech</label>
+                        <input type="number" id="facilityHoursPerDay" min="1" max="12" value="8" step="0.5">
+                    </div>
+                    <div class="control-group">
+                        <label>Working Days/Week</label>
+                        <input type="number" id="facilityDaysPerWeek" min="1" max="7" value="5" step="0.5">
+                    </div>
+                    <div class="control-group">
+                        <label>Working Days/Month</label>
+                        <input type="number" id="facilityDaysPerMonth" min="15" max="27" value="22">
+                    </div>
+                </div>
+                <div class="btn-group" style="margin-top:8px;margin-bottom:16px;">
+                    <button class="btn" id="saveFacilityBtn">Save Facility Config</button>
+                </div>
+            </div>
+
+            <!-- CAPACITY KPIs -->
             <div class="kpi-grid" id="rosterStaffingCards">
             </div>
 
+            <!-- ADVISOR WEEKLY ROSTER -->
             <div class="card">
-                <h3 class="card-title">Weekly Roster</h3>
+                <h3 class="card-title">Advisor Weekly Roster</h3>
                 <div style="overflow-x: auto;">
                     <table id="rosterTable">
                         <thead>
@@ -756,6 +784,110 @@
                 </div>
                 <div class="btn-group">
                     <button class="btn" id="saveRosterBtn">Save Roster</button>
+                </div>
+            </div>
+
+            <!-- TECHNICIAN WEEKLY ENTRY -->
+            <div class="card">
+                <h3 class="card-title">Technician Weekly Entry</h3>
+                <div style="overflow-x: auto;">
+                    <table id="techWeeklyTable">
+                        <thead>
+                            <tr>
+                                <th>Technician</th>
+                                <th>Specialty</th>
+                                <th>Training</th>
+                                <th>ROs Worked</th>
+                                <th>CSI Score</th>
+                                <th>Hours Turned</th>
+                                <th>Clock Hours</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">Efficiency %</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">Productivity %</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">Proficiency %</th>
+                            </tr>
+                        </thead>
+                        <tbody id="techWeeklyBody">
+                        </tbody>
+                        <tfoot id="techWeeklyFooter">
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="btn-group">
+                    <button class="btn" id="saveTechWeeklyBtn">Save Tech Weekly</button>
+                </div>
+            </div>
+
+            <!-- LUBE TECH WEEKLY ENTRY -->
+            <div class="card">
+                <h3 class="card-title">Lube Tech Weekly Entry</h3>
+                <div style="overflow-x: auto;">
+                    <table id="lubeWeeklyTable">
+                        <thead>
+                            <tr>
+                                <th>Lube Tech</th>
+                                <th>Training</th>
+                                <th>ROs Worked</th>
+                                <th>CSI Score</th>
+                                <th>Hours Turned</th>
+                                <th>Clock Hours</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">Efficiency %</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">Productivity %</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">Proficiency %</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lubeWeeklyBody">
+                        </tbody>
+                        <tfoot id="lubeWeeklyFooter">
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="btn-group">
+                    <button class="btn" id="saveLubeWeeklyBtn">Save Lube Tech Weekly</button>
+                </div>
+            </div>
+
+            <!-- MONTHLY / YTD TECH PERFORMANCE -->
+            <div class="card">
+                <h3 class="card-title">Technician Performance — MTD / YTD</h3>
+                <div class="controls" style="margin-bottom:16px;">
+                    <div class="control-group">
+                        <label>View</label>
+                        <select id="techPerfView">
+                            <option value="mtd">Month to Date</option>
+                            <option value="ytd">Year to Date</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table id="techPerfTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Specialty</th>
+                                <th>Training</th>
+                                <th>Total ROs</th>
+                                <th>Avg CSI</th>
+                                <th>Total Hrs Turned</th>
+                                <th>Total Clock Hrs</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">Efficiency %</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">Productivity %</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">Proficiency %</th>
+                                <th>Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody id="techPerfBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- CAPACITY ANALYSIS -->
+            <div class="card">
+                <h3 class="card-title">Capacity Analysis & Staffing Recommendations</h3>
+                <div class="kpi-grid" id="capacityAnalysisCards">
+                </div>
+                <div id="capacityRecommendations" style="margin-top:16px;">
                 </div>
             </div>
         </div>
@@ -1182,8 +1314,15 @@
             // Advisor
             document.getElementById('advisorSelect').addEventListener('change', loadAdvisor);
 
-            // Save roster
+            // Save roster & tech weekly
             document.getElementById('saveRosterBtn').addEventListener('click', saveRoster);
+            document.getElementById('saveFacilityBtn').addEventListener('click', saveFacilityConfig);
+            document.getElementById('saveTechWeeklyBtn').addEventListener('click', () => saveTechWeekly('techWeeklyBody', 'tech'));
+            document.getElementById('saveLubeWeeklyBtn').addEventListener('click', () => saveTechWeekly('lubeWeeklyBody', 'lube'));
+            document.getElementById('techPerfView').addEventListener('change', () => {
+                const storeId = document.getElementById('rosterStoreSelect').value;
+                if (storeId) loadTechPerformance(storeId, facilityConfig[storeId] || { hoursPerDay: 8, daysPerMonth: 22 });
+            });
 
             // Staff management
             document.getElementById('staffStoreSelect').addEventListener('change', loadStaffManagement);
@@ -1880,6 +2019,10 @@
         // ============================================================================
         // TAB 6: CAPACITY & ROSTER
         // ============================================================================
+        // In-memory storage for weekly tech entries and facility config
+        let techWeeklyData = {};  // key: `${storeId}_${weekStart}_${type}_${techId}`
+        let facilityConfig = {};  // key: storeId -> { bays, hoursPerDay, daysPerWeek, daysPerMonth }
+
         async function loadRoster() {
             const storeId = document.getElementById('rosterStoreSelect').value;
             const weekDate = document.getElementById('rosterWeekPicker').valueAsDate;
@@ -1887,64 +2030,97 @@
             if (!storeId) {
                 document.getElementById('rosterBody').innerHTML = '';
                 document.getElementById('rosterStaffingCards').innerHTML = '';
+                document.getElementById('techWeeklyBody').innerHTML = '';
+                document.getElementById('techWeeklyFooter').innerHTML = '';
+                document.getElementById('lubeWeeklyBody').innerHTML = '';
+                document.getElementById('lubeWeeklyFooter').innerHTML = '';
+                document.getElementById('techPerfBody').innerHTML = '';
+                document.getElementById('capacityAnalysisCards').innerHTML = '';
+                document.getElementById('capacityRecommendations').innerHTML = '';
                 return;
             }
 
             try {
                 const weekStart = getWeekStart(weekDate);
+                const wsKey = dateToString(weekStart);
+
+                // Load facility config
+                const fc = facilityConfig[storeId] || { bays: 0, hoursPerDay: 8, daysPerWeek: 5, daysPerMonth: 22 };
+                document.getElementById('facilityBays').value = fc.bays || '';
+                document.getElementById('facilityHoursPerDay').value = fc.hoursPerDay || 8;
+                document.getElementById('facilityDaysPerWeek').value = fc.daysPerWeek || 5;
+                document.getElementById('facilityDaysPerMonth').value = fc.daysPerMonth || 22;
 
                 // Fetch staffing data
                 const { data: staffingData } = await db
                     .from('staffing')
                     .select('*')
                     .eq('store_id', storeId)
-                    .eq('week_start', dateToString(weekStart))
+                    .eq('week_start', wsKey)
                     .single();
 
-                // Count active advisors
-                const storeAdvisors = advisors.filter(a => a.store_id === storeId);
-                const currentAdvisors = storeAdvisors.length;
-                const recommendedAdvisors = staffingData?.recommended_advisors || currentAdvisors;
-                const recommendedTechs = staffingData?.recommended_techs || 0;
+                // Count staff
+                const storeAdvisors = advisors.filter(a => a.store_id === storeId && a.is_active !== false);
+                const storeTechs = technicians.filter(t => t.store_id === storeId && t.is_active !== false);
+                const storeLubes = lubeTechs.filter(t => t.store_id === storeId && t.is_active !== false);
+                const totalTechHeadcount = storeTechs.length + storeLubes.length;
+                const recommendedAdvisors = staffingData?.recommended_advisors || storeAdvisors.length;
 
-                // Count techs
-                const storeTechCount = technicians.filter(t => t.store_id === storeId && t.is_active !== false).length;
-                const storeLubeCount = lubeTechs.filter(t => t.store_id === storeId && t.is_active !== false).length;
+                // Capacity calculations
+                const hrsPerDay = fc.hoursPerDay || 8;
+                const daysPerWeek = fc.daysPerWeek || 5;
+                const daysPerMonth = fc.daysPerMonth || 22;
+                const weeklyAvailHrs = totalTechHeadcount * hrsPerDay * daysPerWeek;
+                const monthlyAvailHrs = totalTechHeadcount * hrsPerDay * daysPerMonth;
+                const bayCapacityWeekly = (fc.bays || 0) * hrsPerDay * daysPerWeek;
+                const bayCapacityMonthly = (fc.bays || 0) * hrsPerDay * daysPerMonth;
 
                 // Build staffing cards
                 document.getElementById('rosterStaffingCards').innerHTML = `
                     <div class="kpi-card">
                         <div class="kpi-label">Advisors</div>
-                        <div class="kpi-value">${currentAdvisors}</div>
-                        <div class="kpi-subtext">Recommended: ${recommendedAdvisors}</div>
-                        <div style="color: ${currentAdvisors >= recommendedAdvisors ? '#10b981' : '#ef4444'}; font-weight: 600;">
-                            ${currentAdvisors >= recommendedAdvisors ? '✓ Staffed' : '⚠ Under'}
-                        </div>
+                        <div class="kpi-value">${storeAdvisors.length}</div>
+                        <div class="kpi-subtext">Active on roster</div>
                     </div>
                     <div class="kpi-card">
                         <div class="kpi-label">Technicians</div>
-                        <div class="kpi-value">${storeTechCount}</div>
+                        <div class="kpi-value">${storeTechs.length}</div>
                         <div class="kpi-subtext">A/B/C & Specialty</div>
                     </div>
                     <div class="kpi-card">
                         <div class="kpi-label">Lube Techs</div>
-                        <div class="kpi-value">${storeLubeCount}</div>
-                        <div class="kpi-subtext">Recommended: ${recommendedTechs || storeLubeCount}</div>
+                        <div class="kpi-value">${storeLubes.length}</div>
+                        <div class="kpi-subtext">Express lane</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Bays</div>
+                        <div class="kpi-value">${fc.bays || '—'}</div>
+                        <div class="kpi-subtext">Facility total</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Weekly Available Hrs</div>
+                        <div class="kpi-value">${weeklyAvailHrs.toLocaleString()}</div>
+                        <div class="kpi-subtext">${totalTechHeadcount} techs × ${hrsPerDay}h × ${daysPerWeek}d</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Monthly Available Hrs</div>
+                        <div class="kpi-value">${monthlyAvailHrs.toLocaleString()}</div>
+                        <div class="kpi-subtext">${totalTechHeadcount} techs × ${hrsPerDay}h × ${daysPerMonth}d</div>
                     </div>
                 `;
 
-                // Fetch roster entries
+                // Fetch advisor roster entries
                 const { data: rosterData } = await db
                     .from('roster_entries')
                     .select('*')
                     .eq('store_id', storeId)
-                    .eq('week_start', dateToString(weekStart));
+                    .eq('week_start', wsKey);
 
-                // Build roster rows
-                let html = '';
+                // Build advisor roster rows
+                let advHtml = '';
                 storeAdvisors.forEach(advisor => {
                     const entry = rosterData?.find(r => r.advisor_id === advisor.id) || {};
-                    html += `
+                    advHtml += `
                         <tr>
                             <td>${advisor.name}</td>
                             <td><select class="roster-training" data-advisor="${advisor.id}">
@@ -1966,10 +2142,325 @@
                         </tr>
                     `;
                 });
-                document.getElementById('rosterBody').innerHTML = html;
+                document.getElementById('rosterBody').innerHTML = advHtml;
+
+                // Build Technician weekly entry
+                const availHrsPerTech = hrsPerDay * daysPerWeek;
+                let techHtml = '';
+                let techTotals = { ros: 0, hrsTurned: 0, clockHrs: 0 };
+                storeTechs.forEach(tech => {
+                    const key = `${storeId}_${wsKey}_tech_${tech.id}`;
+                    const d = techWeeklyData[key] || {};
+                    const hrsTurned = d.hours_turned || 0;
+                    const clockHrs = d.clock_hours || 0;
+                    const eff = clockHrs > 0 ? (hrsTurned / clockHrs * 100) : 0;
+                    const prod = availHrsPerTech > 0 ? (clockHrs / availHrsPerTech * 100) : 0;
+                    const prof = availHrsPerTech > 0 ? (hrsTurned / availHrsPerTech * 100) : 0;
+                    techTotals.ros += (d.ros_worked || 0);
+                    techTotals.hrsTurned += hrsTurned;
+                    techTotals.clockHrs += clockHrs;
+
+                    techHtml += `
+                        <tr data-tech-id="${tech.id}" data-tech-type="tech">
+                            <td style="font-weight:600">${tech.name}</td>
+                            <td>${tech.specialty || '—'}</td>
+                            <td><select class="tw-training">
+                                <option value="">-</option>
+                                <option value="Complete" ${d.training === 'Complete' ? 'selected' : ''}>Complete</option>
+                                <option value="In Progress" ${d.training === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                <option value="Not Started" ${d.training === 'Not Started' ? 'selected' : ''}>Not Started</option>
+                            </select></td>
+                            <td><input type="number" class="tw-ros input-yellow" value="${d.ros_worked || ''}" placeholder="0"></td>
+                            <td><input type="number" step="0.1" class="tw-csi input-yellow" value="${d.csi_score || ''}" placeholder="0"></td>
+                            <td><input type="number" step="0.1" class="tw-hrs-turned input-yellow" value="${d.hours_turned || ''}" placeholder="0"></td>
+                            <td><input type="number" step="0.1" class="tw-clock-hrs input-yellow" value="${d.clock_hours || ''}" placeholder="0"></td>
+                            <td class="tw-eff" style="font-weight:700;color:${eff >= 100 ? '#10b981' : eff >= 75 ? '#f59e0b' : '#ef4444'}">${eff > 0 ? eff.toFixed(1) + '%' : '—'}</td>
+                            <td class="tw-prod" style="font-weight:700;color:${prod >= 85 ? '#10b981' : prod >= 70 ? '#f59e0b' : '#ef4444'}">${prod > 0 ? prod.toFixed(1) + '%' : '—'}</td>
+                            <td class="tw-prof" style="font-weight:700;color:${prof >= 100 ? '#10b981' : prof >= 75 ? '#f59e0b' : '#ef4444'}">${prof > 0 ? prof.toFixed(1) + '%' : '—'}</td>
+                        </tr>
+                    `;
+                });
+                document.getElementById('techWeeklyBody').innerHTML = techHtml;
+
+                // Tech totals footer
+                const totalTechAvail = storeTechs.length * availHrsPerTech;
+                const tEff = techTotals.clockHrs > 0 ? (techTotals.hrsTurned / techTotals.clockHrs * 100) : 0;
+                const tProd = totalTechAvail > 0 ? (techTotals.clockHrs / totalTechAvail * 100) : 0;
+                const tProf = totalTechAvail > 0 ? (techTotals.hrsTurned / totalTechAvail * 100) : 0;
+                document.getElementById('techWeeklyFooter').innerHTML = `
+                    <tr style="background:#e0e0e0;font-weight:700;">
+                        <td colspan="3">SHOP TOTALS</td>
+                        <td>${techTotals.ros}</td>
+                        <td>—</td>
+                        <td>${techTotals.hrsTurned.toFixed(1)}</td>
+                        <td>${techTotals.clockHrs.toFixed(1)}</td>
+                        <td style="color:${tEff >= 100 ? '#10b981' : '#ef4444'}">${tEff > 0 ? tEff.toFixed(1) + '%' : '—'}</td>
+                        <td style="color:${tProd >= 85 ? '#10b981' : '#ef4444'}">${tProd > 0 ? tProd.toFixed(1) + '%' : '—'}</td>
+                        <td style="color:${tProf >= 100 ? '#10b981' : '#ef4444'}">${tProf > 0 ? tProf.toFixed(1) + '%' : '—'}</td>
+                    </tr>
+                `;
+
+                // Build Lube Tech weekly entry
+                let lubeHtml = '';
+                let lubeTotals = { ros: 0, hrsTurned: 0, clockHrs: 0 };
+                storeLubes.forEach(tech => {
+                    const key = `${storeId}_${wsKey}_lube_${tech.id}`;
+                    const d = techWeeklyData[key] || {};
+                    const hrsTurned = d.hours_turned || 0;
+                    const clockHrs = d.clock_hours || 0;
+                    const eff = clockHrs > 0 ? (hrsTurned / clockHrs * 100) : 0;
+                    const prod = availHrsPerTech > 0 ? (clockHrs / availHrsPerTech * 100) : 0;
+                    const prof = availHrsPerTech > 0 ? (hrsTurned / availHrsPerTech * 100) : 0;
+                    lubeTotals.ros += (d.ros_worked || 0);
+                    lubeTotals.hrsTurned += hrsTurned;
+                    lubeTotals.clockHrs += clockHrs;
+
+                    lubeHtml += `
+                        <tr data-tech-id="${tech.id}" data-tech-type="lube">
+                            <td style="font-weight:600">${tech.name}</td>
+                            <td><select class="tw-training">
+                                <option value="">-</option>
+                                <option value="Complete" ${d.training === 'Complete' ? 'selected' : ''}>Complete</option>
+                                <option value="In Progress" ${d.training === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                <option value="Not Compliant" ${d.training === 'Not Compliant' ? 'selected' : ''}>Not Compliant</option>
+                            </select></td>
+                            <td><input type="number" class="tw-ros input-yellow" value="${d.ros_worked || ''}" placeholder="0"></td>
+                            <td><input type="number" step="0.1" class="tw-csi input-yellow" value="${d.csi_score || ''}" placeholder="0"></td>
+                            <td><input type="number" step="0.1" class="tw-hrs-turned input-yellow" value="${d.hours_turned || ''}" placeholder="0"></td>
+                            <td><input type="number" step="0.1" class="tw-clock-hrs input-yellow" value="${d.clock_hours || ''}" placeholder="0"></td>
+                            <td class="tw-eff" style="font-weight:700;color:${eff >= 100 ? '#10b981' : eff >= 75 ? '#f59e0b' : '#ef4444'}">${eff > 0 ? eff.toFixed(1) + '%' : '—'}</td>
+                            <td class="tw-prod" style="font-weight:700;color:${prod >= 85 ? '#10b981' : prod >= 70 ? '#f59e0b' : '#ef4444'}">${prod > 0 ? prod.toFixed(1) + '%' : '—'}</td>
+                            <td class="tw-prof" style="font-weight:700;color:${prof >= 100 ? '#10b981' : prof >= 75 ? '#f59e0b' : '#ef4444'}">${prof > 0 ? prof.toFixed(1) + '%' : '—'}</td>
+                        </tr>
+                    `;
+                });
+                document.getElementById('lubeWeeklyBody').innerHTML = lubeHtml;
+
+                // Lube totals footer
+                const totalLubeAvail = storeLubes.length * availHrsPerTech;
+                const lEff = lubeTotals.clockHrs > 0 ? (lubeTotals.hrsTurned / lubeTotals.clockHrs * 100) : 0;
+                const lProd = totalLubeAvail > 0 ? (lubeTotals.clockHrs / totalLubeAvail * 100) : 0;
+                const lProf = totalLubeAvail > 0 ? (lubeTotals.hrsTurned / totalLubeAvail * 100) : 0;
+                document.getElementById('lubeWeeklyFooter').innerHTML = `
+                    <tr style="background:#e0e0e0;font-weight:700;">
+                        <td colspan="2">LUBE TOTALS</td>
+                        <td>${lubeTotals.ros}</td>
+                        <td>—</td>
+                        <td>${lubeTotals.hrsTurned.toFixed(1)}</td>
+                        <td>${lubeTotals.clockHrs.toFixed(1)}</td>
+                        <td style="color:${lEff >= 100 ? '#10b981' : '#ef4444'}">${lEff > 0 ? lEff.toFixed(1) + '%' : '—'}</td>
+                        <td style="color:${lProd >= 85 ? '#10b981' : '#ef4444'}">${lProd > 0 ? lProd.toFixed(1) + '%' : '—'}</td>
+                        <td style="color:${lProf >= 100 ? '#10b981' : '#ef4444'}">${lProf > 0 ? lProf.toFixed(1) + '%' : '—'}</td>
+                    </tr>
+                `;
+
+                // Add live-calc listeners
+                document.querySelectorAll('.tw-hrs-turned, .tw-clock-hrs').forEach(input => {
+                    input.addEventListener('input', recalcTechRow);
+                });
+
+                // Load tech perf MTD/YTD and capacity analysis
+                loadTechPerformance(storeId, fc);
+                loadCapacityAnalysis(storeId, fc, storeTechs, storeLubes, storeAdvisors, techTotals, lubeTotals);
             } catch (error) {
                 console.error('Roster load error:', error);
             }
+        }
+
+        function recalcTechRow(e) {
+            const row = e.target.closest('tr');
+            const hrsTurned = parseFloat(row.querySelector('.tw-hrs-turned').value) || 0;
+            const clockHrs = parseFloat(row.querySelector('.tw-clock-hrs').value) || 0;
+            const storeId = document.getElementById('rosterStoreSelect').value;
+            const fc = facilityConfig[storeId] || { hoursPerDay: 8, daysPerWeek: 5 };
+            const availHrs = (fc.hoursPerDay || 8) * (fc.daysPerWeek || 5);
+
+            const eff = clockHrs > 0 ? (hrsTurned / clockHrs * 100) : 0;
+            const prod = availHrs > 0 ? (clockHrs / availHrs * 100) : 0;
+            const prof = availHrs > 0 ? (hrsTurned / availHrs * 100) : 0;
+
+            row.querySelector('.tw-eff').textContent = eff > 0 ? eff.toFixed(1) + '%' : '—';
+            row.querySelector('.tw-eff').style.color = eff >= 100 ? '#10b981' : eff >= 75 ? '#f59e0b' : '#ef4444';
+            row.querySelector('.tw-prod').textContent = prod > 0 ? prod.toFixed(1) + '%' : '—';
+            row.querySelector('.tw-prod').style.color = prod >= 85 ? '#10b981' : prod >= 70 ? '#f59e0b' : '#ef4444';
+            row.querySelector('.tw-prof').textContent = prof > 0 ? prof.toFixed(1) + '%' : '—';
+            row.querySelector('.tw-prof').style.color = prof >= 100 ? '#10b981' : prof >= 75 ? '#f59e0b' : '#ef4444';
+        }
+
+        function saveTechWeekly(tableBodyId, techType) {
+            const storeId = document.getElementById('rosterStoreSelect').value;
+            const weekDate = document.getElementById('rosterWeekPicker').valueAsDate;
+            const wsKey = dateToString(getWeekStart(weekDate));
+            if (!storeId) { showToast('Select a store', 'error'); return; }
+
+            document.querySelectorAll(`#${tableBodyId} tr`).forEach(row => {
+                const techId = row.dataset.techId;
+                const key = `${storeId}_${wsKey}_${techType}_${techId}`;
+                techWeeklyData[key] = {
+                    training: row.querySelector('.tw-training').value || null,
+                    ros_worked: parseFloat(row.querySelector('.tw-ros').value) || 0,
+                    csi_score: parseFloat(row.querySelector('.tw-csi').value) || null,
+                    hours_turned: parseFloat(row.querySelector('.tw-hrs-turned').value) || 0,
+                    clock_hours: parseFloat(row.querySelector('.tw-clock-hrs').value) || 0,
+                    store_id: storeId,
+                    week_start: wsKey,
+                    tech_type: techType,
+                    tech_id: parseInt(techId)
+                };
+            });
+            showToast(`${techType === 'tech' ? 'Technician' : 'Lube tech'} weekly data saved`);
+        }
+
+        function loadTechPerformance(storeId, fc) {
+            const view = document.getElementById('techPerfView').value;
+            const hrsPerDay = fc.hoursPerDay || 8;
+            const daysPerMonth = fc.daysPerMonth || 22;
+            const monthlyAvail = hrsPerDay * daysPerMonth;
+
+            const now = new Date();
+            const currentMonth = now.getMonth() + 1;
+            const currentYear = now.getFullYear();
+
+            // Aggregate from techWeeklyData
+            const perfMap = {};
+            Object.values(techWeeklyData).forEach(d => {
+                if (d.store_id !== storeId) return;
+                const entryDate = new Date(d.week_start);
+                const entryMonth = entryDate.getMonth() + 1;
+                const entryYear = entryDate.getFullYear();
+
+                if (view === 'mtd' && (entryMonth !== currentMonth || entryYear !== currentYear)) return;
+                if (view === 'ytd' && entryYear !== currentYear) return;
+
+                const key = `${d.tech_type}_${d.tech_id}`;
+                if (!perfMap[key]) {
+                    perfMap[key] = { ros: 0, csiSum: 0, csiCount: 0, hrsTurned: 0, clockHrs: 0, weeks: 0,
+                        type: d.tech_type, id: d.tech_id, training: d.training };
+                }
+                perfMap[key].ros += d.ros_worked || 0;
+                if (d.csi_score) { perfMap[key].csiSum += d.csi_score; perfMap[key].csiCount++; }
+                perfMap[key].hrsTurned += d.hours_turned || 0;
+                perfMap[key].clockHrs += d.clock_hours || 0;
+                perfMap[key].weeks++;
+                perfMap[key].training = d.training || perfMap[key].training;
+            });
+
+            // Build all techs (even those without data yet)
+            const allStaff = [
+                ...technicians.filter(t => t.store_id === storeId && t.is_active !== false).map(t => ({ ...t, staffType: 'tech' })),
+                ...lubeTechs.filter(t => t.store_id === storeId && t.is_active !== false).map(t => ({ ...t, staffType: 'lube' }))
+            ];
+
+            const periodMonths = view === 'ytd' ? currentMonth : 1;
+            const periodAvail = monthlyAvail * periodMonths;
+
+            let html = '';
+            allStaff.forEach(s => {
+                const key = `${s.staffType}_${s.id}`;
+                const p = perfMap[key] || {};
+                const eff = (p.clockHrs || 0) > 0 ? ((p.hrsTurned || 0) / p.clockHrs * 100) : 0;
+                const prod = periodAvail > 0 ? ((p.clockHrs || 0) / periodAvail * 100) : 0;
+                const prof = periodAvail > 0 ? ((p.hrsTurned || 0) / periodAvail * 100) : 0;
+                const avgCsi = (p.csiCount || 0) > 0 ? (p.csiSum / p.csiCount) : 0;
+                const trend = (p.weeks || 0) >= 2 ? (eff >= 100 ? '▲' : '▼') : '—';
+                const trendColor = trend === '▲' ? '#10b981' : trend === '▼' ? '#ef4444' : '#777';
+
+                html += `
+                    <tr>
+                        <td style="font-weight:600">${s.name}</td>
+                        <td>${s.staffType === 'tech' ? 'Technician' : 'Lube Tech'}</td>
+                        <td>${s.specialty || '—'}</td>
+                        <td>${p.training || '—'}</td>
+                        <td>${p.ros || 0}</td>
+                        <td>${avgCsi > 0 ? avgCsi.toFixed(1) : '—'}</td>
+                        <td>${(p.hrsTurned || 0).toFixed(1)}</td>
+                        <td>${(p.clockHrs || 0).toFixed(1)}</td>
+                        <td style="font-weight:700;color:${eff >= 100 ? '#10b981' : eff >= 75 ? '#f59e0b' : '#ef4444'}">${eff > 0 ? eff.toFixed(1) + '%' : '—'}</td>
+                        <td style="font-weight:700;color:${prod >= 85 ? '#10b981' : prod >= 70 ? '#f59e0b' : '#ef4444'}">${prod > 0 ? prod.toFixed(1) + '%' : '—'}</td>
+                        <td style="font-weight:700;color:${prof >= 100 ? '#10b981' : prof >= 75 ? '#f59e0b' : '#ef4444'}">${prof > 0 ? prof.toFixed(1) + '%' : '—'}</td>
+                        <td style="font-weight:700;color:${trendColor}">${trend}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('techPerfBody').innerHTML = html || '<tr><td colspan="12" class="empty-state">No weekly data entered yet. Enter tech weekly data above to see MTD/YTD performance.</td></tr>';
+        }
+
+        function loadCapacityAnalysis(storeId, fc, storeTechs, storeLubes, storeAdvisors, techTotals, lubeTotals) {
+            const bays = fc.bays || 0;
+            const hrsPerDay = fc.hoursPerDay || 8;
+            const daysPerWeek = fc.daysPerWeek || 5;
+            const daysPerMonth = fc.daysPerMonth || 22;
+            const totalTechs = storeTechs.length + storeLubes.length;
+            const totalAdvisors = storeAdvisors.length;
+
+            // Weekly capacity
+            const weeklyTechHrs = totalTechs * hrsPerDay * daysPerWeek;
+            const weeklyBayHrs = bays * hrsPerDay * daysPerWeek;
+            const weeklyClockUsed = (techTotals?.clockHrs || 0) + (lubeTotals?.clockHrs || 0);
+            const weeklyHrsTurned = (techTotals?.hrsTurned || 0) + (lubeTotals?.hrsTurned || 0);
+            const utilizationPct = weeklyTechHrs > 0 ? (weeklyClockUsed / weeklyTechHrs * 100) : 0;
+            const bayUtilPct = weeklyBayHrs > 0 ? (weeklyClockUsed / weeklyBayHrs * 100) : 0;
+
+            // Ideal ratios (industry standard)
+            const idealTechsPerAdvisor = 3;
+            const idealRosPerAdvisor = 12; // per day
+            const idealTechPerBay = 1.2;
+            const recommendedTechs = Math.ceil(totalAdvisors * idealTechsPerAdvisor);
+            const recommendedBays = Math.ceil(totalTechs / idealTechPerBay);
+
+            const techShortage = recommendedTechs - totalTechs;
+            const bayStatus = bays > 0 ? (bays >= recommendedBays ? 'Adequate' : 'Under') : 'Not configured';
+
+            document.getElementById('capacityAnalysisCards').innerHTML = `
+                <div class="kpi-card">
+                    <div class="kpi-label">Tech Utilization</div>
+                    <div class="kpi-value" style="color:${utilizationPct >= 80 ? '#10b981' : utilizationPct >= 60 ? '#f59e0b' : '#ef4444'}">${utilizationPct > 0 ? utilizationPct.toFixed(0) + '%' : '—'}</div>
+                    <div class="kpi-subtext">Clock hrs / Available hrs this week</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Bay Utilization</div>
+                    <div class="kpi-value" style="color:${bayUtilPct >= 75 ? '#10b981' : bayUtilPct >= 50 ? '#f59e0b' : '#ef4444'}">${bays > 0 && weeklyClockUsed > 0 ? bayUtilPct.toFixed(0) + '%' : '—'}</div>
+                    <div class="kpi-subtext">${bays} bays × ${hrsPerDay}h × ${daysPerWeek}d = ${weeklyBayHrs}h capacity</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Tech:Advisor Ratio</div>
+                    <div class="kpi-value">${totalAdvisors > 0 ? (totalTechs / totalAdvisors).toFixed(1) : '—'}:1</div>
+                    <div class="kpi-subtext">Target: ${idealTechsPerAdvisor}:1</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Staffing Need</div>
+                    <div class="kpi-value" style="color:${techShortage <= 0 ? '#10b981' : '#ef4444'}">${techShortage <= 0 ? 'Staffed' : '+' + techShortage + ' techs'}</div>
+                    <div class="kpi-subtext">${totalTechs} of ${recommendedTechs} recommended (${totalAdvisors} advisors × ${idealTechsPerAdvisor})</div>
+                </div>
+            `;
+
+            // Recommendations
+            let recs = [];
+            if (techShortage > 0) {
+                recs.push(`<div style="padding:10px;background:#fee2e2;border-radius:6px;margin-bottom:8px;border-left:4px solid #ef4444;">
+                    <strong>Understaffed:</strong> Based on ${totalAdvisors} advisors at a ${idealTechsPerAdvisor}:1 ratio, this store needs ${techShortage} more technician${techShortage > 1 ? 's' : ''} to handle projected workload without bottlenecks.</div>`);
+            }
+            if (bays > 0 && totalTechs > bays) {
+                recs.push(`<div style="padding:10px;background:#fef3c7;border-radius:6px;margin-bottom:8px;border-left:4px solid #f59e0b;">
+                    <strong>Bay constraint:</strong> ${totalTechs} techs sharing ${bays} bays means techs may be waiting for lifts. Consider staggered shifts or additional bays.</div>`);
+            }
+            if (utilizationPct > 0 && utilizationPct < 65) {
+                recs.push(`<div style="padding:10px;background:#fef3c7;border-radius:6px;margin-bottom:8px;border-left:4px solid #f59e0b;">
+                    <strong>Low utilization (${utilizationPct.toFixed(0)}%):</strong> Techs have available capacity. This may indicate appointment scheduling gaps, parts delays, or advisor bottleneck limiting car flow.</div>`);
+            }
+            if (utilizationPct > 95) {
+                recs.push(`<div style="padding:10px;background:#fee2e2;border-radius:6px;margin-bottom:8px;border-left:4px solid #ef4444;">
+                    <strong>At capacity (${utilizationPct.toFixed(0)}%):</strong> Shop is running near max. Any increase in volume will create backlog. Consider adding techs or extending hours before demand grows.</div>`);
+            }
+            if (weeklyClockUsed === 0) {
+                recs.push(`<div style="padding:10px;background:#f0f0f0;border-radius:6px;margin-bottom:8px;border-left:4px solid #999;">
+                    <strong>No weekly data yet.</strong> Enter technician hours in the weekly entry tables above to see capacity utilization and staffing recommendations.</div>`);
+            }
+            if (techShortage <= 0 && utilizationPct >= 65 && utilizationPct <= 95 && weeklyClockUsed > 0) {
+                recs.push(`<div style="padding:10px;background:#d1fae5;border-radius:6px;margin-bottom:8px;border-left:4px solid #10b981;">
+                    <strong>Healthy capacity.</strong> Staffing levels and utilization are in a good range. Continue monitoring weekly to catch shifts early.</div>`);
+            }
+            document.getElementById('capacityRecommendations').innerHTML = recs.join('');
         }
 
         async function saveRoster() {
@@ -2014,6 +2505,19 @@
                 console.error('Save roster error:', error);
                 showToast('Failed to save roster', 'error');
             }
+        }
+
+        function saveFacilityConfig() {
+            const storeId = document.getElementById('rosterStoreSelect').value;
+            if (!storeId) { showToast('Select a store first', 'error'); return; }
+            facilityConfig[storeId] = {
+                bays: parseInt(document.getElementById('facilityBays').value) || 0,
+                hoursPerDay: parseFloat(document.getElementById('facilityHoursPerDay').value) || 8,
+                daysPerWeek: parseFloat(document.getElementById('facilityDaysPerWeek').value) || 5,
+                daysPerMonth: parseInt(document.getElementById('facilityDaysPerMonth').value) || 22
+            };
+            showToast('Facility configuration saved');
+            loadRoster(); // Refresh all calculations
         }
 
         // ============================================================================
