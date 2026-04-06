@@ -1335,8 +1335,8 @@
                     try {
                         const { data, error } = await db.from('staff_overrides').select('*');
                         if (!error && data) {
-                            // Map from DB format to app format
-                            const mapped = data.map(r => ({ type: r.override_type, id: r.staff_id, data: r.data, action: r.action }));
+                            // Map from DB format to app format (parse id back to number)
+                            const mapped = data.map(r => ({ type: r.override_type, id: isNaN(r.staff_id) ? r.staff_id : parseInt(r.staff_id), data: r.data, action: r.action }));
                             this._set('dyer_staff_overrides', mapped);
                             return mapped;
                         }
@@ -1360,7 +1360,7 @@
 
                 overrides.forEach(o => {
                     const arr = o.type === 'advisor' ? advs : o.type === 'technician' ? techs : lubes;
-                    const idx = arr.findIndex(x => x.id === o.id);
+                    const idx = arr.findIndex(x => String(x.id) === String(o.id));
                     if (idx >= 0) {
                         Object.assign(arr[idx], o.data);
                     } else if (o.action === 'add') {
