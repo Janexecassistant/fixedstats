@@ -744,7 +744,7 @@
         const SUPABASE_URL = 'https://vhmyqgerucfrrwyxsloq.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZobXlxZ2VydWNmcnJ3eXhzbG9xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NzQ4NTcsImV4cCI6MjA5MTA1MDg1N30.yKSr3SvW5jyNCFFVNAJWRjTOumJrNloRCWQ9pItekk0';
         const { createClient } = window.supabase;
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // ============================================================================
         // STATE & DATA
@@ -859,7 +859,7 @@
         async function initialize() {
             try {
                 // Try Supabase first
-                const { data: storesData, error: storesErr } = await supabase
+                const { data: storesData, error: storesErr } = await db
                     .from('stores')
                     .select('*')
                     .order('name');
@@ -871,7 +871,7 @@
                     advisors = FALLBACK_ADVISORS;
                 } else {
                     stores = storesData;
-                    const { data: advisorsData } = await supabase
+                    const { data: advisorsData } = await db
                         .from('advisors')
                         .select('*')
                         .eq('is_active', true)
@@ -1013,7 +1013,7 @@
 
             try {
                 // Fetch daily entry
-                const { data: dailyData } = await supabase
+                const { data: dailyData } = await db
                     .from('daily_entries')
                     .select('*')
                     .eq('store_id', storeId)
@@ -1029,7 +1029,7 @@
                 }
 
                 // Fetch advisor entries
-                const { data: advisorEntries } = await supabase
+                const { data: advisorEntries } = await db
                     .from('advisor_entries')
                     .select('*')
                     .eq('store_id', storeId)
@@ -1112,7 +1112,7 @@
             // Fetch MTD data
             if (!storeId) return;
 
-            const { data: monthlyData } = await supabase
+            const { data: monthlyData } = await db
                 .from('daily_entries')
                 .select('labor_day, parts_day')
                 .eq('store_id', storeId)
@@ -1154,7 +1154,7 @@
 
             try {
                 // Save daily entry
-                await supabase
+                await db
                     .from('daily_entries')
                     .upsert({
                         store_id: storeId,
@@ -1176,7 +1176,7 @@
                     const mpviPct = parseFloat(row.querySelector('.advisor-mpvi').value) || null;
 
                     if (totalGross > 0 || roCount > 0 || hours > 0) {
-                        await supabase
+                        await db
                             .from('advisor_entries')
                             .upsert({
                                 store_id: storeId,
@@ -1210,7 +1210,7 @@
                 const { month, year } = getMonthYear(new Date());
 
                 // Fetch goals
-                const { data: goalsData } = await supabase
+                const { data: goalsData } = await db
                     .from('goals')
                     .select('*')
                     .eq('store_id', storeId)
@@ -1222,7 +1222,7 @@
                 const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
                 const monthEnd = dateToString(new Date(year, month, 0));
 
-                const { data: dailyData } = await supabase
+                const { data: dailyData } = await db
                     .from('daily_entries')
                     .select('*')
                     .eq('store_id', storeId)
@@ -1234,7 +1234,7 @@
                 const totalGrossMtd = laborMtd + partsMtd;
 
                 // Fetch advisor entries
-                const { data: advisorData } = await supabase
+                const { data: advisorData } = await db
                     .from('advisor_entries')
                     .select('*')
                     .eq('store_id', storeId)
@@ -1375,19 +1375,19 @@
                 const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
                 const monthEnd = dateToString(new Date(year, month, 0));
 
-                const { data: dailyData } = await supabase
+                const { data: dailyData } = await db
                     .from('daily_entries')
                     .select('*')
                     .gte('entry_date', monthStart)
                     .lte('entry_date', monthEnd);
 
-                const { data: advisorData } = await supabase
+                const { data: advisorData } = await db
                     .from('advisor_entries')
                     .select('*')
                     .gte('entry_date', monthStart)
                     .lte('entry_date', monthEnd);
 
-                const { data: goalsData } = await supabase
+                const { data: goalsData } = await db
                     .from('goals')
                     .select('*')
                     .eq('month', month)
@@ -1528,7 +1528,7 @@
                 const monthEnd = dateToString(new Date(year, month, 0));
 
                 // Fetch advisor entries
-                const { data: advisorEntries } = await supabase
+                const { data: advisorEntries } = await db
                     .from('advisor_entries')
                     .select('*')
                     .eq('advisor_id', advisorId)
@@ -1536,7 +1536,7 @@
                     .lte('entry_date', monthEnd);
 
                 // Fetch store advisor averages
-                const { data: storeEntries } = await supabase
+                const { data: storeEntries } = await db
                     .from('advisor_entries')
                     .select('*')
                     .eq('store_id', advisor.store_id)
@@ -1628,7 +1628,7 @@
             try {
                 const { month, year } = getMonthYear(new Date());
 
-                const { data: goalsData } = await supabase
+                const { data: goalsData } = await db
                     .from('goals')
                     .select('*')
                     .eq('month', month)
@@ -1664,7 +1664,7 @@
                     const totalGoal = parseFloat(row.querySelector('.goal-total').value) || 0;
                     const perRoTarget = parseFloat(row.querySelector('.goal-per-ro').value) || 0;
 
-                    await supabase
+                    await db
                         .from('goals')
                         .upsert({
                             store_id: storeId,
@@ -1701,7 +1701,7 @@
                 const weekStart = getWeekStart(weekDate);
 
                 // Fetch staffing data
-                const { data: staffingData } = await supabase
+                const { data: staffingData } = await db
                     .from('staffing')
                     .select('*')
                     .eq('store_id', storeId)
@@ -1732,7 +1732,7 @@
                 `;
 
                 // Fetch roster entries
-                const { data: rosterData } = await supabase
+                const { data: rosterData } = await db
                     .from('roster_entries')
                     .select('*')
                     .eq('store_id', storeId)
@@ -1791,7 +1791,7 @@
                     const csi = parseFloat(row.querySelector('.roster-csi').value) || null;
                     const csiRegion = parseFloat(row.querySelector('.roster-csi-region').value) || null;
 
-                    await supabase
+                    await db
                         .from('roster_entries')
                         .upsert({
                             store_id: storeId,
