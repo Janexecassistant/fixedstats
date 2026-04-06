@@ -726,33 +726,45 @@
                     </select>
                 </div>
                 <div class="control-group">
-                    <label>Week Start</label>
+                    <label>Week Starting</label>
                     <input type="date" id="rosterWeekPicker">
+                </div>
+                <div class="control-group">
+                    <label>View Period</label>
+                    <select id="rosterPeriod">
+                        <option value="week">This Week</option>
+                        <option value="mtd">Month to Date</option>
+                        <option value="ytd">Year to Date</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                </div>
+                <div class="control-group" id="customRangeGroup" style="display:none;">
+                    <label>From</label>
+                    <input type="month" id="rosterFromMonth">
+                </div>
+                <div class="control-group" id="customRangeGroupTo" style="display:none;">
+                    <label>To</label>
+                    <input type="month" id="rosterToMonth">
                 </div>
             </div>
 
-            <!-- FACILITY & CAPACITY -->
+            <!-- FACILITY CONFIG — only bays is manual -->
             <div class="card">
-                <h3 class="card-title">Facility & Capacity Configuration</h3>
+                <h3 class="card-title">Facility Configuration</h3>
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:16px;">
                     <div class="control-group">
-                        <label>Total Bays</label>
-                        <input type="number" id="facilityBays" min="1" max="100" placeholder="0">
+                        <label>Total Service Bays</label>
+                        <input type="number" id="facilityBays" min="1" max="100" placeholder="Enter bays...">
                     </div>
-                    <div class="control-group">
-                        <label>Hours/Day per Tech</label>
-                        <input type="number" id="facilityHoursPerDay" min="1" max="12" value="8" step="0.5">
-                    </div>
-                    <div class="control-group">
-                        <label>Working Days/Week</label>
-                        <input type="number" id="facilityDaysPerWeek" min="1" max="7" value="5" step="0.5">
-                    </div>
-                    <div class="control-group">
-                        <label>Working Days/Month</label>
-                        <input type="number" id="facilityDaysPerMonth" min="15" max="27" value="22">
+                    <div style="display:flex;flex-direction:column;gap:4px;">
+                        <span style="font-size:13px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:0.5px;">Schedule</span>
+                        <span style="font-size:14px;">Mon–Fri: 7:30 AM – 5:30 PM (9 hrs after lunch)</span>
+                        <span style="font-size:14px;">Saturday: 8:00 AM – 2:00 PM (5 hrs after lunch)</span>
                     </div>
                 </div>
-                <div class="btn-group" style="margin-top:8px;margin-bottom:16px;">
+                <div id="facilityAutoCalc" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;padding:12px;background:#f5f5f5;border-radius:8px;margin-bottom:12px;">
+                </div>
+                <div class="btn-group" style="margin-top:8px;margin-bottom:0;">
                     <button class="btn" id="saveFacilityBtn">Save Facility Config</button>
                 </div>
             </div>
@@ -848,16 +860,7 @@
 
             <!-- MONTHLY / YTD TECH PERFORMANCE -->
             <div class="card">
-                <h3 class="card-title">Technician Performance — MTD / YTD</h3>
-                <div class="controls" style="margin-bottom:16px;">
-                    <div class="control-group">
-                        <label>View</label>
-                        <select id="techPerfView">
-                            <option value="mtd">Month to Date</option>
-                            <option value="ytd">Year to Date</option>
-                        </select>
-                    </div>
-                </div>
+                <h3 class="card-title" id="techPerfTitle">Technician Performance — MTD</h3>
                 <div style="overflow-x: auto;">
                     <table id="techPerfTable">
                         <thead>
@@ -1319,10 +1322,14 @@
             document.getElementById('saveFacilityBtn').addEventListener('click', saveFacilityConfig);
             document.getElementById('saveTechWeeklyBtn').addEventListener('click', () => saveTechWeekly('techWeeklyBody', 'tech'));
             document.getElementById('saveLubeWeeklyBtn').addEventListener('click', () => saveTechWeekly('lubeWeeklyBody', 'lube'));
-            document.getElementById('techPerfView').addEventListener('change', () => {
-                const storeId = document.getElementById('rosterStoreSelect').value;
-                if (storeId) loadTechPerformance(storeId, facilityConfig[storeId] || { hoursPerDay: 8, daysPerMonth: 22 });
+            document.getElementById('rosterPeriod').addEventListener('change', () => {
+                const v = document.getElementById('rosterPeriod').value;
+                document.getElementById('customRangeGroup').style.display = v === 'custom' ? '' : 'none';
+                document.getElementById('customRangeGroupTo').style.display = v === 'custom' ? '' : 'none';
+                loadRoster();
             });
+            document.getElementById('rosterFromMonth')?.addEventListener('change', loadRoster);
+            document.getElementById('rosterToMonth')?.addEventListener('change', loadRoster);
 
             // Staff management
             document.getElementById('staffStoreSelect').addEventListener('change', loadStaffManagement);
@@ -2019,9 +2026,89 @@
         // ============================================================================
         // TAB 6: CAPACITY & ROSTER
         // ============================================================================
-        // In-memory storage for weekly tech entries and facility config
-        let techWeeklyData = {};  // key: `${storeId}_${weekStart}_${type}_${techId}`
-        let facilityConfig = {};  // key: storeId -> { bays, hoursPerDay, daysPerWeek, daysPerMonth }
+        // ============================================================================
+        // SCHEDULE & WORKING HOURS ENGINE
+        // ============================================================================
+        // Mon-Fri 7:30AM-5:30PM = 10hrs - 1hr lunch = 9 productive hrs
+        // Saturday 8:00AM-2:00PM = 6hrs - 1hr lunch = 5 productive hrs
+        const WEEKDAY_HOURS = 9;  // Mon-Fri after lunch
+        const SATURDAY_HOURS = 5; // Sat after lunch
+
+        function getWorkingDaysInMonth(year, month) {
+            // month is 1-indexed
+            const daysInMonth = new Date(year, month, 0).getDate();
+            let weekdays = 0, saturdays = 0;
+            for (let d = 1; d <= daysInMonth; d++) {
+                const day = new Date(year, month - 1, d).getDay();
+                if (day >= 1 && day <= 5) weekdays++;
+                else if (day === 6) saturdays++;
+            }
+            return { weekdays, saturdays, totalDays: weekdays + saturdays };
+        }
+
+        function getAvailableHoursInMonth(year, month) {
+            const wd = getWorkingDaysInMonth(year, month);
+            return (wd.weekdays * WEEKDAY_HOURS) + (wd.saturdays * SATURDAY_HOURS);
+        }
+
+        function getWorkingDaysInWeek(weekStartDate) {
+            // Count Mon-Fri and Sat in the 7-day span starting from weekStartDate
+            let weekdays = 0, saturdays = 0;
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(weekStartDate);
+                d.setDate(d.getDate() + i);
+                const day = d.getDay();
+                if (day >= 1 && day <= 5) weekdays++;
+                else if (day === 6) saturdays++;
+            }
+            return { weekdays, saturdays, totalDays: weekdays + saturdays };
+        }
+
+        function getAvailableHoursInWeek(weekStartDate) {
+            const wd = getWorkingDaysInWeek(weekStartDate);
+            return (wd.weekdays * WEEKDAY_HOURS) + (wd.saturdays * SATURDAY_HOURS); // returns number
+        }
+
+        function getAvailableHoursInRange(startDate, endDate) {
+            let weekdays = 0, saturdays = 0;
+            const d = new Date(startDate);
+            while (d <= endDate) {
+                const day = d.getDay();
+                if (day >= 1 && day <= 5) weekdays++;
+                else if (day === 6) saturdays++;
+                d.setDate(d.getDate() + 1);
+            }
+            return { weekdays, saturdays, totalDays: weekdays + saturdays,
+                     hours: (weekdays * WEEKDAY_HOURS) + (saturdays * SATURDAY_HOURS) };
+        }
+
+        // ============================================================================
+        // PERSISTENT DATA STORAGE (localStorage + Supabase)
+        // ============================================================================
+        const STORAGE_KEY_TECH = 'dyer_tech_weekly';
+        const STORAGE_KEY_FACILITY = 'dyer_facility';
+
+        function loadPersistedTechData() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY_TECH);
+                return raw ? JSON.parse(raw) : {};
+            } catch (e) { return {}; }
+        }
+        function savePersistedTechData(data) {
+            try { localStorage.setItem(STORAGE_KEY_TECH, JSON.stringify(data)); } catch (e) {}
+        }
+        function loadPersistedFacility() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY_FACILITY);
+                return raw ? JSON.parse(raw) : {};
+            } catch (e) { return {}; }
+        }
+        function savePersistedFacility(data) {
+            try { localStorage.setItem(STORAGE_KEY_FACILITY, JSON.stringify(data)); } catch (e) {}
+        }
+
+        let techWeeklyData = loadPersistedTechData();
+        let facilityConfig = loadPersistedFacility();
 
         async function loadRoster() {
             const storeId = document.getElementById('rosterStoreSelect').value;
@@ -2037,43 +2124,45 @@
                 document.getElementById('techPerfBody').innerHTML = '';
                 document.getElementById('capacityAnalysisCards').innerHTML = '';
                 document.getElementById('capacityRecommendations').innerHTML = '';
+                document.getElementById('facilityAutoCalc').innerHTML = '';
                 return;
             }
 
             try {
                 const weekStart = getWeekStart(weekDate);
                 const wsKey = dateToString(weekStart);
+                const now = new Date();
+                const currentMonth = now.getMonth() + 1;
+                const currentYear = now.getFullYear();
 
-                // Load facility config
-                const fc = facilityConfig[storeId] || { bays: 0, hoursPerDay: 8, daysPerWeek: 5, daysPerMonth: 22 };
+                // Load facility config (only bays is stored)
+                const fc = facilityConfig[storeId] || { bays: 0 };
                 document.getElementById('facilityBays').value = fc.bays || '';
-                document.getElementById('facilityHoursPerDay').value = fc.hoursPerDay || 8;
-                document.getElementById('facilityDaysPerWeek').value = fc.daysPerWeek || 5;
-                document.getElementById('facilityDaysPerMonth').value = fc.daysPerMonth || 22;
 
-                // Fetch staffing data
-                const { data: staffingData } = await db
-                    .from('staffing')
-                    .select('*')
-                    .eq('store_id', storeId)
-                    .eq('week_start', wsKey)
-                    .single();
+                // Auto-calculate schedule
+                const weekWd = getWorkingDaysInWeek(weekStart);
+                const weekHrsTotal = getAvailableHoursInWeek(weekStart);
+                const monthWd = getWorkingDaysInMonth(currentYear, currentMonth);
+                const monthHrs = getAvailableHoursInMonth(currentYear, currentMonth);
+
+                // Show auto-calculated schedule
+                document.getElementById('facilityAutoCalc').innerHTML = `
+                    <div><strong>This Week:</strong> ${weekWd.weekdays} weekdays + ${weekWd.saturdays} Sat = <strong>${weekHrsTotal}h/tech</strong></div>
+                    <div><strong>${now.toLocaleString('default',{month:'long'})} ${currentYear}:</strong> ${monthWd.weekdays} weekdays + ${monthWd.saturdays} Sat = <strong>${monthWd.totalDays} working days</strong></div>
+                    <div><strong>Monthly Hrs/Tech:</strong> (${monthWd.weekdays}×${WEEKDAY_HOURS}) + (${monthWd.saturdays}×${SATURDAY_HOURS}) = <strong>${monthHrs}h</strong></div>
+                `;
 
                 // Count staff
                 const storeAdvisors = advisors.filter(a => a.store_id === storeId && a.is_active !== false);
                 const storeTechs = technicians.filter(t => t.store_id === storeId && t.is_active !== false);
                 const storeLubes = lubeTechs.filter(t => t.store_id === storeId && t.is_active !== false);
                 const totalTechHeadcount = storeTechs.length + storeLubes.length;
-                const recommendedAdvisors = staffingData?.recommended_advisors || storeAdvisors.length;
 
-                // Capacity calculations
-                const hrsPerDay = fc.hoursPerDay || 8;
-                const daysPerWeek = fc.daysPerWeek || 5;
-                const daysPerMonth = fc.daysPerMonth || 22;
-                const weeklyAvailHrs = totalTechHeadcount * hrsPerDay * daysPerWeek;
-                const monthlyAvailHrs = totalTechHeadcount * hrsPerDay * daysPerMonth;
-                const bayCapacityWeekly = (fc.bays || 0) * hrsPerDay * daysPerWeek;
-                const bayCapacityMonthly = (fc.bays || 0) * hrsPerDay * daysPerMonth;
+                // Available hours
+                const weeklyAvailPerTech = weekHrsTotal;
+                const weeklyAvailTotal = totalTechHeadcount * weeklyAvailPerTech;
+                const monthlyAvailPerTech = monthHrs;
+                const monthlyAvailTotal = totalTechHeadcount * monthlyAvailPerTech;
 
                 // Build staffing cards
                 document.getElementById('rosterStaffingCards').innerHTML = `
@@ -2098,14 +2187,14 @@
                         <div class="kpi-subtext">Facility total</div>
                     </div>
                     <div class="kpi-card">
-                        <div class="kpi-label">Weekly Available Hrs</div>
-                        <div class="kpi-value">${weeklyAvailHrs.toLocaleString()}</div>
-                        <div class="kpi-subtext">${totalTechHeadcount} techs × ${hrsPerDay}h × ${daysPerWeek}d</div>
+                        <div class="kpi-label">Weekly Shop Capacity</div>
+                        <div class="kpi-value">${weeklyAvailTotal.toLocaleString()}h</div>
+                        <div class="kpi-subtext">${totalTechHeadcount} techs × ${weeklyAvailPerTech}h/wk</div>
                     </div>
                     <div class="kpi-card">
-                        <div class="kpi-label">Monthly Available Hrs</div>
-                        <div class="kpi-value">${monthlyAvailHrs.toLocaleString()}</div>
-                        <div class="kpi-subtext">${totalTechHeadcount} techs × ${hrsPerDay}h × ${daysPerMonth}d</div>
+                        <div class="kpi-label">Monthly Shop Capacity</div>
+                        <div class="kpi-value">${monthlyAvailTotal.toLocaleString()}h</div>
+                        <div class="kpi-subtext">${totalTechHeadcount} techs × ${monthlyAvailPerTech}h/mo</div>
                     </div>
                 `;
 
@@ -2145,7 +2234,7 @@
                 document.getElementById('rosterBody').innerHTML = advHtml;
 
                 // Build Technician weekly entry
-                const availHrsPerTech = hrsPerDay * daysPerWeek;
+                const availHrsPerTech = weeklyAvailPerTech;
                 let techHtml = '';
                 let techTotals = { ros: 0, hrsTurned: 0, clockHrs: 0 };
                 storeTechs.forEach(tech => {
@@ -2271,9 +2360,8 @@
             const row = e.target.closest('tr');
             const hrsTurned = parseFloat(row.querySelector('.tw-hrs-turned').value) || 0;
             const clockHrs = parseFloat(row.querySelector('.tw-clock-hrs').value) || 0;
-            const storeId = document.getElementById('rosterStoreSelect').value;
-            const fc = facilityConfig[storeId] || { hoursPerDay: 8, daysPerWeek: 5 };
-            const availHrs = (fc.hoursPerDay || 8) * (fc.daysPerWeek || 5);
+            const weekStart = getWeekStart(document.getElementById('rosterWeekPicker').valueAsDate);
+            const availHrs = getAvailableHoursInWeek(weekStart);
 
             const eff = clockHrs > 0 ? (hrsTurned / clockHrs * 100) : 0;
             const prod = availHrs > 0 ? (clockHrs / availHrs * 100) : 0;
@@ -2293,6 +2381,11 @@
             const wsKey = dateToString(getWeekStart(weekDate));
             if (!storeId) { showToast('Select a store', 'error'); return; }
 
+            // Get month/year for monthly compilation
+            const ws = new Date(wsKey);
+            const entryMonth = ws.getMonth() + 1;
+            const entryYear = ws.getFullYear();
+
             document.querySelectorAll(`#${tableBodyId} tr`).forEach(row => {
                 const techId = row.dataset.techId;
                 const key = `${storeId}_${wsKey}_${techType}_${techId}`;
@@ -2304,33 +2397,70 @@
                     clock_hours: parseFloat(row.querySelector('.tw-clock-hrs').value) || 0,
                     store_id: storeId,
                     week_start: wsKey,
+                    month: entryMonth,
+                    year: entryYear,
                     tech_type: techType,
                     tech_id: parseInt(techId)
                 };
             });
-            showToast(`${techType === 'tech' ? 'Technician' : 'Lube tech'} weekly data saved`);
+
+            // Persist to localStorage
+            savePersistedTechData(techWeeklyData);
+            showToast(`${techType === 'tech' ? 'Technician' : 'Lube tech'} weekly data saved for week of ${wsKey}`);
+
+            // Refresh the performance and capacity views
+            const fc = facilityConfig[storeId] || { bays: 0 };
+            const storeTechs = technicians.filter(t => t.store_id === storeId && t.is_active !== false);
+            const storeLubes = lubeTechs.filter(t => t.store_id === storeId && t.is_active !== false);
+            const storeAdvs = advisors.filter(a => a.store_id === storeId && a.is_active !== false);
+            loadTechPerformance(storeId, fc);
         }
 
         function loadTechPerformance(storeId, fc) {
-            const view = document.getElementById('techPerfView').value;
-            const hrsPerDay = fc.hoursPerDay || 8;
-            const daysPerMonth = fc.daysPerMonth || 22;
-            const monthlyAvail = hrsPerDay * daysPerMonth;
-
+            const period = document.getElementById('rosterPeriod').value;
             const now = new Date();
             const currentMonth = now.getMonth() + 1;
             const currentYear = now.getFullYear();
+
+            // Determine date range based on period
+            let rangeStart, rangeEnd, periodLabel;
+            if (period === 'week') {
+                const ws = getWeekStart(document.getElementById('rosterWeekPicker').valueAsDate);
+                rangeStart = ws;
+                rangeEnd = new Date(ws); rangeEnd.setDate(rangeEnd.getDate() + 6);
+                periodLabel = `Week of ${dateToString(ws)}`;
+            } else if (period === 'mtd') {
+                rangeStart = new Date(currentYear, currentMonth - 1, 1);
+                rangeEnd = now;
+                periodLabel = `${now.toLocaleString('default',{month:'long'})} ${currentYear} MTD`;
+            } else if (period === 'ytd') {
+                rangeStart = new Date(currentYear, 0, 1);
+                rangeEnd = now;
+                periodLabel = `${currentYear} Year to Date`;
+            } else {
+                // custom
+                const fromVal = document.getElementById('rosterFromMonth').value;
+                const toVal = document.getElementById('rosterToMonth').value;
+                if (!fromVal || !toVal) { periodLabel = 'Select date range'; }
+                const [fy, fm] = (fromVal || `${currentYear}-01`).split('-').map(Number);
+                const [ty, tm] = (toVal || `${currentYear}-${String(currentMonth).padStart(2,'0')}`).split('-').map(Number);
+                rangeStart = new Date(fy, fm - 1, 1);
+                rangeEnd = new Date(ty, tm, 0); // last day of to-month
+                periodLabel = `${fromVal || '—'} to ${toVal || '—'}`;
+            }
+
+            document.getElementById('techPerfTitle').textContent = `Technician Performance — ${periodLabel}`;
+
+            // Calculate available hours for this range
+            const rangeInfo = getAvailableHoursInRange(rangeStart, rangeEnd);
+            const periodAvailPerTech = rangeInfo.hours;
 
             // Aggregate from techWeeklyData
             const perfMap = {};
             Object.values(techWeeklyData).forEach(d => {
                 if (d.store_id !== storeId) return;
                 const entryDate = new Date(d.week_start);
-                const entryMonth = entryDate.getMonth() + 1;
-                const entryYear = entryDate.getFullYear();
-
-                if (view === 'mtd' && (entryMonth !== currentMonth || entryYear !== currentYear)) return;
-                if (view === 'ytd' && entryYear !== currentYear) return;
+                if (entryDate < rangeStart || entryDate > rangeEnd) return;
 
                 const key = `${d.tech_type}_${d.tech_id}`;
                 if (!perfMap[key]) {
@@ -2345,22 +2475,19 @@
                 perfMap[key].training = d.training || perfMap[key].training;
             });
 
-            // Build all techs (even those without data yet)
+            // Build all techs
             const allStaff = [
                 ...technicians.filter(t => t.store_id === storeId && t.is_active !== false).map(t => ({ ...t, staffType: 'tech' })),
                 ...lubeTechs.filter(t => t.store_id === storeId && t.is_active !== false).map(t => ({ ...t, staffType: 'lube' }))
             ];
-
-            const periodMonths = view === 'ytd' ? currentMonth : 1;
-            const periodAvail = monthlyAvail * periodMonths;
 
             let html = '';
             allStaff.forEach(s => {
                 const key = `${s.staffType}_${s.id}`;
                 const p = perfMap[key] || {};
                 const eff = (p.clockHrs || 0) > 0 ? ((p.hrsTurned || 0) / p.clockHrs * 100) : 0;
-                const prod = periodAvail > 0 ? ((p.clockHrs || 0) / periodAvail * 100) : 0;
-                const prof = periodAvail > 0 ? ((p.hrsTurned || 0) / periodAvail * 100) : 0;
+                const prod = periodAvailPerTech > 0 ? ((p.clockHrs || 0) / periodAvailPerTech * 100) : 0;
+                const prof = periodAvailPerTech > 0 ? ((p.hrsTurned || 0) / periodAvailPerTech * 100) : 0;
                 const avgCsi = (p.csiCount || 0) > 0 ? (p.csiSum / p.csiCount) : 0;
                 const trend = (p.weeks || 0) >= 2 ? (eff >= 100 ? '▲' : '▼') : '—';
                 const trendColor = trend === '▲' ? '#10b981' : trend === '▼' ? '#ef4444' : '#777';
@@ -2382,20 +2509,19 @@
                     </tr>
                 `;
             });
-            document.getElementById('techPerfBody').innerHTML = html || '<tr><td colspan="12" class="empty-state">No weekly data entered yet. Enter tech weekly data above to see MTD/YTD performance.</td></tr>';
+            document.getElementById('techPerfBody').innerHTML = html || '<tr><td colspan="12" class="empty-state">No data for this period. Enter tech weekly data above — it compiles automatically into monthly and YTD views.</td></tr>';
         }
 
         function loadCapacityAnalysis(storeId, fc, storeTechs, storeLubes, storeAdvisors, techTotals, lubeTotals) {
             const bays = fc.bays || 0;
-            const hrsPerDay = fc.hoursPerDay || 8;
-            const daysPerWeek = fc.daysPerWeek || 5;
-            const daysPerMonth = fc.daysPerMonth || 22;
             const totalTechs = storeTechs.length + storeLubes.length;
             const totalAdvisors = storeAdvisors.length;
 
-            // Weekly capacity
-            const weeklyTechHrs = totalTechs * hrsPerDay * daysPerWeek;
-            const weeklyBayHrs = bays * hrsPerDay * daysPerWeek;
+            // Weekly capacity using actual schedule
+            const weekStart = getWeekStart(document.getElementById('rosterWeekPicker').valueAsDate);
+            const weeklyAvailPerTech = getAvailableHoursInWeek(weekStart);
+            const weeklyTechHrs = totalTechs * weeklyAvailPerTech;
+            const weeklyBayHrs = bays * weeklyAvailPerTech;
             const weeklyClockUsed = (techTotals?.clockHrs || 0) + (lubeTotals?.clockHrs || 0);
             const weeklyHrsTurned = (techTotals?.hrsTurned || 0) + (lubeTotals?.hrsTurned || 0);
             const utilizationPct = weeklyTechHrs > 0 ? (weeklyClockUsed / weeklyTechHrs * 100) : 0;
@@ -2511,11 +2637,9 @@
             const storeId = document.getElementById('rosterStoreSelect').value;
             if (!storeId) { showToast('Select a store first', 'error'); return; }
             facilityConfig[storeId] = {
-                bays: parseInt(document.getElementById('facilityBays').value) || 0,
-                hoursPerDay: parseFloat(document.getElementById('facilityHoursPerDay').value) || 8,
-                daysPerWeek: parseFloat(document.getElementById('facilityDaysPerWeek').value) || 5,
-                daysPerMonth: parseInt(document.getElementById('facilityDaysPerMonth').value) || 22
+                bays: parseInt(document.getElementById('facilityBays').value) || 0
             };
+            savePersistedFacility(facilityConfig);
             showToast('Facility configuration saved');
             loadRoster(); // Refresh all calculations
         }
