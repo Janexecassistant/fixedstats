@@ -1238,14 +1238,10 @@
                 if (useSupabase) {
                     try {
                         const row = { store_id: entry.store_id, entry_date: entry.entry_date,
-                            total_ro: entry.total_ro || 0, total_hours: entry.total_hours || 0,
-                            cp_ro: entry.cp_ro || 0, cp_hours: entry.cp_hours || 0,
-                            warranty_ro: entry.warranty_ro || 0, warranty_hours: entry.warranty_hours || 0,
-                            internal_ro: entry.internal_ro || 0, internal_hours: entry.internal_hours || 0,
-                            total_labor: entry.total_labor || entry.labor_day || 0,
-                            total_parts: entry.total_parts || entry.parts_day || 0,
-                            total_gross: entry.total_gross || 0,
-                            day_of_month: entry.day_of_month || 0, days_in_month: entry.days_in_month || 0,
+                            labor_day: entry.labor_day || entry.total_labor || 0,
+                            parts_day: entry.parts_day || entry.total_parts || 0,
+                            day_number: entry.day_number || entry.day_of_month || 0,
+                            days_in_month: entry.days_in_month || 0,
                             updated_at: new Date().toISOString() };
                         await db.from('daily_entries').upsert(row, { onConflict: 'store_id,entry_date' });
                     } catch(e) { console.warn('Supabase saveDailyEntry failed', e); }
@@ -1269,11 +1265,10 @@
                 this._set('dyer_advisor_entries', all);
                 if (useSupabase) {
                     try {
-                        const row = { advisor_id: String(entry.advisor_id), store_id: entry.store_id, entry_date: entry.entry_date,
-                            ro_count: entry.ro_count || 0, cp_ro: entry.cp_ro || entry.cp_ros || 0,
-                            hours: entry.hours || 0, labor_gross: entry.labor_gross || 0,
-                            parts_gross: entry.parts_gross || 0, total_gross: entry.total_gross || 0,
-                            csi: entry.csi || entry.csi_score || 0,
+                        const row = { advisor_id: parseInt(entry.advisor_id), store_id: entry.store_id, entry_date: entry.entry_date,
+                            ro_count: entry.ro_count || 0, cp_ros: entry.cp_ros || entry.cp_ro || 0,
+                            hours: entry.hours || 0, total_gross: entry.total_gross || 0,
+                            csi_score: entry.csi_score || entry.csi || 0,
                             updated_at: new Date().toISOString() };
                         await db.from('advisor_entries').upsert(row, { onConflict: 'advisor_id,entry_date' });
                     } catch(e) { console.warn('Supabase saveAdvisorEntry failed', e); }
@@ -1299,8 +1294,8 @@
                     try {
                         const row = { store_id: goal.store_id, month: goal.month, year: goal.year,
                             labor_goal: goal.labor_goal || 0, parts_goal: goal.parts_goal || 0,
-                            gross_goal: goal.gross_goal || goal.total_gross_goal || 0,
-                            ro_goal: goal.ro_goal || 0, hours_goal: goal.hours_goal || 0,
+                            total_gross_goal: goal.total_gross_goal || goal.gross_goal || 0,
+                            gross_per_ro_target: goal.gross_per_ro_target || 0,
                             updated_at: new Date().toISOString() };
                         await db.from('goals').upsert(row, { onConflict: 'store_id,month,year' });
                     } catch(e) { console.warn('Supabase saveGoal failed', e); }
@@ -1324,7 +1319,7 @@
                 this._set('dyer_roster_entries', all);
                 if (useSupabase) {
                     try {
-                        const row = { advisor_id: String(entry.advisor_id), store_id: entry.store_id,
+                        const row = { advisor_id: parseInt(entry.advisor_id), store_id: entry.store_id,
                             week_start: entry.week_start, training_status: entry.training_status || '',
                             xtime_pct: entry.xtime_pct || 0, mpvi_pct: entry.mpvi_pct || 0,
                             labor: entry.labor || 0, parts: entry.parts || 0, gross: entry.gross || 0,
