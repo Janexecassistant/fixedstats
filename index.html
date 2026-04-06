@@ -496,12 +496,12 @@
                         <input type="date" id="dailyDatePicker">
                     </div>
                     <div class="control-group">
-                        <label>Day #</label>
-                        <input type="number" id="dailyDayNumber" min="1" max="31">
+                        <label>Working Day #</label>
+                        <input type="number" id="dailyDayNumber" min="1" max="27" readonly style="background:#f0f0f0;">
                     </div>
                     <div class="control-group">
-                        <label>Days in Month</label>
-                        <input type="number" id="dailyDaysInMonth" min="28" max="31" readonly>
+                        <label>Working Days in Month</label>
+                        <input type="number" id="dailyDaysInMonth" min="20" max="27" readonly style="background:#f0f0f0;">
                     </div>
                 </div>
             </div>
@@ -666,19 +666,66 @@
         <div id="advisor" class="tab-content">
             <div class="controls">
                 <div class="control-group">
-                    <label>Advisor</label>
-                    <select id="advisorSelect">
-                        <option value="">Select an advisor...</option>
+                    <label>Period</label>
+                    <select id="advisorPeriod">
+                        <option value="mtd">Month to Date</option>
+                        <option value="ytd">Year to Date</option>
+                        <option value="custom">Custom Range</option>
                     </select>
+                </div>
+                <div class="control-group" id="advisorCustomRange" style="display:none;">
+                    <label>From</label>
+                    <input type="month" id="advisorFromMonth">
+                    <label>To</label>
+                    <input type="month" id="advisorToMonth">
                 </div>
             </div>
 
-            <div class="kpi-grid" id="advisorScorecards">
+            <!-- Ranking Report Table -->
+            <div class="card">
+                <h3 class="card-title" id="advisorRankTitle">Advisor Ranking Report — MTD</h3>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="background:#1a1a1a;color:#cc0000;">Rank</th>
+                                <th>Advisor</th>
+                                <th>Store</th>
+                                <th>Labor ($)</th>
+                                <th>Parts ($)</th>
+                                <th>Total Gross ($)</th>
+                                <th>RO Count</th>
+                                <th>CP ROs</th>
+                                <th>CP %</th>
+                                <th>Hours</th>
+                                <th>Gross/RO</th>
+                                <th>ELR</th>
+                                <th>HRO</th>
+                                <th>CSI</th>
+                                <th>MPVI %</th>
+                            </tr>
+                        </thead>
+                        <tbody id="advisorRankBody">
+                        </tbody>
+                        <tfoot id="advisorRankFooter">
+                        </tfoot>
+                    </table>
+                </div>
             </div>
 
+            <!-- Individual Advisor Drill-Down -->
             <div class="card">
-                <h3 class="card-title">Monthly Trend</h3>
-                <div class="chart-container">
+                <h3 class="card-title">Individual Advisor Detail</h3>
+                <div class="controls" style="margin-bottom:12px;">
+                    <div class="control-group">
+                        <label>Advisor</label>
+                        <select id="advisorSelect">
+                            <option value="">Select an advisor to drill down...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="kpi-grid" id="advisorScorecards"></div>
+                <div class="chart-container" style="margin-top:16px;">
                     <canvas id="advisorTrendChart"></canvas>
                 </div>
             </div>
@@ -771,9 +818,15 @@
                                 <th>Training Status</th>
                                 <th>XTIME %</th>
                                 <th>MPVI %</th>
-                                <th>Gross ($)</th>
+                                <th>Labor ($)</th>
+                                <th>Parts ($)</th>
+                                <th>Total Gross ($)</th>
                                 <th>RO Count</th>
+                                <th>CP ROs</th>
+                                <th>Hours</th>
                                 <th style="background:#1a1a1a;color:#cc0000;">Gross/RO</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">ELR</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">HRO</th>
                                 <th style="background:#1a1a1a;color:#cc0000;">Rank</th>
                                 <th>CSI</th>
                                 <th>CSI Region</th>
@@ -1188,9 +1241,10 @@
                 document.getElementById('dailyDatePicker').valueAsDate = today;
                 document.getElementById('rosterWeekPicker').valueAsDate = today;
 
-                // Set default day number
-                document.getElementById('dailyDayNumber').value = today.getDate();
-                document.getElementById('dailyDaysInMonth').value = getDaysInMonth(today);
+                // Set working day # and working days in month (auto-calculated)
+                document.getElementById('dailyDayNumber').value = getWorkingDayOfMonth(today);
+                const wd = getWorkingDaysInMonth(today.getFullYear(), today.getMonth() + 1);
+                document.getElementById('dailyDaysInMonth').value = wd.totalDays;
 
                 // Populate store dropdowns
                 populateStoreSelects();
@@ -1210,9 +1264,11 @@
                 advisors = FALLBACK_ADVISORS;
                 lubeTechs = FALLBACK_TECHS;
                 technicians = FALLBACK_TECHNICIANS;
-                document.getElementById('dailyDatePicker').valueAsDate = new Date();
-                document.getElementById('dailyDayNumber').value = new Date().getDate();
-                document.getElementById('dailyDaysInMonth').value = getDaysInMonth(new Date());
+                const fallbackToday = new Date();
+                document.getElementById('dailyDatePicker').valueAsDate = fallbackToday;
+                document.getElementById('dailyDayNumber').value = getWorkingDayOfMonth(fallbackToday);
+                const fwd = getWorkingDaysInMonth(fallbackToday.getFullYear(), fallbackToday.getMonth() + 1);
+                document.getElementById('dailyDaysInMonth').value = fwd.totalDays;
                 populateStoreSelects();
                 populateAdvisorSelect();
                 setupEventListeners();
@@ -1278,12 +1334,11 @@
             // Daily Entry
             document.getElementById('dailyDatePicker').addEventListener('change', () => {
                 const date = document.getElementById('dailyDatePicker').valueAsDate;
-                document.getElementById('dailyDayNumber').value = date.getDate();
-                document.getElementById('dailyDaysInMonth').value = getDaysInMonth(date);
+                document.getElementById('dailyDayNumber').value = getWorkingDayOfMonth(date);
+                const wd = getWorkingDaysInMonth(date.getFullYear(), date.getMonth() + 1);
+                document.getElementById('dailyDaysInMonth').value = wd.totalDays;
                 loadDailyEntry();
             });
-            document.getElementById('dailyDayNumber').addEventListener('change', loadDailyEntry);
-            document.getElementById('dailyDaysInMonth').addEventListener('change', updateDailyCalculations);
             document.getElementById('laborDay').addEventListener('input', updateDailyCalculations);
             document.getElementById('partsDay').addEventListener('input', updateDailyCalculations);
             document.getElementById('saveDailyBtn').addEventListener('click', saveDailyEntry);
@@ -1295,7 +1350,17 @@
             document.getElementById('rosterWeekPicker').addEventListener('change', loadRoster);
 
             // Advisor
-            document.getElementById('advisorSelect').addEventListener('change', loadAdvisor);
+            document.getElementById('advisorPeriod').addEventListener('change', () => {
+                document.getElementById('advisorCustomRange').style.display =
+                    document.getElementById('advisorPeriod').value === 'custom' ? 'flex' : 'none';
+                loadAdvisor();
+            });
+            document.getElementById('advisorFromMonth')?.addEventListener('change', loadAdvisor);
+            document.getElementById('advisorToMonth')?.addEventListener('change', loadAdvisor);
+            document.getElementById('advisorSelect').addEventListener('change', () => {
+                const { startDate, endDate } = getAdvisorDateRange();
+                loadAdvisorDrillDown(startDate, endDate);
+            });
 
             // Save roster & tech weekly
             document.getElementById('saveRosterBtn').addEventListener('click', saveRoster);
@@ -1873,42 +1938,198 @@
         }
 
         // ============================================================================
-        // TAB 4: ADVISOR VIEW
+        // TAB 4: ADVISOR VIEW — Ranking Report + Individual Drill-Down
         // ============================================================================
+        function getAdvisorDateRange() {
+            const period = document.getElementById('advisorPeriod').value;
+            const now = new Date();
+            const currentMonth = now.getMonth() + 1;
+            const currentYear = now.getFullYear();
+            let startDate, endDate, label;
+
+            if (period === 'mtd') {
+                startDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
+                endDate = dateToString(now);
+                label = `${now.toLocaleString('default',{month:'long'})} ${currentYear} — Month to Date`;
+            } else if (period === 'ytd') {
+                startDate = `${currentYear}-01-01`;
+                endDate = dateToString(now);
+                label = `${currentYear} — Year to Date`;
+            } else {
+                const from = document.getElementById('advisorFromMonth').value || `${currentYear}-01`;
+                const to = document.getElementById('advisorToMonth').value || `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+                const [fy, fm] = from.split('-').map(Number);
+                const [ty, tm] = to.split('-').map(Number);
+                startDate = `${fy}-${String(fm).padStart(2, '0')}-01`;
+                endDate = dateToString(new Date(ty, tm, 0));
+                label = `${from} to ${to}`;
+            }
+            return { startDate, endDate, label };
+        }
+
         async function loadAdvisor() {
+            try {
+                const { startDate, endDate, label } = getAdvisorDateRange();
+                const storeId = getSelectedStore();
+                const allMode = isAllStores();
+                document.getElementById('advisorRankTitle').textContent = `Advisor Ranking Report — ${label}`;
+
+                // Fetch all advisor entries in range
+                let query = db.from('advisor_entries').select('*')
+                    .gte('entry_date', startDate)
+                    .lte('entry_date', endDate);
+                query = filterByStore(query, storeId);
+                const { data: allEntries } = await query;
+
+                // Aggregate per advisor
+                const advAgg = {};
+                (allEntries || []).forEach(d => {
+                    if (!advAgg[d.advisor_id]) {
+                        advAgg[d.advisor_id] = { labor: 0, parts: 0, gross: 0, ros: 0, cpRos: 0, hours: 0, csiSum: 0, csiCount: 0, mpviSum: 0, mpviCount: 0, days: 0 };
+                    }
+                    const a = advAgg[d.advisor_id];
+                    a.labor += d.labor_gross || 0;
+                    a.parts += d.parts_gross || 0;
+                    a.gross += d.total_gross || 0;
+                    a.ros += d.ro_count || 0;
+                    a.cpRos += d.cp_ros || 0;
+                    a.hours += d.hours || 0;
+                    if (d.csi_score) { a.csiSum += d.csi_score; a.csiCount++; }
+                    if (d.mpvi_pct) { a.mpviSum += d.mpvi_pct; a.mpviCount++; }
+                    a.days++;
+                });
+
+                // Build ranked list
+                const filteredAdvisors = allMode ? advisors.filter(a => a.is_active !== false) : advisors.filter(a => a.store_id === storeId && a.is_active !== false);
+                const ranked = filteredAdvisors.map(adv => {
+                    const a = advAgg[adv.id] || {};
+                    const gross = a.gross || 0;
+                    const ros = a.ros || 0;
+                    const cpRos = a.cpRos || 0;
+                    const hours = a.hours || 0;
+                    return {
+                        id: adv.id,
+                        name: adv.name,
+                        store: stores.find(s => s.id === adv.store_id)?.code || '',
+                        storeName: stores.find(s => s.id === adv.store_id)?.name || '',
+                        storeId: adv.store_id,
+                        labor: a.labor || 0,
+                        parts: a.parts || 0,
+                        gross,
+                        ros,
+                        cpRos,
+                        cpPct: ros > 0 ? (cpRos / ros) * 100 : 0,
+                        hours,
+                        grossRo: ros > 0 ? gross / ros : 0,
+                        elr: hours > 0 ? gross / hours : 0,
+                        hro: ros > 0 ? hours / ros : 0,
+                        csi: (a.csiCount || 0) > 0 ? a.csiSum / a.csiCount : 0,
+                        mpvi: (a.mpviCount || 0) > 0 ? a.mpviSum / a.mpviCount : 0,
+                        days: a.days || 0
+                    };
+                }).sort((a, b) => b.gross - a.gross);
+
+                // Totals
+                const totals = { labor: 0, parts: 0, gross: 0, ros: 0, cpRos: 0, hours: 0 };
+                ranked.forEach(r => {
+                    totals.labor += r.labor; totals.parts += r.parts; totals.gross += r.gross;
+                    totals.ros += r.ros; totals.cpRos += r.cpRos; totals.hours += r.hours;
+                });
+
+                // Render ranking table
+                let html = '';
+                ranked.forEach((r, idx) => {
+                    const rank = r.gross > 0 ? idx + 1 : '—';
+                    const rankColor = rank === 1 ? '#10b981' : (rank === ranked.length && rank !== '—') ? '#ef4444' : '#1a1a1a';
+                    const rowBg = rank === 1 ? 'background:rgba(16,185,129,0.08);' : (rank === ranked.length && rank !== '—') ? 'background:rgba(239,68,68,0.08);' : '';
+                    html += `
+                        <tr style="${rowBg}">
+                            <td style="font-weight:700;color:${rankColor};text-align:center;font-size:16px;">${rank}</td>
+                            <td style="font-weight:600">${r.name}</td>
+                            <td>${r.store}</td>
+                            <td>${formatCurrency(r.labor)}</td>
+                            <td>${formatCurrency(r.parts)}</td>
+                            <td style="font-weight:700">${formatCurrency(r.gross)}</td>
+                            <td>${r.ros}</td>
+                            <td>${r.cpRos}</td>
+                            <td>${r.cpPct > 0 ? r.cpPct.toFixed(1) + '%' : '—'}</td>
+                            <td>${r.hours > 0 ? r.hours.toFixed(1) : '—'}</td>
+                            <td style="font-weight:700">${r.grossRo > 0 ? formatCurrency(r.grossRo) : '—'}</td>
+                            <td>${r.elr > 0 ? formatCurrency(r.elr) : '—'}</td>
+                            <td>${r.hro > 0 ? r.hro.toFixed(2) : '—'}</td>
+                            <td>${r.csi > 0 ? r.csi.toFixed(1) : '—'}</td>
+                            <td>${r.mpvi > 0 ? r.mpvi.toFixed(1) + '%' : '—'}</td>
+                        </tr>
+                    `;
+                });
+                document.getElementById('advisorRankBody').innerHTML = html || '<tr><td colspan="15" class="empty-state">No advisor data for this period.</td></tr>';
+
+                // Totals footer
+                const tCpPct = totals.ros > 0 ? (totals.cpRos / totals.ros * 100) : 0;
+                const tGrossRo = totals.ros > 0 ? totals.gross / totals.ros : 0;
+                const tElr = totals.hours > 0 ? totals.gross / totals.hours : 0;
+                const tHro = totals.ros > 0 ? totals.hours / totals.ros : 0;
+                document.getElementById('advisorRankFooter').innerHTML = `
+                    <tr style="background:#e0e0e0;font-weight:700;">
+                        <td></td>
+                        <td colspan="2">ALL ADVISORS</td>
+                        <td>${formatCurrency(totals.labor)}</td>
+                        <td>${formatCurrency(totals.parts)}</td>
+                        <td>${formatCurrency(totals.gross)}</td>
+                        <td>${totals.ros}</td>
+                        <td>${totals.cpRos}</td>
+                        <td>${tCpPct.toFixed(1)}%</td>
+                        <td>${totals.hours.toFixed(1)}</td>
+                        <td>${formatCurrency(tGrossRo)}</td>
+                        <td>${formatCurrency(tElr)}</td>
+                        <td>${tHro.toFixed(2)}</td>
+                        <td>—</td>
+                        <td>—</td>
+                    </tr>
+                `;
+
+                // Individual drill-down (if advisor selected)
+                await loadAdvisorDrillDown(startDate, endDate);
+            } catch (error) {
+                console.error('Advisor load error:', error);
+            }
+        }
+
+        async function loadAdvisorDrillDown(startDate, endDate) {
             const advisorId = document.getElementById('advisorSelect').value;
             if (!advisorId) {
-                document.getElementById('advisorScorecards').innerHTML = '';
+                document.getElementById('advisorScorecards').innerHTML = '<p style="color:#888;text-align:center;">Select an advisor above to see their individual scorecard and trend.</p>';
                 return;
             }
 
             try {
                 const advisor = advisors.find(a => a.id === parseInt(advisorId));
-                const { month, year } = getMonthYear(new Date());
-                const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
-                const monthEnd = dateToString(new Date(year, month, 0));
+                if (!startDate || !endDate) {
+                    const range = getAdvisorDateRange();
+                    startDate = range.startDate;
+                    endDate = range.endDate;
+                }
 
-                // Fetch advisor entries
                 const { data: advisorEntries } = await db
                     .from('advisor_entries')
                     .select('*')
                     .eq('advisor_id', advisorId)
-                    .gte('entry_date', monthStart)
-                    .lte('entry_date', monthEnd);
+                    .gte('entry_date', startDate)
+                    .lte('entry_date', endDate);
 
-                // Fetch store advisor averages
                 const { data: storeEntries } = await db
                     .from('advisor_entries')
                     .select('*')
                     .eq('store_id', advisor.store_id)
-                    .gte('entry_date', monthStart)
-                    .lte('entry_date', monthEnd);
+                    .gte('entry_date', startDate)
+                    .lte('entry_date', endDate);
 
                 const computeStats = (entries) => {
                     if (!entries || entries.length === 0) {
-                        return { gross: 0, grossRo: 0, roCount: 0, cpPct: 0, csi: 0, hro: 0, elr: 0, mpvi: 0 };
+                        return { labor: 0, parts: 0, gross: 0, grossRo: 0, roCount: 0, cpPct: 0, csi: 0, hro: 0, elr: 0, mpvi: 0 };
                     }
-
+                    const totalLabor = entries.reduce((s, e) => s + (e.labor_gross || 0), 0);
+                    const totalParts = entries.reduce((s, e) => s + (e.parts_gross || 0), 0);
                     const totalGross = entries.reduce((s, e) => s + (e.total_gross || 0), 0);
                     const totalRo = entries.reduce((s, e) => s + (e.ro_count || 0), 0);
                     const totalCp = entries.reduce((s, e) => s + (e.cp_ros || 0), 0);
@@ -1917,9 +2138,8 @@
                     const csiSum = entries.reduce((s, e) => s + (e.csi_score || 0), 0);
                     const mpviCount = entries.filter(e => e.mpvi_pct).length;
                     const mpviSum = entries.reduce((s, e) => s + (e.mpvi_pct || 0), 0);
-
                     return {
-                        gross: totalGross,
+                        labor: totalLabor, parts: totalParts, gross: totalGross,
                         grossRo: totalRo > 0 ? totalGross / totalRo : 0,
                         roCount: totalRo,
                         cpPct: totalRo > 0 ? (totalCp / totalRo) * 100 : 0,
@@ -1933,38 +2153,39 @@
                 const advisorStats = computeStats(advisorEntries);
                 const storeAvgStats = computeStats(storeEntries);
 
-                // Create scorecards
                 const createScorecard = (label, value, storeAvg, unit = '') => {
                     const isAboveAvg = value > storeAvg;
                     const diff = Math.abs(value - storeAvg);
                     const arrow = isAboveAvg ? '▲' : '▼';
                     const color = isAboveAvg ? '#10b981' : '#ef4444';
-
                     return `
                         <div class="kpi-card">
                             <div class="kpi-label">${label}</div>
                             <div class="kpi-value">${unit === '$' ? formatCurrency(value) : value.toFixed(unit === '%' ? 1 : 2)}${unit === '%' ? '%' : ''}</div>
                             <div class="kpi-subtext" style="color: ${color};">
-                                ${arrow} ${unit === '$' ? formatCurrency(diff) : diff.toFixed(unit === '%' ? 1 : 2)}${unit === '%' ? '%' : ''} vs avg
+                                ${arrow} ${unit === '$' ? formatCurrency(diff) : diff.toFixed(unit === '%' ? 1 : 2)}${unit === '%' ? '%' : ''} vs store avg
                             </div>
                         </div>
                     `;
                 };
 
                 document.getElementById('advisorScorecards').innerHTML = `
-                    ${createScorecard('Total Gross MTD', advisorStats.gross, storeAvgStats.gross, '$')}
+                    ${createScorecard('Labor', advisorStats.labor, storeAvgStats.labor, '$')}
+                    ${createScorecard('Parts', advisorStats.parts, storeAvgStats.parts, '$')}
+                    ${createScorecard('Total Gross', advisorStats.gross, storeAvgStats.gross, '$')}
                     ${createScorecard('Gross/RO', advisorStats.grossRo, storeAvgStats.grossRo, '$')}
                     ${createScorecard('RO Count', advisorStats.roCount, storeAvgStats.roCount)}
                     ${createScorecard('CP %', advisorStats.cpPct, storeAvgStats.cpPct, '%')}
                     ${createScorecard('CSI Avg', advisorStats.csi, storeAvgStats.csi)}
-                    ${createScorecard('HRO', advisorStats.hro, storeAvgStats.hro)}
                     ${createScorecard('ELR', advisorStats.elr, storeAvgStats.elr, '$')}
+                    ${createScorecard('HRO', advisorStats.hro, storeAvgStats.hro)}
                     ${createScorecard('MPVI %', advisorStats.mpvi, storeAvgStats.mpvi, '%')}
                 `;
 
                 // Trend chart
-                const dates = advisorEntries?.sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date)).map(e => new Date(e.entry_date).getDate()) || [];
-                const grossValues = advisorEntries?.sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date)).map(e => e.total_gross || 0) || [];
+                const sorted = (advisorEntries || []).sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date));
+                const dates = sorted.map(e => new Date(e.entry_date).getDate());
+                const grossValues = sorted.map(e => e.total_gross || 0);
 
                 loadChart('advisorTrendChart', 'line', {
                     labels: dates,
@@ -1978,7 +2199,7 @@
                     }]
                 });
             } catch (error) {
-                console.error('Advisor load error:', error);
+                console.error('Advisor drill-down error:', error);
             }
         }
 
@@ -2089,6 +2310,18 @@
         function getAvailableHoursInWeek(weekStartDate) {
             const wd = getWorkingDaysInWeek(weekStartDate);
             return (wd.weekdays * WEEKDAY_HOURS) + (wd.saturdays * SATURDAY_HOURS); // returns number
+        }
+
+        function getWorkingDayOfMonth(date) {
+            // Count working days (Mon-Fri + Sat) from 1st of month up to and including date
+            const year = date.getFullYear();
+            const month = date.getMonth();
+            let count = 0;
+            for (let d = 1; d <= date.getDate(); d++) {
+                const day = new Date(year, month, d).getDay();
+                if (day >= 1 && day <= 6) count++; // Mon-Sat
+            }
+            return count;
         }
 
         function getAvailableHoursInRange(startDate, endDate) {
@@ -2231,17 +2464,52 @@
                     </div>
                 `;
 
-                // Fetch advisor roster entries
+                // Fetch advisor roster entries (manual overrides)
                 let rosterQuery = db.from('roster_entries').select('*').eq('week_start', wsKey);
                 rosterQuery = filterByStore(rosterQuery, storeId);
                 const { data: rosterData } = await rosterQuery;
 
-                // Build advisor roster rows — collect data first for ranking
+                // Fetch daily advisor entries for this week to auto-populate
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekEnd.getDate() + 6);
+                let dailyAdvQuery = db.from('advisor_entries').select('*')
+                    .gte('entry_date', wsKey)
+                    .lte('entry_date', dateToString(weekEnd));
+                dailyAdvQuery = filterByStore(dailyAdvQuery, storeId);
+                const { data: weeklyAdvData } = await dailyAdvQuery;
+
+                // Aggregate daily entries per advisor for the week
+                const weeklyAdvAgg = {};
+                (weeklyAdvData || []).forEach(d => {
+                    if (!weeklyAdvAgg[d.advisor_id]) {
+                        weeklyAdvAgg[d.advisor_id] = { labor: 0, parts: 0, gross: 0, ros: 0, cpRos: 0, hours: 0, csiSum: 0, csiCount: 0, mpviSum: 0, mpviCount: 0 };
+                    }
+                    const a = weeklyAdvAgg[d.advisor_id];
+                    a.labor += d.labor_gross || 0;
+                    a.parts += d.parts_gross || 0;
+                    a.gross += d.total_gross || 0;
+                    a.ros += d.ro_count || 0;
+                    a.cpRos += d.cp_ros || 0;
+                    a.hours += d.hours || 0;
+                    if (d.csi_score) { a.csiSum += d.csi_score; a.csiCount++; }
+                    if (d.mpvi_pct) { a.mpviSum += d.mpvi_pct; a.mpviCount++; }
+                });
+
+                // Build advisor roster rows — use daily aggregates as base, roster overrides on top
                 const advEntryData = storeAdvisors.map(advisor => {
-                    const entry = rosterData?.find(r => r.advisor_id === advisor.id) || {};
-                    return { advisor, entry,
-                        gross: parseFloat(entry.gross_total) || 0,
-                        roCount: parseInt(entry.ro_count) || 0
+                    const rEntry = rosterData?.find(r => r.advisor_id === advisor.id) || {};
+                    const dAgg = weeklyAdvAgg[advisor.id] || {};
+                    // Daily aggregates take priority, manual roster entry as fallback
+                    const gross = dAgg.gross || parseFloat(rEntry.gross_total) || 0;
+                    const roCount = dAgg.ros || parseInt(rEntry.ro_count) || 0;
+                    const labor = dAgg.labor || 0;
+                    const parts = dAgg.parts || 0;
+                    const cpRos = dAgg.cpRos || 0;
+                    const hours = dAgg.hours || 0;
+                    const csiAvg = dAgg.csiCount > 0 ? dAgg.csiSum / dAgg.csiCount : (parseFloat(rEntry.csi_score) || 0);
+                    const mpviAvg = dAgg.mpviCount > 0 ? dAgg.mpviSum / dAgg.mpviCount : (parseFloat(rEntry.mpvi_xtime_pct) || 0);
+                    return { advisor, entry: rEntry, gross, roCount, labor, parts, cpRos, hours, csiAvg, mpviAvg,
+                        hasDaily: !!(dAgg.gross || dAgg.ros)
                     };
                 });
 
@@ -2250,12 +2518,15 @@
                 ranked.forEach((item, idx) => { item.rank = item.gross > 0 ? idx + 1 : '—'; });
 
                 let advHtml = '';
-                advEntryData.forEach(({ advisor, entry, gross, roCount, rank }) => {
+                advEntryData.forEach(({ advisor, entry, gross, roCount, rank, labor, parts, cpRos, hours, csiAvg, mpviAvg, hasDaily }) => {
                     const grossPerRo = roCount > 0 ? (gross / roCount) : 0;
+                    const elr = hours > 0 ? (gross / hours) : 0;
+                    const hro = roCount > 0 ? (hours / roCount) : 0;
                     const rankColor = rank === 1 ? '#10b981' : rank === ranked.length && rank !== '—' ? '#ef4444' : '#1a1a1a';
+                    const autoTag = hasDaily ? ' <span style="color:#10b981;font-size:10px;" title="Auto-populated from daily entries">●</span>' : '';
                     advHtml += `
                         <tr data-advisor="${advisor.id}">
-                            <td style="font-weight:600">${advisor.name}${allMode ? ' <span style="color:#888;font-weight:400;font-size:12px">(' + (stores.find(s=>s.id===advisor.store_id)?.name||'') + ')</span>' : ''}</td>
+                            <td style="font-weight:600">${advisor.name}${allMode ? ' <span style="color:#888;font-weight:400;font-size:12px">(' + (stores.find(s=>s.id===advisor.store_id)?.name||'') + ')</span>' : ''}${autoTag}</td>
                             <td><select class="roster-training" data-advisor="${advisor.id}">
                                 <option value="">-</option>
                                 <option value="Complete" ${entry.training_status === 'Complete' ? 'selected' : ''}>Complete</option>
@@ -2263,22 +2534,23 @@
                                 <option value="N/A" ${entry.training_status === 'N/A' ? 'selected' : ''}>N/A</option>
                             </select></td>
                             <td><input type="number" step="0.1" class="roster-xtime input-yellow" data-advisor="${advisor.id}" value="${entry.xtime_pct || ''}" placeholder="0"></td>
-                            <td><input type="number" step="0.1" class="roster-mpvi input-yellow" data-advisor="${advisor.id}" value="${entry.mpvi_xtime_pct || ''}" placeholder="0"></td>
-                            <td><input type="number" class="roster-gross input-yellow" data-advisor="${advisor.id}" value="${entry.gross_total || ''}" placeholder="0"></td>
-                            <td><input type="number" class="roster-ro-count input-yellow" data-advisor="${advisor.id}" value="${entry.ro_count || ''}" placeholder="0"></td>
+                            <td class="input-gray" style="font-weight:600">${mpviAvg > 0 ? mpviAvg.toFixed(1) + '%' : (entry.mpvi_xtime_pct || '—')}</td>
+                            <td class="input-gray roster-labor">${labor > 0 ? formatCurrency(labor) : '—'}</td>
+                            <td class="input-gray roster-parts">${parts > 0 ? formatCurrency(parts) : '—'}</td>
+                            <td class="input-gray roster-gross" style="font-weight:700">${gross > 0 ? formatCurrency(gross) : '—'}</td>
+                            <td class="input-gray roster-ro-count" style="font-weight:600">${roCount > 0 ? roCount : '—'}</td>
+                            <td class="input-gray">${cpRos > 0 ? cpRos : '—'}</td>
+                            <td class="input-gray">${hours > 0 ? hours.toFixed(1) : '—'}</td>
                             <td class="roster-gross-ro input-gray" style="font-weight:700;">${grossPerRo > 0 ? formatCurrency(grossPerRo) : '—'}</td>
+                            <td class="input-gray" style="font-weight:700;">${elr > 0 ? formatCurrency(elr) : '—'}</td>
+                            <td class="input-gray">${hro > 0 ? hro.toFixed(2) : '—'}</td>
                             <td class="roster-rank" style="font-weight:700;color:${rankColor};text-align:center;">${rank}</td>
-                            <td><input type="number" step="0.1" class="roster-csi input-yellow" data-advisor="${advisor.id}" value="${entry.csi_score || ''}" placeholder="0"></td>
+                            <td class="input-gray" style="font-weight:600">${csiAvg > 0 ? csiAvg.toFixed(1) : '—'}</td>
                             <td><input type="number" step="0.1" class="roster-csi-region input-yellow" data-advisor="${advisor.id}" value="${entry.csi_region || ''}" placeholder="0"></td>
                         </tr>
                     `;
                 });
                 document.getElementById('rosterBody').innerHTML = advHtml;
-
-                // Live recalc for Gross/RO and Rank when values change
-                document.querySelectorAll('.roster-gross, .roster-ro-count').forEach(input => {
-                    input.addEventListener('input', recalcAdvisorRoster);
-                });
 
                 // Build Technician weekly entry
                 const availHrsPerTech = weeklyAvailPerTech;
