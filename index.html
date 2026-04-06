@@ -782,10 +782,12 @@
                             <tr>
                                 <th>Advisor</th>
                                 <th>Training Status</th>
-                                <th>MPVI/XTIME %</th>
-                                <th>Gross/RO</th>
-                                <th>Ranking</th>
-                                <th>Check-In</th>
+                                <th>XTIME %</th>
+                                <th>MPVI %</th>
+                                <th>Gross ($)</th>
+                                <th>RO Count</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">Gross/RO</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">Rank</th>
                                 <th>CSI</th>
                                 <th>CSI Region</th>
                             </tr>
@@ -2205,33 +2207,49 @@
                     .eq('store_id', storeId)
                     .eq('week_start', wsKey);
 
-                // Build advisor roster rows
-                let advHtml = '';
-                storeAdvisors.forEach(advisor => {
+                // Build advisor roster rows — collect data first for ranking
+                const advEntryData = storeAdvisors.map(advisor => {
                     const entry = rosterData?.find(r => r.advisor_id === advisor.id) || {};
+                    return { advisor, entry,
+                        gross: parseFloat(entry.gross_total) || 0,
+                        roCount: parseInt(entry.ro_count) || 0
+                    };
+                });
+
+                // Sort by gross descending to assign rank
+                const ranked = [...advEntryData].sort((a, b) => b.gross - a.gross);
+                ranked.forEach((item, idx) => { item.rank = item.gross > 0 ? idx + 1 : '—'; });
+
+                let advHtml = '';
+                advEntryData.forEach(({ advisor, entry, gross, roCount, rank }) => {
+                    const grossPerRo = roCount > 0 ? (gross / roCount) : 0;
+                    const rankColor = rank === 1 ? '#10b981' : rank === ranked.length && rank !== '—' ? '#ef4444' : '#1a1a1a';
                     advHtml += `
-                        <tr>
-                            <td>${advisor.name}</td>
+                        <tr data-advisor="${advisor.id}">
+                            <td style="font-weight:600">${advisor.name}</td>
                             <td><select class="roster-training" data-advisor="${advisor.id}">
                                 <option value="">-</option>
-                                <option value="Certified" ${entry.training_status === 'Certified' ? 'selected' : ''}>Certified</option>
-                                <option value="In Training" ${entry.training_status === 'In Training' ? 'selected' : ''}>In Training</option>
-                                <option value="New" ${entry.training_status === 'New' ? 'selected' : ''}>New</option>
+                                <option value="Complete" ${entry.training_status === 'Complete' ? 'selected' : ''}>Complete</option>
+                                <option value="In Progress" ${entry.training_status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                <option value="N/A" ${entry.training_status === 'N/A' ? 'selected' : ''}>N/A</option>
                             </select></td>
-                            <td><input type="number" step="0.1" class="roster-mpvi" data-advisor="${advisor.id}" value="${entry.mpvi_xtime_pct || ''}" placeholder="0"></td>
-                            <td><input type="number" step="0.01" class="roster-gross-ro" data-advisor="${advisor.id}" value="${entry.gross_per_ro || ''}" placeholder="0"></td>
-                            <td><input type="number" class="roster-ranking" data-advisor="${advisor.id}" value="${entry.advisor_ranking || ''}" placeholder="0"></td>
-                            <td><select class="roster-checkin" data-advisor="${advisor.id}">
-                                <option value="">-</option>
-                                <option value="Checked In" ${entry.checkin_status === 'Checked In' ? 'selected' : ''}>Checked In</option>
-                                <option value="Not Checked" ${entry.checkin_status === 'Not Checked' ? 'selected' : ''}>Not Checked</option>
-                            </select></td>
-                            <td><input type="number" step="0.1" class="roster-csi" data-advisor="${advisor.id}" value="${entry.csi_score || ''}" placeholder="0"></td>
-                            <td><input type="number" step="0.1" class="roster-csi-region" data-advisor="${advisor.id}" value="${entry.csi_region || ''}" placeholder="0"></td>
+                            <td><input type="number" step="0.1" class="roster-xtime input-yellow" data-advisor="${advisor.id}" value="${entry.xtime_pct || ''}" placeholder="0"></td>
+                            <td><input type="number" step="0.1" class="roster-mpvi input-yellow" data-advisor="${advisor.id}" value="${entry.mpvi_xtime_pct || ''}" placeholder="0"></td>
+                            <td><input type="number" class="roster-gross input-yellow" data-advisor="${advisor.id}" value="${entry.gross_total || ''}" placeholder="0"></td>
+                            <td><input type="number" class="roster-ro-count input-yellow" data-advisor="${advisor.id}" value="${entry.ro_count || ''}" placeholder="0"></td>
+                            <td class="roster-gross-ro input-gray" style="font-weight:700;">${grossPerRo > 0 ? formatCurrency(grossPerRo) : '—'}</td>
+                            <td class="roster-rank" style="font-weight:700;color:${rankColor};text-align:center;">${rank}</td>
+                            <td><input type="number" step="0.1" class="roster-csi input-yellow" data-advisor="${advisor.id}" value="${entry.csi_score || ''}" placeholder="0"></td>
+                            <td><input type="number" step="0.1" class="roster-csi-region input-yellow" data-advisor="${advisor.id}" value="${entry.csi_region || ''}" placeholder="0"></td>
                         </tr>
                     `;
                 });
                 document.getElementById('rosterBody').innerHTML = advHtml;
+
+                // Live recalc for Gross/RO and Rank when values change
+                document.querySelectorAll('.roster-gross, .roster-ro-count').forEach(input => {
+                    input.addEventListener('input', recalcAdvisorRoster);
+                });
 
                 // Build Technician weekly entry
                 const availHrsPerTech = weeklyAvailPerTech;
@@ -2373,6 +2391,33 @@
             row.querySelector('.tw-prod').style.color = prod >= 85 ? '#10b981' : prod >= 70 ? '#f59e0b' : '#ef4444';
             row.querySelector('.tw-prof').textContent = prof > 0 ? prof.toFixed(1) + '%' : '—';
             row.querySelector('.tw-prof').style.color = prof >= 100 ? '#10b981' : prof >= 75 ? '#f59e0b' : '#ef4444';
+        }
+
+        function recalcAdvisorRoster() {
+            const rows = document.querySelectorAll('#rosterBody tr');
+            // Collect gross per advisor
+            const data = [];
+            rows.forEach(row => {
+                const gross = parseFloat(row.querySelector('.roster-gross')?.value) || 0;
+                const roCount = parseInt(row.querySelector('.roster-ro-count')?.value) || 0;
+                const grossPerRo = roCount > 0 ? gross / roCount : 0;
+
+                // Update Gross/RO cell
+                const grCell = row.querySelector('.roster-gross-ro');
+                if (grCell) grCell.textContent = grossPerRo > 0 ? formatCurrency(grossPerRo) : '—';
+
+                data.push({ row, gross });
+            });
+
+            // Re-rank by gross descending
+            const sorted = [...data].sort((a, b) => b.gross - a.gross);
+            sorted.forEach((item, idx) => {
+                const rankCell = item.row.querySelector('.roster-rank');
+                if (!rankCell) return;
+                const rank = item.gross > 0 ? idx + 1 : '—';
+                rankCell.textContent = rank;
+                rankCell.style.color = rank === 1 ? '#10b981' : rank === sorted.length && rank !== '—' ? '#ef4444' : '#1a1a1a';
+            });
         }
 
         function saveTechWeekly(tableBodyId, techType) {
@@ -2603,12 +2648,17 @@
                 document.querySelectorAll('#rosterBody tr').forEach(async row => {
                     const advisorId = parseInt(row.querySelector('.roster-training').dataset.advisor);
                     const trainingStatus = row.querySelector('.roster-training').value;
-                    const mpviXtime = parseFloat(row.querySelector('.roster-mpvi').value) || null;
-                    const grossPerRo = parseFloat(row.querySelector('.roster-gross-ro').value) || null;
-                    const ranking = parseInt(row.querySelector('.roster-ranking').value) || null;
-                    const checkinStatus = row.querySelector('.roster-checkin').value;
+                    const xtimePct = parseFloat(row.querySelector('.roster-xtime')?.value) || null;
+                    const mpviPct = parseFloat(row.querySelector('.roster-mpvi').value) || null;
+                    const grossTotal = parseFloat(row.querySelector('.roster-gross')?.value) || null;
+                    const roCount = parseInt(row.querySelector('.roster-ro-count')?.value) || null;
                     const csi = parseFloat(row.querySelector('.roster-csi').value) || null;
                     const csiRegion = parseFloat(row.querySelector('.roster-csi-region').value) || null;
+
+                    // Gross/RO and Rank are auto-calculated, read from display
+                    const grossPerRo = roCount > 0 ? grossTotal / roCount : null;
+                    const ranking = row.querySelector('.roster-rank')?.textContent;
+                    const rankNum = parseInt(ranking) || null;
 
                     await db
                         .from('roster_entries')
@@ -2617,10 +2667,12 @@
                             advisor_id: advisorId,
                             week_start: dateToString(weekStart),
                             training_status: trainingStatus || null,
-                            mpvi_xtime_pct: mpviXtime,
+                            xtime_pct: xtimePct,
+                            mpvi_xtime_pct: mpviPct,
+                            gross_total: grossTotal,
+                            ro_count: roCount,
                             gross_per_ro: grossPerRo,
-                            advisor_ranking: ranking,
-                            checkin_status: checkinStatus || null,
+                            advisor_ranking: rankNum,
                             csi_score: csi,
                             csi_region: csiRegion
                         });
