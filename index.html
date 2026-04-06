@@ -1199,62 +1199,161 @@
             { id: 47, store_id: 'mazda', name: 'Zach Burden', employee_id: '1318', specialty: 'New Car Prep', is_active: true },
             { id: 48, store_id: 'mazda', name: 'AJ Trumpower', employee_id: '4215', specialty: 'Tint', is_active: true }
         ];
-        let useSupabase = false; // localStorage is primary — Supabase sync planned for later
+        let useSupabase = true; // Supabase is primary, localStorage is cache
 
         // ============================================================================
-        // LOCAL DATA STORE (localStorage persistence)
+        // DATA STORE — Supabase primary, localStorage cache
         // ============================================================================
         const LS = {
+            // --- Local cache helpers ---
             _get(key) { try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; } },
             _set(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) { console.error('LS write error', e); } },
 
-            // Daily department entries: { store_id, entry_date, labor_day, parts_day }
-            getDailyEntries() { return this._get('dyer_daily_entries'); },
-            saveDailyEntry(entry) {
-                const all = this.getDailyEntries();
+            // --- Daily department entries ---
+            async getDailyEntries() {
+                if (useSupabase) {
+                    try {
+                        const { data, error } = await db.from('daily_entries').select('*');
+                        if (!error && data) { this._set('dyer_daily_entries', data); return data; }
+                    } catch(e) { console.warn('Supabase getDailyEntries failed, using cache', e); }
+                }
+                return this._get('dyer_daily_entries');
+            },
+            async saveDailyEntry(entry) {
+                // Always save to local cache
+                const all = this._get('dyer_daily_entries');
                 const idx = all.findIndex(d => d.store_id === entry.store_id && d.entry_date === entry.entry_date);
                 if (idx >= 0) all[idx] = entry; else all.push(entry);
                 this._set('dyer_daily_entries', all);
+                // Save to Supabase
+                if (useSupabase) {
+                    try {
+                        const row = { store_id: entry.store_id, entry_date: entry.entry_date,
+                            total_ro: entry.total_ro || 0, total_hours: entry.total_hours || 0,
+                            cp_ro: entry.cp_ro || 0, cp_hours: entry.cp_hours || 0,
+                            warranty_ro: entry.warranty_ro || 0, warranty_hours: entry.warranty_hours || 0,
+                            internal_ro: entry.internal_ro || 0, internal_hours: entry.internal_hours || 0,
+                            total_labor: entry.total_labor || entry.labor_day || 0,
+                            total_parts: entry.total_parts || entry.parts_day || 0,
+                            total_gross: entry.total_gross || 0,
+                            day_of_month: entry.day_of_month || 0, days_in_month: entry.days_in_month || 0,
+                            updated_at: new Date().toISOString() };
+                        await db.from('daily_entries').upsert(row, { onConflict: 'store_id,entry_date' });
+                    } catch(e) { console.warn('Supabase saveDailyEntry failed', e); }
+                }
             },
 
-            // Advisor daily entries: { store_id, advisor_id, entry_date, labor_gross, parts_gross, total_gross, ro_count, cp_ros, hours, csi_score, mpvi_pct }
-            getAdvisorEntries() { return this._get('dyer_advisor_entries'); },
-            saveAdvisorEntry(entry) {
-                const all = this.getAdvisorEntries();
+            // --- Advisor daily entries ---
+            async getAdvisorEntries() {
+                if (useSupabase) {
+                    try {
+                        const { data, error } = await db.from('advisor_entries').select('*');
+                        if (!error && data) { this._set('dyer_advisor_entries', data); return data; }
+                    } catch(e) { console.warn('Supabase getAdvisorEntries failed, using cache', e); }
+                }
+                return this._get('dyer_advisor_entries');
+            },
+            async saveAdvisorEntry(entry) {
+                const all = this._get('dyer_advisor_entries');
                 const idx = all.findIndex(d => d.advisor_id === entry.advisor_id && d.entry_date === entry.entry_date);
                 if (idx >= 0) all[idx] = entry; else all.push(entry);
                 this._set('dyer_advisor_entries', all);
+                if (useSupabase) {
+                    try {
+                        const row = { advisor_id: String(entry.advisor_id), store_id: entry.store_id, entry_date: entry.entry_date,
+                            ro_count: entry.ro_count || 0, cp_ro: entry.cp_ro || entry.cp_ros || 0,
+                            hours: entry.hours || 0, labor_gross: entry.labor_gross || 0,
+                            parts_gross: entry.parts_gross || 0, total_gross: entry.total_gross || 0,
+                            csi: entry.csi || entry.csi_score || 0,
+                            updated_at: new Date().toISOString() };
+                        await db.from('advisor_entries').upsert(row, { onConflict: 'advisor_id,entry_date' });
+                    } catch(e) { console.warn('Supabase saveAdvisorEntry failed', e); }
+                }
             },
 
-            // Goals: { store_id, month, year, labor_goal, parts_goal, total_gross_goal, gross_per_ro_target }
-            getGoals() { return this._get('dyer_goals'); },
-            saveGoal(goal) {
-                const all = this.getGoals();
+            // --- Goals ---
+            async getGoals() {
+                if (useSupabase) {
+                    try {
+                        const { data, error } = await db.from('goals').select('*');
+                        if (!error && data) { this._set('dyer_goals', data); return data; }
+                    } catch(e) { console.warn('Supabase getGoals failed, using cache', e); }
+                }
+                return this._get('dyer_goals');
+            },
+            async saveGoal(goal) {
+                const all = this._get('dyer_goals');
                 const idx = all.findIndex(g => g.store_id === goal.store_id && g.month === goal.month && g.year === goal.year);
                 if (idx >= 0) all[idx] = goal; else all.push(goal);
                 this._set('dyer_goals', all);
+                if (useSupabase) {
+                    try {
+                        const row = { store_id: goal.store_id, month: goal.month, year: goal.year,
+                            labor_goal: goal.labor_goal || 0, parts_goal: goal.parts_goal || 0,
+                            gross_goal: goal.gross_goal || goal.total_gross_goal || 0,
+                            ro_goal: goal.ro_goal || 0, hours_goal: goal.hours_goal || 0,
+                            updated_at: new Date().toISOString() };
+                        await db.from('goals').upsert(row, { onConflict: 'store_id,month,year' });
+                    } catch(e) { console.warn('Supabase saveGoal failed', e); }
+                }
             },
 
-            // Roster entries: { store_id, advisor_id, week_start, training_status, xtime_pct, csi_region }
-            getRosterEntries() { return this._get('dyer_roster_entries'); },
-            saveRosterEntry(entry) {
-                const all = this.getRosterEntries();
+            // --- Roster entries ---
+            async getRosterEntries() {
+                if (useSupabase) {
+                    try {
+                        const { data, error } = await db.from('roster_entries').select('*');
+                        if (!error && data) { this._set('dyer_roster_entries', data); return data; }
+                    } catch(e) { console.warn('Supabase getRosterEntries failed, using cache', e); }
+                }
+                return this._get('dyer_roster_entries');
+            },
+            async saveRosterEntry(entry) {
+                const all = this._get('dyer_roster_entries');
                 const idx = all.findIndex(r => r.advisor_id === entry.advisor_id && r.week_start === entry.week_start);
                 if (idx >= 0) all[idx] = entry; else all.push(entry);
                 this._set('dyer_roster_entries', all);
+                if (useSupabase) {
+                    try {
+                        const row = { advisor_id: String(entry.advisor_id), store_id: entry.store_id,
+                            week_start: entry.week_start, training_status: entry.training_status || '',
+                            xtime_pct: entry.xtime_pct || 0, mpvi_pct: entry.mpvi_pct || 0,
+                            labor: entry.labor || 0, parts: entry.parts || 0, gross: entry.gross || 0,
+                            ro_count: entry.ro_count || 0, cp_ro: entry.cp_ro || 0,
+                            hours: entry.hours || 0, gross_per_ro: entry.gross_per_ro || 0,
+                            elr: entry.elr || 0, hro: entry.hro || 0, rank: entry.rank || 0,
+                            csi: entry.csi || 0, csi_region: entry.csi_region || '',
+                            updated_at: new Date().toISOString() };
+                        await db.from('roster_entries').upsert(row, { onConflict: 'advisor_id,week_start' });
+                    } catch(e) { console.warn('Supabase saveRosterEntry failed', e); }
+                }
             },
 
-            // Staff persistence — saves changes (adds, edits, deactivations) on top of fallback arrays
-            getStaffOverrides() { return this._get('dyer_staff_overrides'); },
-            saveStaffOverrides(overrides) { this._set('dyer_staff_overrides', overrides); },
+            // --- Staff overrides ---
+            async getStaffOverrides() {
+                if (useSupabase) {
+                    try {
+                        const { data, error } = await db.from('staff_overrides').select('*');
+                        if (!error && data) {
+                            // Map from DB format to app format
+                            const mapped = data.map(r => ({ type: r.override_type, id: r.staff_id, data: r.data, action: r.action }));
+                            this._set('dyer_staff_overrides', mapped);
+                            return mapped;
+                        }
+                    } catch(e) { console.warn('Supabase getStaffOverrides failed, using cache', e); }
+                }
+                return this._get('dyer_staff_overrides');
+            },
+            async saveStaffOverrides(overrides) {
+                this._set('dyer_staff_overrides', overrides);
+                // Bulk sync handled by recordStaffChange
+            },
 
             // Apply saved overrides on top of fallback arrays
-            applyStaffOverrides(fallbackAdvisors, fallbackTechs, fallbackLubes, fallbackTechnicians) {
-                const overrides = this.getStaffOverrides();
+            applyStaffOverrides(fallbackAdvisors, fallbackTechs, fallbackLubes, fallbackTechnicians, overrides) {
                 if (!overrides || !overrides.length) {
                     return { advisors: [...fallbackAdvisors], lubeTechs: [...fallbackLubes], technicians: [...fallbackTechnicians] };
                 }
-                // Start with deep copies of fallbacks
                 let advs = fallbackAdvisors.map(a => ({...a}));
                 let lubes = fallbackLubes.map(t => ({...t}));
                 let techs = fallbackTechnicians.map(t => ({...t}));
@@ -1272,12 +1371,19 @@
             },
 
             // Record a staff change
-            recordStaffChange(type, id, data, action = 'update') {
-                const overrides = this.getStaffOverrides();
+            async recordStaffChange(type, id, data, action = 'update') {
+                const overrides = this._get('dyer_staff_overrides');
                 const idx = overrides.findIndex(o => o.type === type && o.id === id);
                 const entry = { type, id, data, action };
                 if (idx >= 0) overrides[idx] = entry; else overrides.push(entry);
-                this.saveStaffOverrides(overrides);
+                this._set('dyer_staff_overrides', overrides);
+                if (useSupabase) {
+                    try {
+                        const row = { override_type: type, staff_id: String(id), data: data, action: action,
+                            updated_at: new Date().toISOString() };
+                        await db.from('staff_overrides').upsert(row, { onConflict: 'override_type,staff_id' });
+                    } catch(e) { console.warn('Supabase recordStaffChange failed', e); }
+                }
             }
         };
 
@@ -1288,7 +1394,8 @@
             try {
                 // Use local fallback data with any saved staff changes applied
                 stores = FALLBACK_STORES;
-                const staffData = LS.applyStaffOverrides(FALLBACK_ADVISORS, null, FALLBACK_TECHS, FALLBACK_TECHNICIANS);
+                const overrides = await LS.getStaffOverrides();
+                const staffData = LS.applyStaffOverrides(FALLBACK_ADVISORS, null, FALLBACK_TECHS, FALLBACK_TECHNICIANS, overrides);
                 advisors = staffData.advisors;
                 lubeTechs = staffData.lubeTechs;
                 technicians = staffData.technicians;
@@ -1318,7 +1425,8 @@
                 // Even on error, load fallback data so the UI works
                 useSupabase = false;
                 stores = FALLBACK_STORES;
-                const fbStaff = LS.applyStaffOverrides(FALLBACK_ADVISORS, null, FALLBACK_TECHS, FALLBACK_TECHNICIANS);
+                const fbOverrides = LS._get('dyer_staff_overrides');
+                const fbStaff = LS.applyStaffOverrides(FALLBACK_ADVISORS, null, FALLBACK_TECHS, FALLBACK_TECHNICIANS, fbOverrides);
                 advisors = fbStaff.advisors;
                 lubeTechs = fbStaff.lubeTechs;
                 technicians = fbStaff.technicians;
@@ -1470,7 +1578,7 @@
                 const ds = dateToString(date);
 
                 // Load daily department entry from localStorage
-                const dailyData = LS.getDailyEntries().find(d => d.store_id === storeId && d.entry_date === ds);
+                const dailyData = (await LS.getDailyEntries()).find(d => d.store_id === storeId && d.entry_date === ds);
                 if (dailyData) {
                     document.getElementById('laborDay').value = dailyData.labor_day || '';
                     document.getElementById('partsDay').value = dailyData.parts_day || '';
@@ -1480,7 +1588,7 @@
                 }
 
                 // Load advisor entries from localStorage
-                const advisorEntries = LS.getAdvisorEntries().filter(d => d.store_id === storeId && d.entry_date === ds);
+                const advisorEntries = (await LS.getAdvisorEntries()).filter(d => d.store_id === storeId && d.entry_date === ds);
 
                 // Get active store advisors only
                 const storeAdvisors = advisors.filter(a => a.store_id === storeId && a.is_active !== false);
@@ -1566,7 +1674,7 @@
             if (!storeId) return;
 
             const monthStart = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
-            const monthlyData = LS.getDailyEntries().filter(d =>
+            const monthlyData = (await LS.getDailyEntries()).filter(d =>
                 d.store_id === storeId && d.entry_date >= monthStart && d.entry_date <= dateToString(date)
             );
 
@@ -1602,7 +1710,7 @@
                 const ds = dateToString(date);
 
                 // Save daily department entry to localStorage
-                LS.saveDailyEntry({
+                await LS.saveDailyEntry({
                     store_id: storeId,
                     entry_date: ds,
                     day_number: dayNum,
@@ -1624,7 +1732,7 @@
                     const csiScore = parseFloat(row.querySelector('.advisor-csi').value) || null;
                     const mpviPct = parseFloat(row.querySelector('.advisor-mpvi').value) || null;
 
-                    LS.saveAdvisorEntry({
+                    await LS.saveAdvisorEntry({
                         store_id: storeId,
                         advisor_id: parseInt(advisorId),
                         entry_date: ds,
@@ -1665,7 +1773,7 @@
                 const { month, year } = getMonthYear(new Date());
 
                 // Load goals from localStorage
-                const allGoals = LS.getGoals().filter(g => g.month === month && g.year === year);
+                const allGoals = (await LS.getGoals()).filter(g => g.month === month && g.year === year);
                 let goalsData = null;
                 if (allMode) {
                     if (allGoals.length > 0) {
@@ -1683,7 +1791,7 @@
                 const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
                 const monthEnd = dateToString(new Date(year, month, 0));
 
-                let dailyData = LS.getDailyEntries().filter(d => d.entry_date >= monthStart && d.entry_date <= monthEnd);
+                let dailyData = (await LS.getDailyEntries()).filter(d => d.entry_date >= monthStart && d.entry_date <= monthEnd);
                 if (!allMode) dailyData = dailyData.filter(d => d.store_id === storeId);
 
                 const laborMtd = dailyData.reduce((sum, d) => sum + (d.labor_day || 0), 0);
@@ -1691,7 +1799,7 @@
                 const totalGrossMtd = laborMtd + partsMtd;
 
                 // Load advisor entries from localStorage
-                let advisorData = LS.getAdvisorEntries().filter(d => d.entry_date >= monthStart && d.entry_date <= monthEnd);
+                let advisorData = (await LS.getAdvisorEntries()).filter(d => d.entry_date >= monthStart && d.entry_date <= monthEnd);
                 if (!allMode) advisorData = advisorData.filter(d => d.store_id === storeId);
 
                 let avgGrossPerRo = 0;
@@ -1830,11 +1938,11 @@
                 const monthEnd = dateToString(new Date(year, month, 0));
 
                 // Fetch from localStorage
-                const dailyData = LS.getDailyEntries().filter(d => d.entry_date >= monthStart && d.entry_date <= monthEnd);
+                const dailyData = (await LS.getDailyEntries()).filter(d => d.entry_date >= monthStart && d.entry_date <= monthEnd);
 
-                const advisorData = LS.getAdvisorEntries().filter(d => d.entry_date >= monthStart && d.entry_date <= monthEnd);
+                const advisorData = (await LS.getAdvisorEntries()).filter(d => d.entry_date >= monthStart && d.entry_date <= monthEnd);
 
-                const goalsData = LS.getGoals().filter(g => g.month === month && g.year === year);
+                const goalsData = (await LS.getGoals()).filter(g => g.month === month && g.year === year);
 
                 // Build store summaries
                 const storeSummaries = stores.map(store => {
@@ -1992,7 +2100,7 @@
                 document.getElementById('advisorRankTitle').textContent = `Advisor Ranking Report — ${label}`;
 
                 // Fetch all advisor entries in range from localStorage
-                let allEntries = LS.getAdvisorEntries().filter(d => d.entry_date >= startDate && d.entry_date <= endDate);
+                let allEntries = (await LS.getAdvisorEntries()).filter(d => d.entry_date >= startDate && d.entry_date <= endDate);
                 if (storeId && storeId !== 'all') {
                     allEntries = allEntries.filter(d => d.store_id === storeId);
                 }
@@ -2150,13 +2258,13 @@
                     endDate = range.endDate;
                 }
 
-                const advisorEntries = LS.getAdvisorEntries().filter(d =>
+                const advisorEntries = (await LS.getAdvisorEntries()).filter(d =>
                     d.advisor_id === parseInt(advisorId) &&
                     d.entry_date >= startDate &&
                     d.entry_date <= endDate
                 );
 
-                const storeEntries = LS.getAdvisorEntries().filter(d =>
+                const storeEntries = (await LS.getAdvisorEntries()).filter(d =>
                     d.store_id === advisor.store_id &&
                     d.entry_date >= startDate &&
                     d.entry_date <= endDate
@@ -2249,7 +2357,7 @@
             try {
                 const { month, year } = getMonthYear(new Date());
 
-                const goalsData = LS.getGoals().filter(g => g.month === month && g.year === year);
+                const goalsData = (await LS.getGoals()).filter(g => g.month === month && g.year === year);
 
                 let html = '';
                 stores.forEach(store => {
@@ -2281,7 +2389,7 @@
                     const totalGoal = parseFloat(row.querySelector('.goal-total').value) || 0;
                     const perRoTarget = parseFloat(row.querySelector('.goal-per-ro').value) || 0;
 
-                    LS.saveGoal({
+                    await LS.saveGoal({
                         store_id: storeId,
                         month,
                         year,
@@ -2498,7 +2606,7 @@
                 `;
 
                 // Fetch advisor roster entries (manual overrides) from localStorage
-                let rosterData = LS.getRosterEntries().filter(r => r.week_start === wsKey);
+                let rosterData = (await LS.getRosterEntries()).filter(r => r.week_start === wsKey);
                 if (storeId && storeId !== 'all') {
                     rosterData = rosterData.filter(r => r.store_id === storeId);
                 }
@@ -2506,7 +2614,7 @@
                 // Fetch daily advisor entries for this week to auto-populate
                 const weekEnd = new Date(weekStart);
                 weekEnd.setDate(weekEnd.getDate() + 6);
-                let weeklyAdvData = LS.getAdvisorEntries().filter(d =>
+                let weeklyAdvData = (await LS.getAdvisorEntries()).filter(d =>
                     d.entry_date >= wsKey &&
                     d.entry_date <= dateToString(weekEnd)
                 );
@@ -2999,7 +3107,7 @@
                     const ranking = row.querySelector('.roster-rank')?.textContent;
                     const rankNum = parseInt(ranking) || null;
 
-                    LS.saveRosterEntry({
+                    await LS.saveRosterEntry({
                         store_id: storeId,
                         advisor_id: advisorId,
                         week_start: dateToString(weekStart),
@@ -3144,12 +3252,12 @@
                     record.id = parseInt(id);
                     const idx = arr.findIndex(a => a.id === parseInt(id));
                     if (idx >= 0) Object.assign(arr[idx], record);
-                    LS.recordStaffChange(type, record.id, record, 'update');
+                    await LS.recordStaffChange(type, record.id, record, 'update');
                 } else {
                     record.id = Math.max(0, ...arr.map(a => a.id)) + 1;
                     row.dataset.id = record.id;
                     arr.push(record);
-                    LS.recordStaffChange(type, record.id, record, 'add');
+                    await LS.recordStaffChange(type, record.id, record, 'add');
                 }
 
                 if (type === 'advisor') populateAdvisorSelect();
@@ -3173,7 +3281,7 @@
                 const idx = arr.findIndex(a => a.id === numId);
                 if (idx >= 0) {
                     arr[idx].is_active = false;
-                    LS.recordStaffChange(type, numId, { ...arr[idx], is_active: false }, 'update');
+                    await LS.recordStaffChange(type, numId, { ...arr[idx], is_active: false }, 'update');
                 }
 
                 row.remove();
