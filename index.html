@@ -1199,42 +1199,62 @@
             { id: 47, store_id: 'mazda', name: 'Zach Burden', employee_id: '1318', specialty: 'New Car Prep', is_active: true },
             { id: 48, store_id: 'mazda', name: 'AJ Trumpower', employee_id: '4215', specialty: 'Tint', is_active: true }
         ];
-        let useSupabase = true;
+        let useSupabase = false; // localStorage is primary — Supabase sync planned for later
+
+        // ============================================================================
+        // LOCAL DATA STORE (localStorage persistence)
+        // ============================================================================
+        const LS = {
+            _get(key) { try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; } },
+            _set(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) { console.error('LS write error', e); } },
+
+            // Daily department entries: { store_id, entry_date, labor_day, parts_day }
+            getDailyEntries() { return this._get('dyer_daily_entries'); },
+            saveDailyEntry(entry) {
+                const all = this.getDailyEntries();
+                const idx = all.findIndex(d => d.store_id === entry.store_id && d.entry_date === entry.entry_date);
+                if (idx >= 0) all[idx] = entry; else all.push(entry);
+                this._set('dyer_daily_entries', all);
+            },
+
+            // Advisor daily entries: { store_id, advisor_id, entry_date, labor_gross, parts_gross, total_gross, ro_count, cp_ros, hours, csi_score, mpvi_pct }
+            getAdvisorEntries() { return this._get('dyer_advisor_entries'); },
+            saveAdvisorEntry(entry) {
+                const all = this.getAdvisorEntries();
+                const idx = all.findIndex(d => d.advisor_id === entry.advisor_id && d.entry_date === entry.entry_date);
+                if (idx >= 0) all[idx] = entry; else all.push(entry);
+                this._set('dyer_advisor_entries', all);
+            },
+
+            // Goals: { store_id, month, year, labor_goal, parts_goal, total_gross_goal, gross_per_ro_target }
+            getGoals() { return this._get('dyer_goals'); },
+            saveGoal(goal) {
+                const all = this.getGoals();
+                const idx = all.findIndex(g => g.store_id === goal.store_id && g.month === goal.month && g.year === goal.year);
+                if (idx >= 0) all[idx] = goal; else all.push(goal);
+                this._set('dyer_goals', all);
+            },
+
+            // Roster entries: { store_id, advisor_id, week_start, training_status, xtime_pct, csi_region }
+            getRosterEntries() { return this._get('dyer_roster_entries'); },
+            saveRosterEntry(entry) {
+                const all = this.getRosterEntries();
+                const idx = all.findIndex(r => r.advisor_id === entry.advisor_id && r.week_start === entry.week_start);
+                if (idx >= 0) all[idx] = entry; else all.push(entry);
+                this._set('dyer_roster_entries', all);
+            }
+        };
 
         // ============================================================================
         // INITIALIZATION
         // ============================================================================
         async function initialize() {
             try {
-                // Try Supabase first
-                const { data: storesData, error: storesErr } = await db
-                    .from('stores')
-                    .select('*')
-                    .order('name');
-
-                if (storesErr || !storesData || storesData.length === 0) {
-                    console.warn('Supabase unavailable, using fallback data', storesErr);
-                    useSupabase = false;
-                    stores = FALLBACK_STORES;
-                    advisors = FALLBACK_ADVISORS;
-                    lubeTechs = FALLBACK_TECHS;
-                    technicians = FALLBACK_TECHNICIANS;
-                } else {
-                    stores = storesData;
-                    const { data: advisorsData } = await db
-                        .from('advisors')
-                        .select('*')
-                        .eq('is_active', true)
-                        .order('name');
-                    advisors = advisorsData || FALLBACK_ADVISORS;
-                    const { data: techsData } = await db
-                        .from('lube_techs')
-                        .select('*')
-                        .eq('is_active', true)
-                        .order('name');
-                    lubeTechs = techsData || FALLBACK_TECHS;
-                    technicians = FALLBACK_TECHNICIANS; // Local data until DB table created
-                }
+                // Use local fallback data (Supabase sync planned for later)
+                stores = FALLBACK_STORES;
+                advisors = FALLBACK_ADVISORS;
+                lubeTechs = FALLBACK_TECHS;
+                technicians = FALLBACK_TECHNICIANS;
 
                 // Set default date to today
                 const today = new Date();
@@ -1409,28 +1429,20 @@
             }
 
             try {
-                // Fetch daily entry
-                const { data: dailyData } = await db
-                    .from('daily_entries')
-                    .select('*')
-                    .eq('store_id', storeId)
-                    .eq('entry_date', dateToString(date))
-                    .single();
+                const ds = dateToString(date);
 
+                // Load daily department entry from localStorage
+                const dailyData = LS.getDailyEntries().find(d => d.store_id === storeId && d.entry_date === ds);
                 if (dailyData) {
-                    document.getElementById('laborDay').value = dailyData.labor_day || 0;
-                    document.getElementById('partsDay').value = dailyData.parts_day || 0;
+                    document.getElementById('laborDay').value = dailyData.labor_day || '';
+                    document.getElementById('partsDay').value = dailyData.parts_day || '';
                 } else {
                     document.getElementById('laborDay').value = '';
                     document.getElementById('partsDay').value = '';
                 }
 
-                // Fetch advisor entries
-                const { data: advisorEntries } = await db
-                    .from('advisor_entries')
-                    .select('*')
-                    .eq('store_id', storeId)
-                    .eq('entry_date', dateToString(date));
+                // Load advisor entries from localStorage
+                const advisorEntries = LS.getAdvisorEntries().filter(d => d.store_id === storeId && d.entry_date === ds);
 
                 // Get store advisors
                 const storeAdvisors = advisors.filter(a => a.store_id === storeId);
@@ -1512,23 +1524,16 @@
                 row.querySelector('.advisor-elr').textContent = formatCurrency(elr);
             });
 
-            // Fetch MTD data
+            // Compute MTD from localStorage
             if (!storeId) return;
 
-            const { data: monthlyData } = await db
-                .from('daily_entries')
-                .select('labor_day, parts_day')
-                .eq('store_id', storeId)
-                .lte('entry_date', dateToString(date))
-                .gte('entry_date', `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`);
+            const monthStart = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
+            const monthlyData = LS.getDailyEntries().filter(d =>
+                d.store_id === storeId && d.entry_date >= monthStart && d.entry_date <= dateToString(date)
+            );
 
-            let laborMtd = laborDay;
-            let partsMtd = partsDay;
-
-            if (monthlyData) {
-                laborMtd = monthlyData.reduce((sum, d) => sum + (d.labor_day || 0), 0);
-                partsMtd = monthlyData.reduce((sum, d) => sum + (d.parts_day || 0), 0);
-            }
+            let laborMtd = monthlyData.reduce((sum, d) => sum + (d.labor_day || 0), 0);
+            let partsMtd = monthlyData.reduce((sum, d) => sum + (d.parts_day || 0), 0);
 
             document.getElementById('laborMtd').textContent = formatCurrency(laborMtd);
             document.getElementById('partsMtd').textContent = formatCurrency(partsMtd);
@@ -1556,21 +1561,22 @@
             }
 
             try {
-                // Save daily entry
-                await db
-                    .from('daily_entries')
-                    .upsert({
-                        store_id: storeId,
-                        entry_date: dateToString(date),
-                        day_number: dayNum,
-                        days_in_month: daysInMonth,
-                        labor_day: laborDay,
-                        parts_day: partsDay
-                    });
+                const ds = dateToString(date);
 
-                // Save advisor entries
-                document.querySelectorAll('#dailyAdvisorBody tr').forEach(async row => {
-                    const advisorId = row.querySelector('.advisor-labor').dataset.advisor;
+                // Save daily department entry to localStorage
+                LS.saveDailyEntry({
+                    store_id: storeId,
+                    entry_date: ds,
+                    day_number: dayNum,
+                    days_in_month: daysInMonth,
+                    labor_day: laborDay,
+                    parts_day: partsDay
+                });
+
+                // Save advisor entries to localStorage
+                document.querySelectorAll('#dailyAdvisorBody tr').forEach(row => {
+                    const advisorId = row.querySelector('.advisor-labor')?.dataset.advisor;
+                    if (!advisorId) return;
                     const laborGross = parseFloat(row.querySelector('.advisor-labor').value) || 0;
                     const partsGross = parseFloat(row.querySelector('.advisor-parts').value) || 0;
                     const totalGross = laborGross + partsGross;
@@ -1580,26 +1586,23 @@
                     const csiScore = parseFloat(row.querySelector('.advisor-csi').value) || null;
                     const mpviPct = parseFloat(row.querySelector('.advisor-mpvi').value) || null;
 
-                    if (totalGross > 0 || roCount > 0 || hours > 0) {
-                        await db
-                            .from('advisor_entries')
-                            .upsert({
-                                store_id: storeId,
-                                advisor_id: parseInt(advisorId),
-                                entry_date: dateToString(date),
-                                labor_gross: laborGross,
-                                parts_gross: partsGross,
-                                total_gross: totalGross,
-                                ro_count: roCount,
-                                cp_ros: cpRos,
-                                hours: hours,
-                                csi_score: csiScore,
-                                mpvi_pct: mpviPct
-                            });
-                    }
+                    LS.saveAdvisorEntry({
+                        store_id: storeId,
+                        advisor_id: parseInt(advisorId),
+                        entry_date: ds,
+                        labor_gross: laborGross,
+                        parts_gross: partsGross,
+                        total_gross: totalGross,
+                        ro_count: roCount,
+                        cp_ros: cpRos,
+                        hours: hours,
+                        csi_score: csiScore,
+                        mpvi_pct: mpviPct
+                    });
                 });
 
-                showToast('Daily entry saved successfully');
+                showToast('Daily entry saved!');
+                updateDailyCalculations(); // refresh MTD
             } catch (error) {
                 console.error('Save error:', error);
                 showToast('Failed to save entry', 'error');
@@ -1623,15 +1626,11 @@
             try {
                 const { month, year } = getMonthYear(new Date());
 
-                // Fetch goals (aggregate all stores if allMode)
+                // Load goals from localStorage
+                const allGoals = LS.getGoals().filter(g => g.month === month && g.year === year);
                 let goalsData = null;
                 if (allMode) {
-                    const { data: allGoals } = await db
-                        .from('goals')
-                        .select('*')
-                        .eq('month', month)
-                        .eq('year', year);
-                    if (allGoals && allGoals.length > 0) {
+                    if (allGoals.length > 0) {
                         goalsData = {
                             labor_goal: allGoals.reduce((s, g) => s + (g.labor_goal || 0), 0),
                             parts_goal: allGoals.reduce((s, g) => s + (g.parts_goal || 0), 0),
@@ -1639,32 +1638,23 @@
                         };
                     }
                 } else {
-                    const { data } = await db
-                        .from('goals')
-                        .select('*')
-                        .eq('store_id', storeId)
-                        .eq('month', month)
-                        .eq('year', year)
-                        .single();
-                    goalsData = data;
+                    goalsData = allGoals.find(g => g.store_id === storeId) || null;
                 }
 
-                // Fetch daily entries
+                // Load daily entries from localStorage
                 const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
                 const monthEnd = dateToString(new Date(year, month, 0));
 
-                let dailyQuery = db.from('daily_entries').select('*').gte('entry_date', monthStart).lte('entry_date', monthEnd);
-                dailyQuery = filterByStore(dailyQuery, storeId);
-                const { data: dailyData } = await dailyQuery;
+                let dailyData = LS.getDailyEntries().filter(d => d.entry_date >= monthStart && d.entry_date <= monthEnd);
+                if (!allMode) dailyData = dailyData.filter(d => d.store_id === storeId);
 
-                const laborMtd = dailyData?.reduce((sum, d) => sum + (d.labor_day || 0), 0) || 0;
-                const partsMtd = dailyData?.reduce((sum, d) => sum + (d.parts_day || 0), 0) || 0;
+                const laborMtd = dailyData.reduce((sum, d) => sum + (d.labor_day || 0), 0);
+                const partsMtd = dailyData.reduce((sum, d) => sum + (d.parts_day || 0), 0);
                 const totalGrossMtd = laborMtd + partsMtd;
 
-                // Fetch advisor entries
-                let advQuery = db.from('advisor_entries').select('*').gte('entry_date', monthStart).lte('entry_date', monthEnd);
-                advQuery = filterByStore(advQuery, storeId);
-                const { data: advisorData } = await advQuery;
+                // Load advisor entries from localStorage
+                let advisorData = LS.getAdvisorEntries().filter(d => d.entry_date >= monthStart && d.entry_date <= monthEnd);
+                if (!allMode) advisorData = advisorData.filter(d => d.store_id === storeId);
 
                 let avgGrossPerRo = 0;
                 if (advisorData && advisorData.length > 0) {
@@ -1801,29 +1791,18 @@
                 const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
                 const monthEnd = dateToString(new Date(year, month, 0));
 
-                const { data: dailyData } = await db
-                    .from('daily_entries')
-                    .select('*')
-                    .gte('entry_date', monthStart)
-                    .lte('entry_date', monthEnd);
+                // Fetch from localStorage
+                const dailyData = LS.getDailyEntries().filter(d => d.entry_date >= monthStart && d.entry_date <= monthEnd);
 
-                const { data: advisorData } = await db
-                    .from('advisor_entries')
-                    .select('*')
-                    .gte('entry_date', monthStart)
-                    .lte('entry_date', monthEnd);
+                const advisorData = LS.getAdvisorEntries().filter(d => d.entry_date >= monthStart && d.entry_date <= monthEnd);
 
-                const { data: goalsData } = await db
-                    .from('goals')
-                    .select('*')
-                    .eq('month', month)
-                    .eq('year', year);
+                const goalsData = LS.getGoals().filter(g => g.month === month && g.year === year);
 
                 // Build store summaries
                 const storeSummaries = stores.map(store => {
-                    const storeDaily = dailyData?.filter(d => d.store_id === store.id) || [];
-                    const storeAdvisors = advisorData?.filter(d => d.store_id === store.id) || [];
-                    const storeGoals = goalsData?.find(g => g.store_id === store.id);
+                    const storeDaily = dailyData.filter(d => d.store_id === store.id);
+                    const storeAdvisors = advisorData.filter(d => d.store_id === store.id);
+                    const storeGoals = goalsData.find(g => g.store_id === store.id);
 
                     const laborMtd = storeDaily.reduce((sum, d) => sum + (d.labor_day || 0), 0);
                     const partsMtd = storeDaily.reduce((sum, d) => sum + (d.parts_day || 0), 0);
@@ -1974,16 +1953,15 @@
                 const allMode = isAllStores();
                 document.getElementById('advisorRankTitle').textContent = `Advisor Ranking Report — ${label}`;
 
-                // Fetch all advisor entries in range
-                let query = db.from('advisor_entries').select('*')
-                    .gte('entry_date', startDate)
-                    .lte('entry_date', endDate);
-                query = filterByStore(query, storeId);
-                const { data: allEntries } = await query;
+                // Fetch all advisor entries in range from localStorage
+                let allEntries = LS.getAdvisorEntries().filter(d => d.entry_date >= startDate && d.entry_date <= endDate);
+                if (storeId && storeId !== 'all') {
+                    allEntries = allEntries.filter(d => d.store_id === storeId);
+                }
 
                 // Aggregate per advisor
                 const advAgg = {};
-                (allEntries || []).forEach(d => {
+                allEntries.forEach(d => {
                     if (!advAgg[d.advisor_id]) {
                         advAgg[d.advisor_id] = { labor: 0, parts: 0, gross: 0, ros: 0, cpRos: 0, hours: 0, csiSum: 0, csiCount: 0, mpviSum: 0, mpviCount: 0, days: 0 };
                     }
@@ -2036,6 +2014,30 @@
                     totals.ros += r.ros; totals.cpRos += r.cpRos; totals.hours += r.hours;
                 });
 
+                // Compute per-category ranks (1 = best)
+                function assignRanks(arr, field, higherIsBetter = true) {
+                    const withData = arr.filter(r => r[field] > 0);
+                    const sorted = [...withData].sort((a, b) => higherIsBetter ? b[field] - a[field] : a[field] - b[field]);
+                    sorted.forEach((item, idx) => { item[field + 'Rank'] = idx + 1; });
+                    arr.filter(r => !(r[field] > 0)).forEach(r => { r[field + 'Rank'] = '—'; });
+                }
+                assignRanks(ranked, 'gross', true);
+                assignRanks(ranked, 'labor', true);
+                assignRanks(ranked, 'parts', true);
+                assignRanks(ranked, 'grossRo', true);
+                assignRanks(ranked, 'elr', true);
+                assignRanks(ranked, 'ros', true);
+                assignRanks(ranked, 'csi', true);
+                assignRanks(ranked, 'mpvi', true);
+                assignRanks(ranked, 'hro', false); // lower HRO is better (fewer hrs per RO)
+
+                const rankBadge = (val, total) => {
+                    if (val === '—' || val === undefined) return '<span style="color:#888">—</span>';
+                    const color = val === 1 ? '#10b981' : val <= 3 ? '#3b82f6' : val >= total ? '#ef4444' : '#888';
+                    return `<span style="color:${color};font-weight:600;font-size:11px;">#${val}</span>`;
+                };
+                const activeCount = ranked.filter(r => r.gross > 0).length;
+
                 // Render ranking table
                 let html = '';
                 ranked.forEach((r, idx) => {
@@ -2047,18 +2049,18 @@
                             <td style="font-weight:700;color:${rankColor};text-align:center;font-size:16px;">${rank}</td>
                             <td style="font-weight:600">${r.name}</td>
                             <td>${r.store}</td>
-                            <td>${formatCurrency(r.labor)}</td>
-                            <td>${formatCurrency(r.parts)}</td>
+                            <td>${formatCurrency(r.labor)} ${rankBadge(r.laborRank, activeCount)}</td>
+                            <td>${formatCurrency(r.parts)} ${rankBadge(r.partsRank, activeCount)}</td>
                             <td style="font-weight:700">${formatCurrency(r.gross)}</td>
-                            <td>${r.ros}</td>
+                            <td>${r.ros} ${rankBadge(r.rosRank, activeCount)}</td>
                             <td>${r.cpRos}</td>
                             <td>${r.cpPct > 0 ? r.cpPct.toFixed(1) + '%' : '—'}</td>
                             <td>${r.hours > 0 ? r.hours.toFixed(1) : '—'}</td>
-                            <td style="font-weight:700">${r.grossRo > 0 ? formatCurrency(r.grossRo) : '—'}</td>
-                            <td>${r.elr > 0 ? formatCurrency(r.elr) : '—'}</td>
-                            <td>${r.hro > 0 ? r.hro.toFixed(2) : '—'}</td>
-                            <td>${r.csi > 0 ? r.csi.toFixed(1) : '—'}</td>
-                            <td>${r.mpvi > 0 ? r.mpvi.toFixed(1) + '%' : '—'}</td>
+                            <td style="font-weight:700">${r.grossRo > 0 ? formatCurrency(r.grossRo) : '—'} ${rankBadge(r.grossRoRank, activeCount)}</td>
+                            <td>${r.elr > 0 ? formatCurrency(r.elr) : '—'} ${rankBadge(r.elrRank, activeCount)}</td>
+                            <td>${r.hro > 0 ? r.hro.toFixed(2) : '—'} ${rankBadge(r.hroRank, activeCount)}</td>
+                            <td>${r.csi > 0 ? r.csi.toFixed(1) : '—'} ${rankBadge(r.csiRank, activeCount)}</td>
+                            <td>${r.mpvi > 0 ? r.mpvi.toFixed(1) + '%' : '—'} ${rankBadge(r.mpviRank, activeCount)}</td>
                         </tr>
                     `;
                 });
@@ -2110,24 +2112,23 @@
                     endDate = range.endDate;
                 }
 
-                const { data: advisorEntries } = await db
-                    .from('advisor_entries')
-                    .select('*')
-                    .eq('advisor_id', advisorId)
-                    .gte('entry_date', startDate)
-                    .lte('entry_date', endDate);
+                const advisorEntries = LS.getAdvisorEntries().filter(d =>
+                    d.advisor_id === parseInt(advisorId) &&
+                    d.entry_date >= startDate &&
+                    d.entry_date <= endDate
+                );
 
-                const { data: storeEntries } = await db
-                    .from('advisor_entries')
-                    .select('*')
-                    .eq('store_id', advisor.store_id)
-                    .gte('entry_date', startDate)
-                    .lte('entry_date', endDate);
+                const storeEntries = LS.getAdvisorEntries().filter(d =>
+                    d.store_id === advisor.store_id &&
+                    d.entry_date >= startDate &&
+                    d.entry_date <= endDate
+                );
 
                 const computeStats = (entries) => {
                     if (!entries || entries.length === 0) {
                         return { labor: 0, parts: 0, gross: 0, grossRo: 0, roCount: 0, cpPct: 0, csi: 0, hro: 0, elr: 0, mpvi: 0 };
                     }
+                    entries = entries || [];
                     const totalLabor = entries.reduce((s, e) => s + (e.labor_gross || 0), 0);
                     const totalParts = entries.reduce((s, e) => s + (e.parts_gross || 0), 0);
                     const totalGross = entries.reduce((s, e) => s + (e.total_gross || 0), 0);
@@ -2210,15 +2211,11 @@
             try {
                 const { month, year } = getMonthYear(new Date());
 
-                const { data: goalsData } = await db
-                    .from('goals')
-                    .select('*')
-                    .eq('month', month)
-                    .eq('year', year);
+                const goalsData = LS.getGoals().filter(g => g.month === month && g.year === year);
 
                 let html = '';
                 stores.forEach(store => {
-                    const goal = goalsData?.find(g => g.store_id === store.id) || {};
+                    const goal = goalsData.find(g => g.store_id === store.id) || {};
                     html += `
                         <tr>
                             <td>${store.name}</td>
@@ -2239,24 +2236,22 @@
             try {
                 const { month, year } = getMonthYear(new Date());
 
-                document.querySelectorAll('#goalsBody tr').forEach(async row => {
+                document.querySelectorAll('#goalsBody tr').forEach(row => {
                     const storeId = row.querySelector('.goal-labor').dataset.store;
                     const laborGoal = parseFloat(row.querySelector('.goal-labor').value) || 0;
                     const partsGoal = parseFloat(row.querySelector('.goal-parts').value) || 0;
                     const totalGoal = parseFloat(row.querySelector('.goal-total').value) || 0;
                     const perRoTarget = parseFloat(row.querySelector('.goal-per-ro').value) || 0;
 
-                    await db
-                        .from('goals')
-                        .upsert({
-                            store_id: storeId,
-                            month,
-                            year,
-                            labor_goal: laborGoal,
-                            parts_goal: partsGoal,
-                            total_gross_goal: totalGoal,
-                            gross_per_ro_target: perRoTarget
-                        });
+                    LS.saveGoal({
+                        store_id: storeId,
+                        month,
+                        year,
+                        labor_goal: laborGoal,
+                        parts_goal: partsGoal,
+                        total_gross_goal: totalGoal,
+                        gross_per_ro_target: perRoTarget
+                    });
                 });
 
                 showToast('Goals saved successfully');
@@ -2464,23 +2459,26 @@
                     </div>
                 `;
 
-                // Fetch advisor roster entries (manual overrides)
-                let rosterQuery = db.from('roster_entries').select('*').eq('week_start', wsKey);
-                rosterQuery = filterByStore(rosterQuery, storeId);
-                const { data: rosterData } = await rosterQuery;
+                // Fetch advisor roster entries (manual overrides) from localStorage
+                let rosterData = LS.getRosterEntries().filter(r => r.week_start === wsKey);
+                if (storeId && storeId !== 'all') {
+                    rosterData = rosterData.filter(r => r.store_id === storeId);
+                }
 
                 // Fetch daily advisor entries for this week to auto-populate
                 const weekEnd = new Date(weekStart);
                 weekEnd.setDate(weekEnd.getDate() + 6);
-                let dailyAdvQuery = db.from('advisor_entries').select('*')
-                    .gte('entry_date', wsKey)
-                    .lte('entry_date', dateToString(weekEnd));
-                dailyAdvQuery = filterByStore(dailyAdvQuery, storeId);
-                const { data: weeklyAdvData } = await dailyAdvQuery;
+                let weeklyAdvData = LS.getAdvisorEntries().filter(d =>
+                    d.entry_date >= wsKey &&
+                    d.entry_date <= dateToString(weekEnd)
+                );
+                if (storeId && storeId !== 'all') {
+                    weeklyAdvData = weeklyAdvData.filter(d => d.store_id === storeId);
+                }
 
                 // Aggregate daily entries per advisor for the week
                 const weeklyAdvAgg = {};
-                (weeklyAdvData || []).forEach(d => {
+                weeklyAdvData.forEach(d => {
                     if (!weeklyAdvAgg[d.advisor_id]) {
                         weeklyAdvAgg[d.advisor_id] = { labor: 0, parts: 0, gross: 0, ros: 0, cpRos: 0, hours: 0, csiSum: 0, csiCount: 0, mpviSum: 0, mpviCount: 0 };
                     }
@@ -2497,7 +2495,7 @@
 
                 // Build advisor roster rows — use daily aggregates as base, roster overrides on top
                 const advEntryData = storeAdvisors.map(advisor => {
-                    const rEntry = rosterData?.find(r => r.advisor_id === advisor.id) || {};
+                    const rEntry = rosterData.find(r => r.advisor_id === advisor.id) || {};
                     const dAgg = weeklyAdvAgg[advisor.id] || {};
                     // Daily aggregates take priority, manual roster entry as fallback
                     const gross = dAgg.gross || parseFloat(rEntry.gross_total) || 0;
@@ -2948,7 +2946,7 @@
             }
 
             try {
-                document.querySelectorAll('#rosterBody tr').forEach(async row => {
+                document.querySelectorAll('#rosterBody tr').forEach(row => {
                     const advisorId = parseInt(row.querySelector('.roster-training').dataset.advisor);
                     const trainingStatus = row.querySelector('.roster-training').value;
                     const xtimePct = parseFloat(row.querySelector('.roster-xtime')?.value) || null;
@@ -2963,22 +2961,14 @@
                     const ranking = row.querySelector('.roster-rank')?.textContent;
                     const rankNum = parseInt(ranking) || null;
 
-                    await db
-                        .from('roster_entries')
-                        .upsert({
-                            store_id: storeId,
-                            advisor_id: advisorId,
-                            week_start: dateToString(weekStart),
-                            training_status: trainingStatus || null,
-                            xtime_pct: xtimePct,
-                            mpvi_xtime_pct: mpviPct,
-                            gross_total: grossTotal,
-                            ro_count: roCount,
-                            gross_per_ro: grossPerRo,
-                            advisor_ranking: rankNum,
-                            csi_score: csi,
-                            csi_region: csiRegion
-                        });
+                    LS.saveRosterEntry({
+                        store_id: storeId,
+                        advisor_id: advisorId,
+                        week_start: dateToString(weekStart),
+                        training_status: trainingStatus || null,
+                        xtime_pct: xtimePct,
+                        csi_region: csiRegion
+                    });
                 });
 
                 showToast('Roster saved successfully');
@@ -3107,28 +3097,17 @@
             }
 
             try {
+                const arr = type === 'advisor' ? advisors : type === 'technician' ? technicians : lubeTechs;
+
                 if (id && id !== 'new') {
                     record.id = parseInt(id);
-                    if (useSupabase) {
-                        await db.from(table).upsert(record);
-                    }
                     // Update local data
-                    const arr = type === 'advisor' ? advisors : type === 'technician' ? technicians : lubeTechs;
                     const idx = arr.findIndex(a => a.id === parseInt(id));
                     if (idx >= 0) Object.assign(arr[idx], record);
                 } else {
-                    if (useSupabase && type !== 'technician') {
-                        const { data } = await db.from(table).insert(record).select().single();
-                        if (data) {
-                            record.id = data.id;
-                            row.dataset.id = data.id;
-                        }
-                    } else {
-                        const arr = type === 'advisor' ? advisors : type === 'technician' ? technicians : lubeTechs;
-                        record.id = Math.max(0, ...arr.map(a => a.id)) + 1;
-                        row.dataset.id = record.id;
-                    }
-                    const arr = type === 'advisor' ? advisors : type === 'technician' ? technicians : lubeTechs;
+                    // Generate new ID for new records
+                    record.id = Math.max(0, ...arr.map(a => a.id)) + 1;
+                    row.dataset.id = record.id;
                     arr.push(record);
                 }
 
@@ -3149,11 +3128,6 @@
             if (!confirm(`Remove ${name}? This will deactivate them.`)) return;
 
             try {
-                const table = type === 'advisor' ? 'advisors' : type === 'technician' ? 'technicians' : 'lube_techs';
-                if (useSupabase && type !== 'technician' && id && id !== 'new') {
-                    await db.from(table).update({ is_active: false }).eq('id', parseInt(id));
-                }
-
                 // Update local data
                 const arr = type === 'advisor' ? advisors : type === 'technician' ? technicians : lubeTechs;
                 const idx = arr.findIndex(a => a.id === parseInt(id));
