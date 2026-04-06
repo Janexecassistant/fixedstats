@@ -1719,10 +1719,11 @@
                     parts_day: partsDay
                 });
 
-                // Save advisor entries to localStorage
-                document.querySelectorAll('#dailyAdvisorBody tr').forEach(row => {
+                // Save advisor entries
+                const advRows = document.querySelectorAll('#dailyAdvisorBody tr');
+                for (const row of advRows) {
                     const advisorId = row.querySelector('.advisor-labor')?.dataset.advisor;
-                    if (!advisorId) return;
+                    if (!advisorId) continue;
                     const laborGross = parseFloat(row.querySelector('.advisor-labor').value) || 0;
                     const partsGross = parseFloat(row.querySelector('.advisor-parts').value) || 0;
                     const totalGross = laborGross + partsGross;
@@ -1745,7 +1746,7 @@
                         csi_score: csiScore,
                         mpvi_pct: mpviPct
                     });
-                });
+                }
 
                 showToast('Daily entry saved!');
                 updateDailyCalculations(); // refresh MTD
@@ -2382,7 +2383,8 @@
             try {
                 const { month, year } = getMonthYear(new Date());
 
-                document.querySelectorAll('#goalsBody tr').forEach(row => {
+                const goalRows = document.querySelectorAll('#goalsBody tr');
+                for (const row of goalRows) {
                     const storeId = row.querySelector('.goal-labor').dataset.store;
                     const laborGoal = parseFloat(row.querySelector('.goal-labor').value) || 0;
                     const partsGoal = parseFloat(row.querySelector('.goal-parts').value) || 0;
@@ -2398,7 +2400,7 @@
                         total_gross_goal: totalGoal,
                         gross_per_ro_target: perRoTarget
                     });
-                });
+                }
 
                 showToast('Goals saved successfully');
             } catch (error) {
@@ -3092,7 +3094,8 @@
             }
 
             try {
-                document.querySelectorAll('#rosterBody tr').forEach(row => {
+                const rosterRows = document.querySelectorAll('#rosterBody tr');
+                for (const row of rosterRows) {
                     const advisorId = parseInt(row.querySelector('.roster-training').dataset.advisor);
                     const trainingStatus = row.querySelector('.roster-training').value;
                     const xtimePct = parseFloat(row.querySelector('.roster-xtime')?.value) || null;
@@ -3115,7 +3118,7 @@
                         xtime_pct: xtimePct,
                         csi_region: csiRegion
                     });
-                });
+                }
 
                 showToast('Roster saved successfully');
             } catch (error) {
