@@ -1267,8 +1267,10 @@
                     try {
                         const row = { advisor_id: parseInt(entry.advisor_id), store_id: entry.store_id, entry_date: entry.entry_date,
                             ro_count: entry.ro_count || 0, cp_ros: entry.cp_ros || entry.cp_ro || 0,
-                            hours: entry.hours || 0, total_gross: entry.total_gross || 0,
+                            hours: entry.hours || 0, labor_gross: entry.labor_gross || 0,
+                            parts_gross: entry.parts_gross || 0, total_gross: entry.total_gross || 0,
                             csi_score: entry.csi_score || entry.csi || 0,
+                            mpvi_pct: entry.mpvi_pct || 0,
                             updated_at: new Date().toISOString() };
                         await db.from('advisor_entries').upsert(row, { onConflict: 'advisor_id,entry_date' });
                     } catch(e) { console.warn('Supabase saveAdvisorEntry failed', e); }
@@ -1646,12 +1648,14 @@
 
             // Advisor calculations
             document.querySelectorAll('#dailyAdvisorBody tr').forEach(row => {
-                const labor = parseFloat(row.querySelector('.advisor-labor')?.value) || 0;
+                const laborEl = row.querySelector('.advisor-labor');
+                if (!laborEl) return; // skip placeholder rows
+                const labor = parseFloat(laborEl.value) || 0;
                 const parts = parseFloat(row.querySelector('.advisor-parts')?.value) || 0;
                 const gross = labor + parts;
-                const ro = parseFloat(row.querySelector('.advisor-ro').value) || 0;
-                const cp = parseFloat(row.querySelector('.advisor-cp').value) || 0;
-                const hours = parseFloat(row.querySelector('.advisor-hours').value) || 0;
+                const ro = parseFloat(row.querySelector('.advisor-ro')?.value) || 0;
+                const cp = parseFloat(row.querySelector('.advisor-cp')?.value) || 0;
+                const hours = parseFloat(row.querySelector('.advisor-hours')?.value) || 0;
 
                 // Total Gross (auto-calc from labor + parts)
                 const grossCell = row.querySelector('.advisor-gross');
