@@ -15,16 +15,16 @@
 
         body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background-color: #f1f5f9;
-            color: #1e293b;
+            background-color: #eaeaea;
+            color: #1a1a1a;
         }
 
         /* Navigation */
         .navbar {
-            background-color: #1e3a5f;
+            background-color: #111111;
             color: white;
             padding: 0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
             position: sticky;
             top: 0;
             z-index: 100;
@@ -40,8 +40,13 @@
         .navbar-title {
             padding: 16px 24px;
             font-size: 18px;
-            font-weight: 600;
-            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            font-weight: 700;
+            border-right: 1px solid rgba(255, 255, 255, 0.15);
+            letter-spacing: 0.5px;
+        }
+
+        .navbar-title span {
+            color: #cc0000;
         }
 
         .nav-tabs {
@@ -75,7 +80,7 @@
 
         .nav-tab button.active {
             color: white;
-            border-bottom-color: #3b82f6;
+            border-bottom-color: #cc0000;
         }
 
         /* Main Content */
@@ -111,43 +116,44 @@
         .control-group label {
             font-size: 13px;
             font-weight: 600;
-            color: #475569;
+            color: #555;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
         .control-group input,
         .control-group select {
-            border: 1px solid #d1d5db;
+            border: 1px solid #c0c0c0;
             border-radius: 6px;
             padding: 8px 12px;
             font-size: 14px;
             background-color: white;
-            color: #1e293b;
+            color: #1a1a1a;
             min-width: 160px;
         }
 
         .control-group input:focus,
         .control-group select:focus {
             outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            border-color: #cc0000;
+            box-shadow: 0 0 0 3px rgba(204, 0, 0, 0.1);
         }
 
         /* Cards & Grids */
         .card {
             background-color: white;
             border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
             padding: 24px;
             margin-bottom: 24px;
+            border-top: 3px solid #cc0000;
         }
 
         .card-title {
             font-size: 16px;
             font-weight: 600;
             margin-bottom: 16px;
-            color: #1e293b;
+            color: #1a1a1a;
         }
 
         .kpi-grid {
@@ -160,14 +166,15 @@
         .kpi-card {
             background-color: white;
             border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
             padding: 20px;
+            border-left: 4px solid #cc0000;
         }
 
         .kpi-label {
             font-size: 13px;
             font-weight: 600;
-            color: #64748b;
+            color: #777;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 8px;
@@ -176,13 +183,13 @@
         .kpi-value {
             font-size: 28px;
             font-weight: 700;
-            color: #1e293b;
+            color: #1a1a1a;
             margin-bottom: 12px;
         }
 
         .kpi-subtext {
             font-size: 13px;
-            color: #64748b;
+            color: #777;
             margin-bottom: 12px;
         }
 
@@ -220,29 +227,29 @@
         }
 
         th {
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
+            background-color: #222;
+            border: 1px solid #333;
             padding: 12px;
             text-align: left;
             font-size: 13px;
             font-weight: 600;
-            color: #475569;
+            color: #fff;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
         td {
-            border: 1px solid #e2e8f0;
+            border: 1px solid #ddd;
             padding: 12px;
             font-size: 14px;
         }
 
         tr:nth-child(even) {
-            background-color: #f8fafc;
+            background-color: #f5f5f5;
         }
 
         tr:hover {
-            background-color: #f1f5f9;
+            background-color: #eee;
         }
 
         td input,
@@ -258,8 +265,8 @@
         td input:focus,
         td select:focus {
             outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+            border-color: #cc0000;
+            box-shadow: 0 0 0 2px rgba(204, 0, 0, 0.1);
         }
 
         .input-yellow {
@@ -288,7 +295,7 @@
 
         /* Buttons */
         .btn {
-            background-color: #2563eb;
+            background-color: #cc0000;
             color: white;
             border: none;
             border-radius: 6px;
@@ -300,11 +307,27 @@
         }
 
         .btn:hover {
-            background-color: #1d4ed8;
+            background-color: #a30000;
         }
 
         .btn:active {
-            background-color: #1e40af;
+            background-color: #8b0000;
+        }
+
+        .btn-secondary {
+            background-color: #555;
+        }
+
+        .btn-secondary:hover {
+            background-color: #333;
+        }
+
+        .btn-danger {
+            background-color: #8b0000;
+        }
+
+        .btn-danger:hover {
+            background-color: #5c0000;
         }
 
         .btn-group {
@@ -352,8 +375,8 @@
             display: inline-block;
             width: 16px;
             height: 16px;
-            border: 3px solid #e2e8f0;
-            border-top-color: #3b82f6;
+            border: 3px solid #ddd;
+            border-top-color: #cc0000;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
@@ -365,7 +388,7 @@
         .empty-state {
             text-align: center;
             padding: 40px 20px;
-            color: #64748b;
+            color: #777;
         }
 
         .empty-state-icon {
@@ -444,7 +467,7 @@
     <!-- Navigation -->
     <nav class="navbar">
         <div class="navbar-content">
-            <div class="navbar-title">Dyer Service Intelligence</div>
+            <div class="navbar-title">Dyer <span>Service Intelligence</span></div>
             <ul class="nav-tabs">
                 <li class="nav-tab"><button class="nav-btn active" data-tab="daily">Daily Entry</button></li>
                 <li class="nav-tab"><button class="nav-btn" data-tab="dashboard">Store Dashboard</button></li>
@@ -452,6 +475,7 @@
                 <li class="nav-tab"><button class="nav-btn" data-tab="advisor">Advisor View</button></li>
                 <li class="nav-tab"><button class="nav-btn" data-tab="goals">Goals & Settings</button></li>
                 <li class="nav-tab"><button class="nav-btn" data-tab="roster">Capacity & Roster</button></li>
+                <li class="nav-tab"><button class="nav-btn" data-tab="staff">Staff Management</button></li>
             </ul>
         </div>
     </nav>
@@ -735,6 +759,59 @@
                 </div>
             </div>
         </div>
+        <!-- TAB 7: STAFF MANAGEMENT -->
+        <div id="staff" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">Manage Advisors</h2>
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Store</label>
+                        <select id="staffStoreSelect">
+                            <option value="">Select a store...</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table id="staffAdvisorTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Employee ID</th>
+                                <th>Status</th>
+                                <th style="width:120px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staffAdvisorBody">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="btn-group">
+                    <button class="btn" id="addAdvisorBtn">+ Add Advisor</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Manage Lube Techs</h2>
+                <div style="overflow-x: auto;">
+                    <table id="staffTechTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Employee ID</th>
+                                <th>Pay Plan</th>
+                                <th>Status</th>
+                                <th style="width:120px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staffTechBody">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="btn-group">
+                    <button class="btn" id="addTechBtn">+ Add Lube Tech</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -751,6 +828,7 @@
         // ============================================================================
         let stores = [];
         let advisors = [];
+        let lubeTechs = [];
         let currentDate = new Date();
         let charts = {};
 
@@ -813,6 +891,7 @@
                 if (tabId === 'executive') loadExecutive();
                 if (tabId === 'advisor') loadAdvisor();
                 if (tabId === 'roster') loadRoster();
+                if (tabId === 'staff') loadStaffManagement();
             });
         });
 
@@ -851,6 +930,29 @@
             { id: 21, store_id: 'mazda', name: 'Joseph Pelszynski', employee_id: '2033', is_active: true },
             { id: 22, store_id: 'mazda', name: 'Tomas Salinas', employee_id: '2062', is_active: true }
         ];
+        const FALLBACK_TECHS = [
+            { id: 1, store_id: 'dcvb', name: 'Matthew Peacock', employee_id: null, pay_plan: null, is_active: true },
+            { id: 2, store_id: 'dcvb', name: 'Austin Carter', employee_id: null, pay_plan: null, is_active: true },
+            { id: 3, store_id: 'dcvb', name: 'Brandon Gonzales', employee_id: null, pay_plan: null, is_active: true },
+            { id: 4, store_id: 'dcvb', name: 'Mitchell Rucks', employee_id: null, pay_plan: null, is_active: true },
+            { id: 5, store_id: 'dcvb', name: 'Cleve Wilder', employee_id: null, pay_plan: null, is_active: true },
+            { id: 6, store_id: 'dcfp', name: 'Hector Santiago', employee_id: null, pay_plan: null, is_active: true },
+            { id: 7, store_id: 'dcfp', name: 'Trey Tzimenatos', employee_id: null, pay_plan: null, is_active: true },
+            { id: 8, store_id: 'kia', name: 'Jose Coyt', employee_id: null, pay_plan: null, is_active: true },
+            { id: 9, store_id: 'kia', name: 'Quincy Boyd', employee_id: null, pay_plan: null, is_active: true },
+            { id: 10, store_id: 'kia', name: 'Bradly Jean', employee_id: null, pay_plan: null, is_active: true },
+            { id: 11, store_id: 'dclw', name: 'Gilbert Alicea', employee_id: null, pay_plan: null, is_active: true },
+            { id: 12, store_id: 'dclw', name: 'Jeriel Alicea', employee_id: null, pay_plan: null, is_active: true },
+            { id: 13, store_id: 'dclw', name: 'Yeriel Vazquez', employee_id: null, pay_plan: null, is_active: true },
+            { id: 14, store_id: 'subaru', name: 'Donovan Sheldon', employee_id: null, pay_plan: null, is_active: true },
+            { id: 15, store_id: 'subaru', name: 'Corey Alexander', employee_id: null, pay_plan: null, is_active: true },
+            { id: 16, store_id: 'subaru', name: 'Clinton Dansby', employee_id: null, pay_plan: null, is_active: true },
+            { id: 17, store_id: 'subaru', name: 'Anthony Trepiccione', employee_id: null, pay_plan: null, is_active: true },
+            { id: 18, store_id: 'subaru', name: 'Nick Dementei', employee_id: null, pay_plan: null, is_active: true },
+            { id: 19, store_id: 'mazda', name: 'Donovan Sheldon', employee_id: null, pay_plan: null, is_active: true },
+            { id: 20, store_id: 'mazda', name: 'Corey Alexander', employee_id: null, pay_plan: null, is_active: true },
+            { id: 21, store_id: 'mazda', name: 'Anthony Trepiccione', employee_id: null, pay_plan: null, is_active: true }
+        ];
         let useSupabase = true;
 
         // ============================================================================
@@ -869,6 +971,7 @@
                     useSupabase = false;
                     stores = FALLBACK_STORES;
                     advisors = FALLBACK_ADVISORS;
+                    lubeTechs = FALLBACK_TECHS;
                 } else {
                     stores = storesData;
                     const { data: advisorsData } = await db
@@ -877,6 +980,12 @@
                         .eq('is_active', true)
                         .order('name');
                     advisors = advisorsData || FALLBACK_ADVISORS;
+                    const { data: techsData } = await db
+                        .from('lube_techs')
+                        .select('*')
+                        .eq('is_active', true)
+                        .order('name');
+                    lubeTechs = techsData || FALLBACK_TECHS;
                 }
 
                 // Set default date to today
@@ -904,6 +1013,7 @@
                 useSupabase = false;
                 stores = FALLBACK_STORES;
                 advisors = FALLBACK_ADVISORS;
+                lubeTechs = FALLBACK_TECHS;
                 document.getElementById('dailyDatePicker').valueAsDate = new Date();
                 document.getElementById('dailyDayNumber').value = new Date().getDate();
                 document.getElementById('dailyDaysInMonth').value = getDaysInMonth(new Date());
@@ -919,7 +1029,8 @@
                 'dailyStoreSelect',
                 'dashboardStoreSelect',
                 'goalsStoreSelect',
-                'rosterStoreSelect'
+                'rosterStoreSelect',
+                'staffStoreSelect'
             ];
 
             selects.forEach(selectId => {
@@ -997,6 +1108,11 @@
 
             // Save roster
             document.getElementById('saveRosterBtn').addEventListener('click', saveRoster);
+
+            // Staff management
+            document.getElementById('staffStoreSelect').addEventListener('change', loadStaffManagement);
+            document.getElementById('addAdvisorBtn').addEventListener('click', addNewAdvisor);
+            document.getElementById('addTechBtn').addEventListener('click', addNewTech);
         }
 
         // ============================================================================
@@ -1332,8 +1448,8 @@
                     datasets: [{
                         label: 'Daily Total Gross',
                         data: dailyTotals,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderColor: '#cc0000',
+                        backgroundColor: 'rgba(204, 0, 0, 0.1)',
                         tension: 0.4,
                         fill: true
                     }]
@@ -1344,7 +1460,7 @@
                     datasets: [{
                         label: 'Total Gross MTD',
                         data: rankings.map(r => r.totalGross),
-                        backgroundColor: '#3b82f6'
+                        backgroundColor: '#cc0000'
                     }]
                 });
             } catch (error) {
@@ -1466,7 +1582,7 @@
 
                 // Grand total
                 html += `
-                    <tr style="background-color: #dbeafe; font-weight: 600;">
+                    <tr style="background-color: #e0e0e0; font-weight: 600;">
                         <td>TOTAL</td>
                         <td>${formatCurrency(totalLabor)}</td>
                         <td>${formatCurrency(totalParts)}</td>
@@ -1487,7 +1603,7 @@
                     datasets: [{
                         label: 'Total Gross MTD',
                         data: storeSummaries.map(s => s.totalGross),
-                        backgroundColor: '#3b82f6'
+                        backgroundColor: '#cc0000'
                     }]
                 });
 
@@ -1610,8 +1726,8 @@
                     datasets: [{
                         label: 'Daily Total Gross',
                         data: grossValues,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderColor: '#cc0000',
+                        backgroundColor: 'rgba(204, 0, 0, 0.1)',
                         tension: 0.4,
                         fill: true
                     }]
@@ -1812,6 +1928,197 @@
                 console.error('Save roster error:', error);
                 showToast('Failed to save roster', 'error');
             }
+        }
+
+        // ============================================================================
+        // TAB 7: STAFF MANAGEMENT
+        // ============================================================================
+        function loadStaffManagement() {
+            const storeId = document.getElementById('staffStoreSelect').value;
+            if (!storeId) {
+                document.getElementById('staffAdvisorBody').innerHTML = '';
+                document.getElementById('staffTechBody').innerHTML = '';
+                return;
+            }
+
+            // Advisors for this store
+            const storeAdvisors = advisors.filter(a => a.store_id === storeId);
+            let advHtml = '';
+            storeAdvisors.forEach(adv => {
+                advHtml += `
+                    <tr data-id="${adv.id}" data-type="advisor">
+                        <td><input type="text" class="staff-name" value="${adv.name}" style="font-weight:600"></td>
+                        <td><input type="text" class="staff-empid" value="${adv.employee_id || ''}" placeholder="—"></td>
+                        <td>
+                            <select class="staff-status">
+                                <option value="true" ${adv.is_active !== false ? 'selected' : ''}>Active</option>
+                                <option value="false" ${adv.is_active === false ? 'selected' : ''}>Inactive</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="btn" style="padding:6px 12px;font-size:12px;" onclick="saveStaffRow(this, 'advisor')">Save</button>
+                            <button class="btn btn-danger" style="padding:6px 12px;font-size:12px;" onclick="removeStaffRow(this, 'advisor')">Remove</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            document.getElementById('staffAdvisorBody').innerHTML = advHtml;
+
+            // Techs for this store
+            const storeTechs = lubeTechs.filter(t => t.store_id === storeId);
+            let techHtml = '';
+            storeTechs.forEach(tech => {
+                techHtml += `
+                    <tr data-id="${tech.id}" data-type="tech">
+                        <td><input type="text" class="staff-name" value="${tech.name}" style="font-weight:600"></td>
+                        <td><input type="text" class="staff-empid" value="${tech.employee_id || ''}" placeholder="—"></td>
+                        <td><input type="text" class="staff-payplan" value="${tech.pay_plan || ''}" placeholder="—"></td>
+                        <td>
+                            <select class="staff-status">
+                                <option value="true" ${tech.is_active !== false ? 'selected' : ''}>Active</option>
+                                <option value="false" ${tech.is_active === false ? 'selected' : ''}>Inactive</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="btn" style="padding:6px 12px;font-size:12px;" onclick="saveStaffRow(this, 'tech')">Save</button>
+                            <button class="btn btn-danger" style="padding:6px 12px;font-size:12px;" onclick="removeStaffRow(this, 'tech')">Remove</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            document.getElementById('staffTechBody').innerHTML = techHtml;
+        }
+
+        async function saveStaffRow(btn, type) {
+            const row = btn.closest('tr');
+            const id = row.dataset.id;
+            const name = row.querySelector('.staff-name').value.trim();
+            const empId = row.querySelector('.staff-empid').value.trim() || null;
+            const isActive = row.querySelector('.staff-status').value === 'true';
+            const storeId = document.getElementById('staffStoreSelect').value;
+
+            if (!name) { showToast('Name is required', 'error'); return; }
+
+            const table = type === 'advisor' ? 'advisors' : 'lube_techs';
+            const record = { name, employee_id: empId, is_active: isActive, store_id: storeId };
+
+            if (type === 'tech') {
+                record.pay_plan = row.querySelector('.staff-payplan')?.value.trim() || null;
+            }
+
+            try {
+                if (id && id !== 'new') {
+                    record.id = parseInt(id);
+                    if (useSupabase) {
+                        await db.from(table).upsert(record);
+                    }
+                    // Update local data
+                    const arr = type === 'advisor' ? advisors : lubeTechs;
+                    const idx = arr.findIndex(a => a.id === parseInt(id));
+                    if (idx >= 0) Object.assign(arr[idx], record);
+                } else {
+                    if (useSupabase) {
+                        const { data } = await db.from(table).insert(record).select().single();
+                        if (data) {
+                            record.id = data.id;
+                            row.dataset.id = data.id;
+                        }
+                    } else {
+                        const arr = type === 'advisor' ? advisors : lubeTechs;
+                        record.id = Math.max(0, ...arr.map(a => a.id)) + 1;
+                        row.dataset.id = record.id;
+                    }
+                    const arr = type === 'advisor' ? advisors : lubeTechs;
+                    arr.push(record);
+                }
+
+                // Refresh dropdowns
+                if (type === 'advisor') populateAdvisorSelect();
+                showToast(`${type === 'advisor' ? 'Advisor' : 'Tech'} saved`);
+            } catch (error) {
+                console.error('Save staff error:', error);
+                showToast('Failed to save', 'error');
+            }
+        }
+
+        async function removeStaffRow(btn, type) {
+            const row = btn.closest('tr');
+            const id = row.dataset.id;
+            const name = row.querySelector('.staff-name').value;
+
+            if (!confirm(`Remove ${name}? This will deactivate them.`)) return;
+
+            try {
+                const table = type === 'advisor' ? 'advisors' : 'lube_techs';
+                if (useSupabase && id && id !== 'new') {
+                    await db.from(table).update({ is_active: false }).eq('id', parseInt(id));
+                }
+
+                // Update local data
+                const arr = type === 'advisor' ? advisors : lubeTechs;
+                const idx = arr.findIndex(a => a.id === parseInt(id));
+                if (idx >= 0) arr[idx].is_active = false;
+
+                row.remove();
+                if (type === 'advisor') populateAdvisorSelect();
+                showToast(`${name} deactivated`);
+            } catch (error) {
+                console.error('Remove staff error:', error);
+                showToast('Failed to remove', 'error');
+            }
+        }
+
+        function addNewAdvisor() {
+            const storeId = document.getElementById('staffStoreSelect').value;
+            if (!storeId) { showToast('Select a store first', 'error'); return; }
+
+            const tbody = document.getElementById('staffAdvisorBody');
+            const row = document.createElement('tr');
+            row.dataset.id = 'new';
+            row.dataset.type = 'advisor';
+            row.innerHTML = `
+                <td><input type="text" class="staff-name" value="" placeholder="Enter name..." style="font-weight:600"></td>
+                <td><input type="text" class="staff-empid" value="" placeholder="Employee ID"></td>
+                <td>
+                    <select class="staff-status">
+                        <option value="true" selected>Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </td>
+                <td>
+                    <button class="btn" style="padding:6px 12px;font-size:12px;" onclick="saveStaffRow(this, 'advisor')">Save</button>
+                    <button class="btn btn-danger" style="padding:6px 12px;font-size:12px;" onclick="this.closest('tr').remove()">Cancel</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+            row.querySelector('.staff-name').focus();
+        }
+
+        function addNewTech() {
+            const storeId = document.getElementById('staffStoreSelect').value;
+            if (!storeId) { showToast('Select a store first', 'error'); return; }
+
+            const tbody = document.getElementById('staffTechBody');
+            const row = document.createElement('tr');
+            row.dataset.id = 'new';
+            row.dataset.type = 'tech';
+            row.innerHTML = `
+                <td><input type="text" class="staff-name" value="" placeholder="Enter name..." style="font-weight:600"></td>
+                <td><input type="text" class="staff-empid" value="" placeholder="Employee ID"></td>
+                <td><input type="text" class="staff-payplan" value="" placeholder="Pay plan"></td>
+                <td>
+                    <select class="staff-status">
+                        <option value="true" selected>Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </td>
+                <td>
+                    <button class="btn" style="padding:6px 12px;font-size:12px;" onclick="saveStaffRow(this, 'tech')">Save</button>
+                    <button class="btn btn-danger" style="padding:6px 12px;font-size:12px;" onclick="this.closest('tr').remove()">Cancel</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+            row.querySelector('.staff-name').focus();
         }
 
         // ============================================================================
