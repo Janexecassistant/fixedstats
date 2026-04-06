@@ -1482,8 +1482,8 @@
                 // Load advisor entries from localStorage
                 const advisorEntries = LS.getAdvisorEntries().filter(d => d.store_id === storeId && d.entry_date === ds);
 
-                // Get store advisors
-                const storeAdvisors = advisors.filter(a => a.store_id === storeId);
+                // Get active store advisors only
+                const storeAdvisors = advisors.filter(a => a.store_id === storeId && a.is_active !== false);
 
                 // Build advisor rows
                 let html = '';
@@ -3046,8 +3046,9 @@
             const storeAdvisors = allMode ? advisors : advisors.filter(a => a.store_id === storeId);
             let advHtml = '';
             storeAdvisors.forEach(adv => {
+                const inactiveStyle = adv.is_active === false ? 'opacity:0.45;' : '';
                 advHtml += `
-                    <tr data-id="${adv.id}" data-type="advisor">
+                    <tr data-id="${adv.id}" data-type="advisor" style="${inactiveStyle}">
                         <td><input type="text" class="staff-name" value="${adv.name}" style="font-weight:600">${allMode ? ' <span style="color:#888;font-size:11px">'+getStoreName(adv.store_id)+'</span>' : ''}</td>
                         <td><input type="text" class="staff-empid" value="${adv.employee_id || ''}" placeholder="—"></td>
                         <td>
@@ -3069,8 +3070,9 @@
             const storeTechnicians = allMode ? technicians : technicians.filter(t => t.store_id === storeId);
             let technicianHtml = '';
             storeTechnicians.forEach(tech => {
+                const inactiveStyle = tech.is_active === false ? 'opacity:0.45;' : '';
                 technicianHtml += `
-                    <tr data-id="${tech.id}" data-type="technician">
+                    <tr data-id="${tech.id}" data-type="technician" style="${inactiveStyle}">
                         <td><input type="text" class="staff-name" value="${tech.name}" style="font-weight:600"></td>
                         <td><input type="text" class="staff-empid" value="${tech.employee_id || ''}" placeholder="—"></td>
                         <td><input type="text" class="staff-specialty" value="${tech.specialty || ''}" placeholder="A/B/C"></td>
@@ -3093,8 +3095,9 @@
             const storeTechs = allMode ? lubeTechs : lubeTechs.filter(t => t.store_id === storeId);
             let techHtml = '';
             storeTechs.forEach(tech => {
+                const inactiveStyle = tech.is_active === false ? 'opacity:0.45;' : '';
                 techHtml += `
-                    <tr data-id="${tech.id}" data-type="tech">
+                    <tr data-id="${tech.id}" data-type="tech" style="${inactiveStyle}">
                         <td><input type="text" class="staff-name" value="${tech.name}" style="font-weight:600"></td>
                         <td><input type="text" class="staff-empid" value="${tech.employee_id || ''}" placeholder="—"></td>
                         <td><input type="text" class="staff-payplan" value="${tech.pay_plan || ''}" placeholder="—"></td>
