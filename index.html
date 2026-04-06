@@ -1242,6 +1242,42 @@
                 const idx = all.findIndex(r => r.advisor_id === entry.advisor_id && r.week_start === entry.week_start);
                 if (idx >= 0) all[idx] = entry; else all.push(entry);
                 this._set('dyer_roster_entries', all);
+            },
+
+            // Staff persistence — saves changes (adds, edits, deactivations) on top of fallback arrays
+            getStaffOverrides() { return this._get('dyer_staff_overrides'); },
+            saveStaffOverrides(overrides) { this._set('dyer_staff_overrides', overrides); },
+
+            // Apply saved overrides on top of fallback arrays
+            applyStaffOverrides(fallbackAdvisors, fallbackTechs, fallbackLubes, fallbackTechnicians) {
+                const overrides = this.getStaffOverrides();
+                if (!overrides || !overrides.length) {
+                    return { advisors: [...fallbackAdvisors], lubeTechs: [...fallbackLubes], technicians: [...fallbackTechnicians] };
+                }
+                // Start with deep copies of fallbacks
+                let advs = fallbackAdvisors.map(a => ({...a}));
+                let lubes = fallbackLubes.map(t => ({...t}));
+                let techs = fallbackTechnicians.map(t => ({...t}));
+
+                overrides.forEach(o => {
+                    const arr = o.type === 'advisor' ? advs : o.type === 'technician' ? techs : lubes;
+                    const idx = arr.findIndex(x => x.id === o.id);
+                    if (idx >= 0) {
+                        Object.assign(arr[idx], o.data);
+                    } else if (o.action === 'add') {
+                        arr.push(o.data);
+                    }
+                });
+                return { advisors: advs, lubeTechs: lubes, technicians: techs };
+            },
+
+            // Record a staff change
+            recordStaffChange(type, id, data, action = 'update') {
+                const overrides = this.getStaffOverrides();
+                const idx = overrides.findIndex(o => o.type === type && o.id === id);
+                const entry = { type, id, data, action };
+                if (idx >= 0) overrides[idx] = entry; else overrides.push(entry);
+                this.saveStaffOverrides(overrides);
             }
         };
 
@@ -1250,11 +1286,12 @@
         // ============================================================================
         async function initialize() {
             try {
-                // Use local fallback data (Supabase sync planned for later)
+                // Use local fallback data with any saved staff changes applied
                 stores = FALLBACK_STORES;
-                advisors = FALLBACK_ADVISORS;
-                lubeTechs = FALLBACK_TECHS;
-                technicians = FALLBACK_TECHNICIANS;
+                const staffData = LS.applyStaffOverrides(FALLBACK_ADVISORS, null, FALLBACK_TECHS, FALLBACK_TECHNICIANS);
+                advisors = staffData.advisors;
+                lubeTechs = staffData.lubeTechs;
+                technicians = staffData.technicians;
 
                 // Set default date to today
                 const today = new Date();
@@ -1281,9 +1318,10 @@
                 // Even on error, load fallback data so the UI works
                 useSupabase = false;
                 stores = FALLBACK_STORES;
-                advisors = FALLBACK_ADVISORS;
-                lubeTechs = FALLBACK_TECHS;
-                technicians = FALLBACK_TECHNICIANS;
+                const fbStaff = LS.applyStaffOverrides(FALLBACK_ADVISORS, null, FALLBACK_TECHS, FALLBACK_TECHNICIANS);
+                advisors = fbStaff.advisors;
+                lubeTechs = fbStaff.lubeTechs;
+                technicians = fbStaff.technicians;
                 const fallbackToday = new Date();
                 document.getElementById('dailyDatePicker').valueAsDate = fallbackToday;
                 document.getElementById('dailyDayNumber').value = getWorkingDayOfMonth(fallbackToday);
@@ -3101,17 +3139,16 @@
 
                 if (id && id !== 'new') {
                     record.id = parseInt(id);
-                    // Update local data
                     const idx = arr.findIndex(a => a.id === parseInt(id));
                     if (idx >= 0) Object.assign(arr[idx], record);
+                    LS.recordStaffChange(type, record.id, record, 'update');
                 } else {
-                    // Generate new ID for new records
                     record.id = Math.max(0, ...arr.map(a => a.id)) + 1;
                     row.dataset.id = record.id;
                     arr.push(record);
+                    LS.recordStaffChange(type, record.id, record, 'add');
                 }
 
-                // Refresh dropdowns
                 if (type === 'advisor') populateAdvisorSelect();
                 showToast(`${type === 'advisor' ? 'Advisor' : 'Tech'} saved`);
             } catch (error) {
@@ -3128,10 +3165,13 @@
             if (!confirm(`Remove ${name}? This will deactivate them.`)) return;
 
             try {
-                // Update local data
                 const arr = type === 'advisor' ? advisors : type === 'technician' ? technicians : lubeTechs;
-                const idx = arr.findIndex(a => a.id === parseInt(id));
-                if (idx >= 0) arr[idx].is_active = false;
+                const numId = parseInt(id);
+                const idx = arr.findIndex(a => a.id === numId);
+                if (idx >= 0) {
+                    arr[idx].is_active = false;
+                    LS.recordStaffChange(type, numId, { ...arr[idx], is_active: false }, 'update');
+                }
 
                 row.remove();
                 if (type === 'advisor') populateAdvisorSelect();
