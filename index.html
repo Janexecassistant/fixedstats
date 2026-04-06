@@ -1062,6 +1062,11 @@
         function dateToString(date) {
             return date.toISOString().split('T')[0];
         }
+        // Normalize a date picker value (UTC midnight) to local date to avoid timezone offset
+        function pickerDate(date) {
+            if (!date) return new Date();
+            return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+        }
 
         function getWeekStart(date) {
             const d = new Date(date);
@@ -1499,7 +1504,7 @@
 
             // Daily Entry
             document.getElementById('dailyDatePicker').addEventListener('change', () => {
-                const date = document.getElementById('dailyDatePicker').valueAsDate;
+                const date = pickerDate(document.getElementById('dailyDatePicker').valueAsDate);
                 document.getElementById('dailyDayNumber').value = getWorkingDayOfMonth(date);
                 const wd = getWorkingDaysInMonth(date.getFullYear(), date.getMonth() + 1);
                 document.getElementById('dailyDaysInMonth').value = wd.totalDays;
@@ -1560,7 +1565,7 @@
 
         async function loadDailyEntry() {
             const storeId = getSelectedStore();
-            const date = document.getElementById('dailyDatePicker').valueAsDate;
+            const date = pickerDate(document.getElementById('dailyDatePicker').valueAsDate);
 
             if (!storeId) {
                 document.getElementById('dailyAdvisorBody').innerHTML = '';
@@ -1632,7 +1637,7 @@
             const laborDay = parseFloat(document.getElementById('laborDay').value) || 0;
             const partsDay = parseFloat(document.getElementById('partsDay').value) || 0;
             const storeId = getSelectedStore();
-            const date = document.getElementById('dailyDatePicker').valueAsDate;
+            const date = pickerDate(document.getElementById('dailyDatePicker').valueAsDate);
             const dayNum = parseInt(document.getElementById('dailyDayNumber').value) || 0;
             const daysInMonth = parseInt(document.getElementById('dailyDaysInMonth').value) || 0;
 
@@ -1695,7 +1700,7 @@
 
         async function saveDailyEntry() {
             const storeId = getSelectedStore();
-            const date = document.getElementById('dailyDatePicker').valueAsDate;
+            const date = pickerDate(document.getElementById('dailyDatePicker').valueAsDate);
             const dayNum = parseInt(document.getElementById('dailyDayNumber').value);
             const daysInMonth = parseInt(document.getElementById('dailyDaysInMonth').value);
             const laborDay = parseFloat(document.getElementById('laborDay').value) || 0;
@@ -2459,8 +2464,9 @@
             // Count working days (Mon-Fri + Sat) from 1st of month up to and including date
             const year = date.getFullYear();
             const month = date.getMonth();
+            const targetDate = date.getDate();
             let count = 0;
-            for (let d = 1; d <= date.getDate(); d++) {
+            for (let d = 1; d <= targetDate; d++) {
                 const day = new Date(year, month, d).getDay();
                 if (day >= 1 && day <= 6) count++; // Mon-Sat
             }
@@ -2510,7 +2516,7 @@
 
         async function loadRoster() {
             const storeId = getSelectedStore();
-            const weekDate = document.getElementById('rosterWeekPicker').valueAsDate;
+            const weekDate = pickerDate(document.getElementById('rosterWeekPicker').valueAsDate);
             const allMode = isAllStores();
 
             if (!storeId) {
@@ -2869,7 +2875,7 @@
 
         function saveTechWeekly(tableBodyId, techType) {
             const storeId = getSelectedStore();
-            const weekDate = document.getElementById('rosterWeekPicker').valueAsDate;
+            const weekDate = pickerDate(document.getElementById('rosterWeekPicker').valueAsDate);
             const wsKey = dateToString(getWeekStart(weekDate));
             if (!storeId || isAllStores()) { showToast('Select a specific store to save', 'error'); return; }
 
@@ -3085,7 +3091,7 @@
 
         async function saveRoster() {
             const storeId = getSelectedStore();
-            const weekDate = document.getElementById('rosterWeekPicker').valueAsDate;
+            const weekDate = pickerDate(document.getElementById('rosterWeekPicker').valueAsDate);
             const weekStart = getWeekStart(weekDate);
 
             if (!storeId || isAllStores()) {
