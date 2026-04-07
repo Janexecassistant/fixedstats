@@ -587,8 +587,8 @@
             <div class="login-error" id="loginError"></div>
             <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="login-field">
-                    <label for="loginUsername">Username</label>
-                    <input type="text" id="loginUsername" placeholder="Enter your username" required autofocus>
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" placeholder="Enter your email address" required autofocus>
                 </div>
                 <div class="login-field">
                     <label for="loginPassword">Password</label>
@@ -619,7 +619,6 @@
                 <li class="nav-tab"><button class="nav-btn" data-tab="goals">Goals & Settings</button></li>
                 <li class="nav-tab"><button class="nav-btn" data-tab="roster">Capacity & Roster</button></li>
                 <li class="nav-tab"><button class="nav-btn" id="adminConsoleTab" data-tab="admin" style="display:none;">Admin Console</button></li>
-                <li class="nav-tab"><button class="nav-btn" data-tab="staff">Staff Management</button></li>
             </ul>
             <div class="navbar-right">
                 <div class="user-info">
@@ -1090,14 +1089,13 @@
         <!-- ADMIN CONSOLE TAB -->
         <div id="admin" class="tab-content">
             <div class="card">
-                <h2 class="card-title">User Management</h2>
+                <h2 class="card-title">User Accounts</h2>
                 <div style="overflow-x: auto;">
                     <table id="userManagementTable">
                         <thead>
                             <tr>
                                 <th>Display Name</th>
-                                <th>Username</th>
-                                <th>Email</th>
+                                <th>Email (login)</th>
                                 <th>Role</th>
                                 <th>Status</th>
                                 <th>Last Login</th>
@@ -1122,12 +1120,8 @@
                             <input type="text" id="formDisplayName" required>
                         </div>
                         <div class="control-group">
-                            <label>Username *</label>
-                            <input type="text" id="formUsername" required>
-                        </div>
-                        <div class="control-group">
-                            <label>Email</label>
-                            <input type="email" id="formEmail">
+                            <label>Email *</label>
+                            <input type="email" id="formEmail" required>
                         </div>
                         <div class="control-group">
                             <label>Role *</label>
@@ -1154,10 +1148,8 @@
                     </div>
                 </form>
             </div>
-        </div>
 
-        <div id="staff" class="tab-content">
-            <div class="card">
+<div class="card">
                 <h2 class="card-title">Management Staff</h2>
                 <div style="overflow-x: auto;">
                     <table id="staffManagementTable">
@@ -1267,6 +1259,7 @@
                     <button class="btn" id="addTechBtn">+ Add Lube Tech</button>
                 </div>
             </div>
+        </div>
         </div> <!-- End appContent -->
     </div>
     </div>
@@ -1308,7 +1301,7 @@
 
         async function handleLogin(event) {
             event.preventDefault();
-            const username = document.getElementById('loginUsername').value.trim();
+            const username = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value.trim();
             const errorDiv = document.getElementById('loginError');
             errorDiv.style.display = 'none';
@@ -1424,17 +1417,13 @@
 
             // Show/hide tabs based on role
             const adminTab = document.getElementById('adminConsoleTab');
-            const staffTab = document.querySelector('[data-tab="staff"]');
 
             if (currentUser.role === 'admin') {
                 adminTab.style.display = 'block';
-                staffTab.style.display = 'block';
             } else if (currentUser.role === 'manager') {
                 adminTab.style.display = 'none';
-                staffTab.style.display = 'block';
             } else if (currentUser.role === 'executive') {
                 adminTab.style.display = 'none';
-                staffTab.style.display = 'none';
                 // Make content read-only for executive
                 document.querySelectorAll('input:not([readonly]), select').forEach(el => {
                     if (!el.closest('#loginScreen')) {
@@ -1529,15 +1518,17 @@
         async function saveNewUser(event) {
             event.preventDefault();
             const displayName = document.getElementById('formDisplayName').value.trim();
-            const username = document.getElementById('formUsername').value.trim();
             const email = document.getElementById('formEmail').value.trim();
             const role = document.getElementById('formRole').value;
             const password = document.getElementById('formPassword').value.trim();
 
-            if (!displayName || !username || !role || !password) {
+            if (!displayName || !email || !role || !password) {
                 showToast('Please fill in all required fields', 'error');
                 return;
             }
+
+            // Username is set to lowercase email
+            const username = email.toLowerCase().trim();
 
             const storeAccess = Array.from(document.querySelectorAll('.storeAccessCheckbox:checked'))
                 .map(cb => cb.value);
@@ -1713,7 +1704,7 @@
                 if (tabId === 'executive') loadExecutive();
                 if (tabId === 'advisor') loadAdvisor();
                 if (tabId === 'roster') loadRoster();
-                if (tabId === 'staff') loadStaffManagement();
+                if (tabId === 'admin') loadStaffManagement();
             });
         });
 
@@ -2128,7 +2119,7 @@
                 else if (activeTab === 'advisor') loadAdvisor();
                 else if (activeTab === 'goals') loadGoals();
                 else if (activeTab === 'roster') loadRoster();
-                else if (activeTab === 'staff') loadStaffManagement();
+                else if (activeTab === 'admin') loadStaffManagement();
             });
 
             // Daily Entry
