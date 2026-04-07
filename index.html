@@ -2845,17 +2845,25 @@
                 const partsGoal = goalsData?.parts_goal || 0;
                 const totalGrossGoal = goalsData?.total_gross_goal || 0;
 
-                // Calculate days worked and days in month for tracking projection
-                // Days worked = number of unique dates with data entered
-                const uniqueDaysWorked = new Set(dailyData.filter(d => (d.labor_day || 0) + (d.parts_day || 0) > 0).map(d => d.entry_date)).size;
+                // Calculate working day number and total working days in month for tracking projection
                 const wd = getWorkingDaysInMonth(year, month);
                 const daysInMonth = wd.totalDays || new Date(year, month, 0).getDate();
-                const daysWorked = uniqueDaysWorked || 1; // avoid divide by zero
+                // Use current working day number (not count of days with data)
+                const now = new Date();
+                let currentWorkingDay;
+                if (year === now.getFullYear() && month === (now.getMonth() + 1)) {
+                    // Current month — use today's working day number
+                    currentWorkingDay = getWorkingDayOfMonth(now);
+                } else {
+                    // Historical month — use total working days (month is complete)
+                    currentWorkingDay = daysInMonth;
+                }
+                const dayOfMonth = currentWorkingDay || 1; // avoid divide by zero
 
-                // Tracking = (Actual MTD / Days Worked) * Days in Month
-                const laborTracking = (laborMtd / daysWorked) * daysInMonth;
-                const partsTracking = (partsMtd / daysWorked) * daysInMonth;
-                const totalGrossTracking = (totalGrossMtd / daysWorked) * daysInMonth;
+                // Tracking = (Actual MTD / Working Day #) * Working Days in Month
+                const laborTracking = (laborMtd / dayOfMonth) * daysInMonth;
+                const partsTracking = (partsMtd / dayOfMonth) * daysInMonth;
+                const totalGrossTracking = (totalGrossMtd / dayOfMonth) * daysInMonth;
 
                 // Pace % is now tracking vs goal (projected end-of-month vs target)
                 const laborPace = laborGoal > 0 ? (laborTracking / laborGoal) * 100 : 0;
