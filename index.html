@@ -2603,14 +2603,26 @@
                 const partsGoal = goalsData?.parts_goal || 0;
                 const totalGrossGoal = goalsData?.total_gross_goal || 0;
 
-                const laborPace = laborGoal > 0 ? (laborMtd / laborGoal) * 100 : 0;
-                const partsPace = partsGoal > 0 ? (partsMtd / partsGoal) * 100 : 0;
-                const grossPace = totalGrossGoal > 0 ? (totalGrossMtd / totalGrossGoal) * 100 : 0;
+                // Calculate days worked and days in month for tracking projection
+                // Days worked = number of unique dates with data entered
+                const uniqueDaysWorked = new Set(dailyData.filter(d => (d.labor_day || 0) + (d.parts_day || 0) > 0).map(d => d.entry_date)).size;
+                const daysInMonth = parseInt(document.getElementById('dailyDaysInMonth')?.value) || new Date(year, month, 0).getDate();
+                const daysWorked = uniqueDaysWorked || 1; // avoid divide by zero
+
+                // Tracking = (Actual MTD / Days Worked) * Days in Month
+                const laborTracking = (laborMtd / daysWorked) * daysInMonth;
+                const partsTracking = (partsMtd / daysWorked) * daysInMonth;
+                const totalGrossTracking = (totalGrossMtd / daysWorked) * daysInMonth;
+
+                // Pace % is now tracking vs goal (projected end-of-month vs target)
+                const laborPace = laborGoal > 0 ? (laborTracking / laborGoal) * 100 : 0;
+                const partsPace = partsGoal > 0 ? (partsTracking / partsGoal) * 100 : 0;
+                const grossPace = totalGrossGoal > 0 ? (totalGrossTracking / totalGrossGoal) * 100 : 0;
 
                 document.getElementById('dashboardKpis').innerHTML = `
-                    ${createGoalPieCard('Labor', laborMtd, laborGoal, laborPace)}
-                    ${createGoalPieCard('Parts', partsMtd, partsGoal, partsPace)}
-                    ${createGoalPieCard('Total Gross', totalGrossMtd, totalGrossGoal, grossPace)}
+                    ${createGoalPieCard('Labor', laborMtd, laborTracking, laborGoal, laborPace)}
+                    ${createGoalPieCard('Parts', partsMtd, partsTracking, partsGoal, partsPace)}
+                    ${createGoalPieCard('Total Gross', totalGrossMtd, totalGrossTracking, totalGrossGoal, grossPace)}
                     ${createKpiCard('Avg Gross/RO', formatCurrency(avgGrossPerRo), 'All advisors', 100)}
                 `;
 
@@ -2715,31 +2727,53 @@
                     return `${dt.getMonth()+1}/${dt.getDate()}`;
                 });
 
-                // Build cumulative tracking line
-                let cumulative = 0;
-                const trackingLine = sortedDaily.map(d => {
-                    cumulative += (d.labor_day || 0) + (d.parts_day || 0);
-                    return cumulative;
+                // Actual MTD cumulative line
+                let cumActual = 0;
+                const actualLine = sortedDaily.map(d => {
+                    cumActual += (d.labor_day || 0) + (d.parts_day || 0);
+                    return cumActual;
                 });
 
-                // Build goal pace line (linear from 0 to goal across working days)
-                const workingDaysTotal = parseInt(document.getElementById('dailyDaysInMonth')?.value) || 26;
+                // Tracking projection line: at each day, project (cumulative / days worked so far) * days in month
+                let cumForTrack = 0;
+                let daysWorkedSoFar = 0;
+                const trackingProjectionLine = sortedDaily.map(d => {
+                    const dayGross = (d.labor_day || 0) + (d.parts_day || 0);
+                    cumForTrack += dayGross;
+                    if (dayGross > 0) daysWorkedSoFar++;
+                    return daysWorkedSoFar > 0 ? Math.round((cumForTrack / daysWorkedSoFar) * daysInMonth) : 0;
+                });
+
+                // Goal pace line (linear from 0 to goal across working days)
                 const goalPaceLine = sortedDaily.map((d, idx) => {
                     const dayNum = d.day_number || (idx + 1);
-                    return totalGrossGoal > 0 ? Math.round((totalGrossGoal / workingDaysTotal) * dayNum) : 0;
+                    return totalGrossGoal > 0 ? Math.round((totalGrossGoal / daysInMonth) * dayNum) : 0;
                 });
 
-                const chartDatasets = [{
-                    label: 'Tracking (MTD)',
-                    data: trackingLine,
-                    borderColor: '#4ade80',
-                    backgroundColor: 'rgba(74, 222, 128, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                    borderWidth: 3,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#4ade80'
-                }];
+                const chartDatasets = [
+                    {
+                        label: 'Actual MTD',
+                        data: actualLine,
+                        borderColor: '#60a5fa',
+                        backgroundColor: 'rgba(96, 165, 250, 0.08)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#60a5fa'
+                    },
+                    {
+                        label: 'Tracking (Projected)',
+                        data: trackingProjectionLine,
+                        borderColor: '#4ade80',
+                        borderDash: [6, 3],
+                        tension: 0.3,
+                        fill: false,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#4ade80'
+                    }
+                ];
 
                 if (totalGrossGoal > 0) {
                     chartDatasets.push({
@@ -2773,13 +2807,14 @@
             }
         }
 
-        function createGoalPieCard(label, actual, goal, pct) {
+        function createGoalPieCard(label, actual, tracking, goal, pct) {
             const pctVal = Math.min(pct, 100);
             // Brighter, more visible colors
             const color = pct >= 95 ? '#4ade80' : pct >= 80 ? '#facc15' : '#f97316';
             const colorGlow = pct >= 95 ? '#22c55e' : pct >= 80 ? '#eab308' : '#ea580c';
             const goalStr = goal > 0 ? formatCurrency(goal) : 'No goal set';
-            const trackingStr = formatCurrency(actual);
+            const trackingStr = formatCurrency(tracking);
+            const actualStr = formatCurrency(actual);
             const cx = 85, cy = 85;
 
             // Build tread blocks — larger tire
@@ -2864,9 +2899,20 @@
                             ${pct.toFixed(0)}%
                         </div>
                     </div>
-                    <div style="font-size:11px;color:#aaa;margin-top:2px;">TRACKING</div>
-                    <div class="kpi-value" style="font-size:20px;font-weight:800;">${trackingStr}</div>
-                    <div class="kpi-subtext" style="font-size:13px;color:#888;margin-top:2px;">Goal: ${goalStr}</div>
+                    <div style="display:flex;justify-content:space-around;margin-top:6px;gap:4px;">
+                        <div style="text-align:center;flex:1;">
+                            <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Actual</div>
+                            <div style="font-size:14px;font-weight:700;color:#ddd;">${actualStr}</div>
+                        </div>
+                        <div style="text-align:center;flex:1;border-left:1px solid #333;border-right:1px solid #333;padding:0 4px;">
+                            <div style="font-size:10px;color:${color};text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Tracking</div>
+                            <div style="font-size:14px;font-weight:800;color:${color};">${trackingStr}</div>
+                        </div>
+                        <div style="text-align:center;flex:1;">
+                            <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;">Goal</div>
+                            <div style="font-size:14px;font-weight:700;color:#ddd;">${goalStr}</div>
+                        </div>
+                    </div>
                 </div>
             `;
         }
