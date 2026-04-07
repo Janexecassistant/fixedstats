@@ -874,13 +874,15 @@
                                 <th>Labor ($)</th>
                                 <th>Parts ($)</th>
                                 <th>Total Gross ($)</th>
+                                <th>Total ROs</th>
                                 <th>CP ROs</th>
                                 <th>Hours</th>
                                 <th>CSI</th>
                                 <th>MPVI %</th>
-                                <th style="background:#1a1a1a;color:#cc0000;">CP Gross/RO</th>
-                                <th style="background:#1a1a1a;color:#cc0000;">CP HRO</th>
-                                <th style="background:#1a1a1a;color:#cc0000;">CP ELR</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">Gross/RO</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">CP$/RO</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">ELR</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">CP %</th>
                             </tr>
                         </thead>
                         <tbody id="dailyAdvisorBody">
@@ -2605,13 +2607,15 @@
                             <td><input type="number" class="input-yellow advisor-labor" data-advisor="${advisor.id}" value="${entry?.labor_gross || ''}" placeholder="0"></td>
                             <td><input type="number" class="input-yellow advisor-parts" data-advisor="${advisor.id}" value="${entry?.parts_gross || ''}" placeholder="0"></td>
                             <td class="input-gray advisor-gross" data-advisor="${advisor.id}" style="font-weight:700">-</td>
+                            <td><input type="number" class="input-yellow advisor-total-ros" data-advisor="${advisor.id}" value="${entry?.total_ros || ''}" placeholder="0"></td>
                             <td><input type="number" class="input-yellow advisor-cp" data-advisor="${advisor.id}" value="${entry?.cp_ros || ''}" placeholder="0"></td>
                             <td><input type="number" step="0.1" class="input-yellow advisor-hours" data-advisor="${advisor.id}" value="${entry?.hours || ''}" placeholder="0"></td>
                             <td><input type="number" step="0.1" class="input-yellow advisor-csi" data-advisor="${advisor.id}" value="${entry?.csi_score || ''}" placeholder="0"></td>
                             <td><input type="number" step="0.1" class="input-yellow advisor-mpvi" data-advisor="${advisor.id}" value="${entry?.mpvi_pct || ''}" placeholder="0"></td>
                             <td class="input-gray advisor-gross-ro" data-advisor="${advisor.id}" style="font-weight:700">-</td>
-                            <td class="input-gray advisor-hro" data-advisor="${advisor.id}" style="font-weight:700">-</td>
+                            <td class="input-gray advisor-cp-per-ro" data-advisor="${advisor.id}" style="font-weight:700">-</td>
                             <td class="input-gray advisor-elr" data-advisor="${advisor.id}" style="font-weight:700">-</td>
+                            <td class="input-gray advisor-cp-pct" data-advisor="${advisor.id}" style="font-weight:700">-</td>
                         </tr>
                     `;
                 });
@@ -2647,6 +2651,7 @@
                 const labor = parseFloat(laborEl.value) || 0;
                 const parts = parseFloat(row.querySelector('.advisor-parts')?.value) || 0;
                 const gross = labor + parts;
+                const totalRos = parseFloat(row.querySelector('.advisor-total-ros')?.value) || 0;
                 const cpRos = parseFloat(row.querySelector('.advisor-cp')?.value) || 0;
                 const hours = parseFloat(row.querySelector('.advisor-hours')?.value) || 0;
 
@@ -2654,17 +2659,21 @@
                 const grossCell = row.querySelector('.advisor-gross');
                 if (grossCell) grossCell.textContent = gross > 0 ? formatCurrency(gross) : '-';
 
-                // CP Gross/RO (based on CP ROs)
-                const cpGrossRo = cpRos > 0 ? gross / cpRos : 0;
-                row.querySelector('.advisor-gross-ro').textContent = cpGrossRo > 0 ? formatCurrency(cpGrossRo) : '-';
+                // Gross/RO (total gross / total ROs)
+                const grossRo = totalRos > 0 ? gross / totalRos : 0;
+                row.querySelector('.advisor-gross-ro').textContent = grossRo > 0 ? formatCurrency(grossRo) : '-';
 
-                // CP HRO (based on CP ROs)
-                const cpHro = cpRos > 0 ? hours / cpRos : 0;
-                row.querySelector('.advisor-hro').textContent = cpHro > 0 ? cpHro.toFixed(2) : '-';
+                // CP$ Per RO (total gross / CP ROs)
+                const cpPerRo = cpRos > 0 ? gross / cpRos : 0;
+                row.querySelector('.advisor-cp-per-ro').textContent = cpPerRo > 0 ? formatCurrency(cpPerRo) : '-';
 
-                // CP ELR (based on hours)
-                const cpElr = hours > 0 ? gross / hours : 0;
-                row.querySelector('.advisor-elr').textContent = cpElr > 0 ? formatCurrency(cpElr) : '-';
+                // ELR (gross / hours)
+                const elr = hours > 0 ? gross / hours : 0;
+                row.querySelector('.advisor-elr').textContent = elr > 0 ? formatCurrency(elr) : '-';
+
+                // CP % (CP ROs / Total ROs)
+                const cpPct = totalRos > 0 ? (cpRos / totalRos) * 100 : 0;
+                row.querySelector('.advisor-cp-pct').textContent = cpPct > 0 ? cpPct.toFixed(1) + '%' : '-';
             });
 
             // Compute MTD from localStorage
@@ -2736,6 +2745,7 @@
                     const laborGross = parseFloat(row.querySelector('.advisor-labor').value) || 0;
                     const partsGross = parseFloat(row.querySelector('.advisor-parts').value) || 0;
                     const totalGross = laborGross + partsGross;
+                    const totalRos = parseFloat(row.querySelector('.advisor-total-ros').value) || 0;
                     const cpRos = parseFloat(row.querySelector('.advisor-cp').value) || 0;
                     const hours = parseFloat(row.querySelector('.advisor-hours').value) || 0;
                     const csiScore = parseFloat(row.querySelector('.advisor-csi').value) || null;
@@ -2748,7 +2758,8 @@
                         labor_gross: laborGross,
                         parts_gross: partsGross,
                         total_gross: totalGross,
-                        ro_count: cpRos,
+                        ro_count: totalRos,
+                        total_ros: totalRos,
                         cp_ros: cpRos,
                         hours: hours,
                         csi_score: csiScore,
