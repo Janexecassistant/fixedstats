@@ -795,7 +795,8 @@
             <!-- Department Section -->
             <div class="card">
                 <h3 class="card-title">Department Sales</h3>
-                <table>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 32px;">
+                <table style="flex:1;">
                     <tbody>
                         <tr>
                             <td style="font-weight: 600;">Labor</td>
@@ -831,6 +832,27 @@
                         </tr>
                     </tbody>
                 </table>
+                <table style="flex:1;">
+                    <tbody>
+                        <tr>
+                            <td style="font-weight: 600;">Total ROs</td>
+                            <td><input type="number" id="dailyTotalRos" class="input-yellow" placeholder="0"></td>
+                        </tr>
+                        <tr style="background-color: #f3f4f6;">
+                            <td style="font-weight: 600;">Tracking RO Count</td>
+                            <td class="input-gray" id="dailyTrackingRos">0</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 600;">Store NPS</td>
+                            <td><input type="number" step="0.1" id="dailyStoreNps" class="input-yellow" placeholder="0"></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 600;">Region NPS</td>
+                            <td><input type="number" step="0.1" id="dailyRegionNps" class="input-yellow" placeholder="0"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                </div>
             </div>
 
             <!-- Advisor Section -->
@@ -844,15 +866,13 @@
                                 <th>Labor ($)</th>
                                 <th>Parts ($)</th>
                                 <th>Total Gross ($)</th>
-                                <th>RO Count</th>
                                 <th>CP ROs</th>
                                 <th>Hours</th>
                                 <th>CSI</th>
                                 <th>MPVI %</th>
-                                <th>Gross/RO</th>
-                                <th>CP %</th>
-                                <th>HRO</th>
-                                <th>ELR</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">CP Gross/RO</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">CP HRO</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">CP ELR</th>
                             </tr>
                         </thead>
                         <tbody id="dailyAdvisorBody">
@@ -2509,7 +2529,7 @@
             }
 
             if (isAllStores()) {
-                document.getElementById('dailyAdvisorBody').innerHTML = '<tr><td colspan="13" style="text-align:center;padding:24px;color:#888;">Select a specific store to enter daily data</td></tr>';
+                document.getElementById('dailyAdvisorBody').innerHTML = '<tr><td colspan="11" style="text-align:center;padding:24px;color:#888;">Select a specific store to enter daily data</td></tr>';
                 document.getElementById('laborDay').value = '';
                 document.getElementById('partsDay').value = '';
                 return;
@@ -2523,9 +2543,15 @@
                 if (dailyData) {
                     document.getElementById('laborDay').value = dailyData.labor_day || '';
                     document.getElementById('partsDay').value = dailyData.parts_day || '';
+                    document.getElementById('dailyTotalRos').value = dailyData.total_ros || '';
+                    document.getElementById('dailyStoreNps').value = dailyData.store_nps || '';
+                    document.getElementById('dailyRegionNps').value = dailyData.region_nps || '';
                 } else {
                     document.getElementById('laborDay').value = '';
                     document.getElementById('partsDay').value = '';
+                    document.getElementById('dailyTotalRos').value = '';
+                    document.getElementById('dailyStoreNps').value = '';
+                    document.getElementById('dailyRegionNps').value = '';
                 }
 
                 // Load advisor entries from localStorage
@@ -2544,15 +2570,13 @@
                             <td><input type="number" class="input-yellow advisor-labor" data-advisor="${advisor.id}" value="${entry?.labor_gross || ''}" placeholder="0"></td>
                             <td><input type="number" class="input-yellow advisor-parts" data-advisor="${advisor.id}" value="${entry?.parts_gross || ''}" placeholder="0"></td>
                             <td class="input-gray advisor-gross" data-advisor="${advisor.id}" style="font-weight:700">-</td>
-                            <td><input type="number" class="input-yellow advisor-ro" data-advisor="${advisor.id}" value="${entry?.ro_count || ''}" placeholder="0"></td>
                             <td><input type="number" class="input-yellow advisor-cp" data-advisor="${advisor.id}" value="${entry?.cp_ros || ''}" placeholder="0"></td>
                             <td><input type="number" step="0.1" class="input-yellow advisor-hours" data-advisor="${advisor.id}" value="${entry?.hours || ''}" placeholder="0"></td>
                             <td><input type="number" step="0.1" class="input-yellow advisor-csi" data-advisor="${advisor.id}" value="${entry?.csi_score || ''}" placeholder="0"></td>
                             <td><input type="number" step="0.1" class="input-yellow advisor-mpvi" data-advisor="${advisor.id}" value="${entry?.mpvi_pct || ''}" placeholder="0"></td>
-                            <td class="input-gray advisor-gross-ro" data-advisor="${advisor.id}">-</td>
-                            <td class="input-gray advisor-cp-pct" data-advisor="${advisor.id}">-</td>
-                            <td class="input-gray advisor-hro" data-advisor="${advisor.id}">-</td>
-                            <td class="input-gray advisor-elr" data-advisor="${advisor.id}">-</td>
+                            <td class="input-gray advisor-gross-ro" data-advisor="${advisor.id}" style="font-weight:700">-</td>
+                            <td class="input-gray advisor-hro" data-advisor="${advisor.id}" style="font-weight:700">-</td>
+                            <td class="input-gray advisor-elr" data-advisor="${advisor.id}" style="font-weight:700">-</td>
                         </tr>
                     `;
                 });
@@ -2581,36 +2605,31 @@
             const totalGrossDay = laborDay + partsDay;
             document.getElementById('totalGrossDay').textContent = formatCurrency(totalGrossDay);
 
-            // Advisor calculations
+            // Advisor calculations — CP-based metrics
             document.querySelectorAll('#dailyAdvisorBody tr').forEach(row => {
                 const laborEl = row.querySelector('.advisor-labor');
                 if (!laborEl) return; // skip placeholder rows
                 const labor = parseFloat(laborEl.value) || 0;
                 const parts = parseFloat(row.querySelector('.advisor-parts')?.value) || 0;
                 const gross = labor + parts;
-                const ro = parseFloat(row.querySelector('.advisor-ro')?.value) || 0;
-                const cp = parseFloat(row.querySelector('.advisor-cp')?.value) || 0;
+                const cpRos = parseFloat(row.querySelector('.advisor-cp')?.value) || 0;
                 const hours = parseFloat(row.querySelector('.advisor-hours')?.value) || 0;
 
                 // Total Gross (auto-calc from labor + parts)
                 const grossCell = row.querySelector('.advisor-gross');
                 if (grossCell) grossCell.textContent = gross > 0 ? formatCurrency(gross) : '-';
 
-                // Gross/RO
-                const grossRo = ro > 0 ? gross / ro : 0;
-                row.querySelector('.advisor-gross-ro').textContent = formatCurrency(grossRo);
+                // CP Gross/RO (based on CP ROs)
+                const cpGrossRo = cpRos > 0 ? gross / cpRos : 0;
+                row.querySelector('.advisor-gross-ro').textContent = cpGrossRo > 0 ? formatCurrency(cpGrossRo) : '-';
 
-                // CP%
-                const cpPct = ro > 0 ? (cp / ro) * 100 : 0;
-                row.querySelector('.advisor-cp-pct').textContent = cpPct.toFixed(1) + '%';
+                // CP HRO (based on CP ROs)
+                const cpHro = cpRos > 0 ? hours / cpRos : 0;
+                row.querySelector('.advisor-hro').textContent = cpHro > 0 ? cpHro.toFixed(2) : '-';
 
-                // HRO
-                const hro = ro > 0 ? hours / ro : 0;
-                row.querySelector('.advisor-hro').textContent = hro.toFixed(2);
-
-                // ELR
-                const elr = hours > 0 ? gross / hours : 0;
-                row.querySelector('.advisor-elr').textContent = formatCurrency(elr);
+                // CP ELR (based on hours)
+                const cpElr = hours > 0 ? gross / hours : 0;
+                row.querySelector('.advisor-elr').textContent = cpElr > 0 ? formatCurrency(cpElr) : '-';
             });
 
             // Compute MTD from localStorage
@@ -2634,6 +2653,12 @@
                 document.getElementById('laborPace').textContent = formatCurrency(laborPace);
                 document.getElementById('partsPace').textContent = formatCurrency(partsPace);
             }
+
+            // Tracking RO Count — sum total_ros MTD, then project to month
+            const roMtd = monthlyData.reduce((sum, d) => sum + (d.total_ros || 0), 0);
+            const daysWorked = monthlyData.filter(d => (d.labor_day || 0) > 0 || (d.total_ros || 0) > 0).length;
+            const trackingRos = daysWorked > 0 && daysInMonth > 0 ? Math.round((roMtd / daysWorked) * daysInMonth) : 0;
+            document.getElementById('dailyTrackingRos').textContent = trackingRos > 0 ? trackingRos.toLocaleString() : '0';
         }
 
         async function saveDailyEntry() {
@@ -2653,13 +2678,19 @@
                 const ds = dateToString(date);
 
                 // Save daily department entry to localStorage
+                const totalRos = parseFloat(document.getElementById('dailyTotalRos').value) || 0;
+                const storeNps = parseFloat(document.getElementById('dailyStoreNps').value) || null;
+                const regionNps = parseFloat(document.getElementById('dailyRegionNps').value) || null;
                 await LS.saveDailyEntry({
                     store_id: storeId,
                     entry_date: ds,
                     day_number: dayNum,
                     days_in_month: daysInMonth,
                     labor_day: laborDay,
-                    parts_day: partsDay
+                    parts_day: partsDay,
+                    total_ros: totalRos,
+                    store_nps: storeNps,
+                    region_nps: regionNps
                 });
 
                 // Save advisor entries
@@ -2670,7 +2701,6 @@
                     const laborGross = parseFloat(row.querySelector('.advisor-labor').value) || 0;
                     const partsGross = parseFloat(row.querySelector('.advisor-parts').value) || 0;
                     const totalGross = laborGross + partsGross;
-                    const roCount = parseFloat(row.querySelector('.advisor-ro').value) || 0;
                     const cpRos = parseFloat(row.querySelector('.advisor-cp').value) || 0;
                     const hours = parseFloat(row.querySelector('.advisor-hours').value) || 0;
                     const csiScore = parseFloat(row.querySelector('.advisor-csi').value) || null;
@@ -2683,7 +2713,7 @@
                         labor_gross: laborGross,
                         parts_gross: partsGross,
                         total_gross: totalGross,
-                        ro_count: roCount,
+                        ro_count: cpRos,
                         cp_ros: cpRos,
                         hours: hours,
                         csi_score: csiScore,
