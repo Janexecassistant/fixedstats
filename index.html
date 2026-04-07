@@ -1259,6 +1259,28 @@
                     <button class="btn" id="addTechBtn">+ Add Lube Tech</button>
                 </div>
             </div>
+
+            <div class="card">
+                <h2 class="card-title">Manage Apprentices</h2>
+                <div style="overflow-x: auto;">
+                    <table id="staffApprenticeTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Employee ID</th>
+                                <th>Mentor/Supervisor</th>
+                                <th>Status</th>
+                                <th style="width:120px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staffApprenticeBody">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="btn-group">
+                    <button class="btn" id="addApprenticeBtn">+ Add Apprentice</button>
+                </div>
+            </div>
         </div>
         </div> <!-- End appContent -->
     </div>
@@ -1280,6 +1302,7 @@
         let advisors = [];
         let lubeTechs = [];
         let technicians = [];
+        let apprentices = [];
         let currentDate = new Date();
         let charts = {};
         let currentUser = null;
@@ -2084,22 +2107,26 @@
             // Apply saved overrides on top of fallback arrays
             applyStaffOverrides(fallbackAdvisors, fallbackTechs, fallbackLubes, fallbackTechnicians, overrides) {
                 if (!overrides || !overrides.length) {
-                    return { advisors: [...fallbackAdvisors], lubeTechs: [...fallbackLubes], technicians: [...fallbackTechnicians] };
+                    return { advisors: [...fallbackAdvisors], lubeTechs: [...fallbackLubes], technicians: [...fallbackTechnicians], apprentices: [] };
                 }
                 let advs = fallbackAdvisors.map(a => ({...a}));
                 let lubes = fallbackLubes.map(t => ({...t}));
                 let techs = fallbackTechnicians.map(t => ({...t}));
+                let apps = [];
 
                 overrides.forEach(o => {
-                    const arr = o.type === 'advisor' ? advs : o.type === 'technician' ? techs : lubes;
-                    const idx = arr.findIndex(x => String(x.id) === String(o.id));
-                    if (idx >= 0) {
-                        Object.assign(arr[idx], o.data);
-                    } else if (o.action === 'add') {
-                        arr.push(o.data);
+                    if (o.type === 'apprentice') {
+                        const idx = apps.findIndex(x => String(x.id) === String(o.id));
+                        if (idx >= 0) { Object.assign(apps[idx], o.data); }
+                        else if (o.action === 'add') { apps.push(o.data); }
+                    } else {
+                        const arr = o.type === 'advisor' ? advs : o.type === 'technician' ? techs : lubes;
+                        const idx = arr.findIndex(x => String(x.id) === String(o.id));
+                        if (idx >= 0) { Object.assign(arr[idx], o.data); }
+                        else if (o.action === 'add') { arr.push(o.data); }
                     }
                 });
-                return { advisors: advs, lubeTechs: lubes, technicians: techs };
+                return { advisors: advs, lubeTechs: lubes, technicians: techs, apprentices: apps };
             },
 
             // Record a staff change
@@ -2139,6 +2166,7 @@
                 advisors = staffData.advisors;
                 lubeTechs = staffData.lubeTechs;
                 technicians = staffData.technicians;
+                apprentices = staffData.apprentices || [];
 
                 // Set default date to today
                 const today = new Date();
@@ -2170,6 +2198,7 @@
                 advisors = fbStaff.advisors;
                 lubeTechs = fbStaff.lubeTechs;
                 technicians = fbStaff.technicians;
+                apprentices = fbStaff.apprentices || [];
                 const fallbackToday = new Date();
                 document.getElementById('dailyDatePicker').valueAsDate = fallbackToday;
                 document.getElementById('dailyDayNumber').value = getWorkingDayOfMonth(fallbackToday);
@@ -2286,6 +2315,7 @@
             document.getElementById('addAdvisorBtn').addEventListener('click', addNewAdvisor);
             document.getElementById('addTechnicianBtn').addEventListener('click', addNewTechnician);
             document.getElementById('addTechBtn').addEventListener('click', addNewTech);
+            document.getElementById('addApprenticeBtn').addEventListener('click', addNewApprentice);
             document.getElementById('addManagementStaffBtn').addEventListener('click', addNewManagementStaff);
             document.getElementById('addExecutiveStaffBtn').addEventListener('click', addNewExecutiveStaff);
         }
@@ -3938,6 +3968,7 @@
                 document.getElementById('staffAdvisorBody').innerHTML = '';
                 document.getElementById('staffTechnicianBody').innerHTML = '';
                 document.getElementById('staffTechBody').innerHTML = '';
+                document.getElementById('staffApprenticeBody').innerHTML = '';
                 document.getElementById('staffManagementBody').innerHTML = '';
                 document.getElementById('staffExecutiveBody').innerHTML = '';
                 return;
@@ -4023,6 +4054,31 @@
                 `;
             });
             document.getElementById('staffTechBody').innerHTML = techHtml;
+
+            // Apprentices for this store (or all)
+            const storeApprentices = allMode ? apprentices : apprentices.filter(a => a.store_id === storeId);
+            let apprenticeHtml = '';
+            storeApprentices.forEach(app => {
+                const inactiveStyle = app.is_active === false ? 'opacity:0.45;' : '';
+                apprenticeHtml += `
+                    <tr data-id="${app.id}" data-type="apprentice" style="${inactiveStyle}">
+                        <td><input type="text" class="staff-name" value="${app.name}" style="font-weight:600">${allMode ? ' <span style="color:#888;font-size:11px">'+getStoreName(app.store_id)+'</span>' : ''}</td>
+                        <td><input type="text" class="staff-empid" value="${app.employee_id || ''}" placeholder="—"></td>
+                        <td><input type="text" class="staff-mentor" value="${app.mentor || ''}" placeholder="—"></td>
+                        <td>
+                            <select class="staff-status">
+                                <option value="true" ${app.is_active !== false ? 'selected' : ''}>Active</option>
+                                <option value="false" ${app.is_active === false ? 'selected' : ''}>Inactive</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="btn" style="padding:6px 12px;font-size:12px;" onclick="saveStaffRow(this, 'apprentice')">Save</button>
+                            <button class="btn btn-danger" style="padding:6px 12px;font-size:12px;" onclick="removeStaffRow(this, 'apprentice')">Remove</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            document.getElementById('staffApprenticeBody').innerHTML = apprenticeHtml;
         }
 
         async function saveStaffRow(btn, type) {
@@ -4035,7 +4091,6 @@
 
             if (!name) { showToast('Name is required', 'error'); return; }
 
-            const table = type === 'advisor' ? 'advisors' : type === 'technician' ? 'technicians' : 'lube_techs';
             const record = { name, employee_id: empId, is_active: isActive, store_id: storeId };
 
             if (type === 'tech') {
@@ -4044,9 +4099,12 @@
             if (type === 'technician') {
                 record.specialty = row.querySelector('.staff-specialty')?.value.trim() || null;
             }
+            if (type === 'apprentice') {
+                record.mentor = row.querySelector('.staff-mentor')?.value.trim() || null;
+            }
 
             try {
-                const arr = type === 'advisor' ? advisors : type === 'technician' ? technicians : lubeTechs;
+                const arr = type === 'advisor' ? advisors : type === 'technician' ? technicians : type === 'apprentice' ? apprentices : lubeTechs;
 
                 if (id && id !== 'new') {
                     record.id = parseInt(id);
@@ -4063,7 +4121,8 @@
                 }
 
                 if (type === 'advisor') populateAdvisorSelect();
-                showToast(`${type === 'advisor' ? 'Advisor' : 'Tech'} saved` + (currentUser ? ` (by ${currentUser.display_name})` : ''));
+                const typeLabel = type === 'advisor' ? 'Advisor' : type === 'technician' ? 'Technician' : type === 'apprentice' ? 'Apprentice' : 'Tech';
+                showToast(`${typeLabel} saved` + (currentUser ? ` (by ${currentUser.display_name})` : ''));
             } catch (error) {
                 console.error('Save staff error:', error);
                 showToast('Failed to save', 'error');
@@ -4078,7 +4137,7 @@
             if (!confirm(`Remove ${name}? This will deactivate them.`)) return;
 
             try {
-                const arr = type === 'advisor' ? advisors : type === 'technician' ? technicians : lubeTechs;
+                const arr = type === 'advisor' ? advisors : type === 'technician' ? technicians : type === 'apprentice' ? apprentices : lubeTechs;
                 const numId = parseInt(id);
                 const idx = arr.findIndex(a => a.id === numId);
                 if (idx >= 0) {
@@ -4168,6 +4227,33 @@
                 </td>
                 <td>
                     <button class="btn" style="padding:6px 12px;font-size:12px;" onclick="saveStaffRow(this, 'tech')">Save</button>
+                    <button class="btn btn-danger" style="padding:6px 12px;font-size:12px;" onclick="this.closest('tr').remove()">Cancel</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+            row.querySelector('.staff-name').focus();
+        }
+
+        function addNewApprentice() {
+            const storeId = getSelectedStore();
+            if (!storeId || isAllStores()) { showToast('Select a specific store to add staff', 'error'); return; }
+
+            const tbody = document.getElementById('staffApprenticeBody');
+            const row = document.createElement('tr');
+            row.dataset.id = 'new';
+            row.dataset.type = 'apprentice';
+            row.innerHTML = `
+                <td><input type="text" class="staff-name" value="" placeholder="Enter name..." style="font-weight:600"></td>
+                <td><input type="text" class="staff-empid" value="" placeholder="Employee ID"></td>
+                <td><input type="text" class="staff-mentor" value="" placeholder="Mentor/Supervisor"></td>
+                <td>
+                    <select class="staff-status">
+                        <option value="true" selected>Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </td>
+                <td>
+                    <button class="btn" style="padding:6px 12px;font-size:12px;" onclick="saveStaffRow(this, 'apprentice')">Save</button>
                     <button class="btn btn-danger" style="padding:6px 12px;font-size:12px;" onclick="this.closest('tr').remove()">Cancel</button>
                 </td>
             `;
