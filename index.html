@@ -758,7 +758,7 @@
             </div>
 
             <div class="card">
-                <h3 class="card-title">Total Gross Trend</h3>
+                <h3 class="card-title">Tracking vs Goal</h3>
                 <div class="chart-container">
                     <canvas id="trendChart"></canvas>
                 </div>
@@ -2708,20 +2708,56 @@
                     .map(a => ({ name: a.name, totalGross: advisorStats[a.id].totalGross }))
                     .sort((a, b) => b.totalGross - a.totalGross);
 
-                // Charts
-                const dailyLabels = dailyData?.map(d => new Date(d.entry_date).getDate()).sort((a, b) => a - b) || [];
-                const dailyTotals = dailyData?.sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date)).map(d => (d.labor_day || 0) + (d.parts_day || 0)) || [];
+                // Charts — Tracking vs Goal
+                const sortedDaily = [...dailyData].sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date));
+                const dailyLabels = sortedDaily.map(d => {
+                    const dt = new Date(d.entry_date);
+                    return `${dt.getMonth()+1}/${dt.getDate()}`;
+                });
+
+                // Build cumulative tracking line
+                let cumulative = 0;
+                const trackingLine = sortedDaily.map(d => {
+                    cumulative += (d.labor_day || 0) + (d.parts_day || 0);
+                    return cumulative;
+                });
+
+                // Build goal pace line (linear from 0 to goal across working days)
+                const workingDaysTotal = parseInt(document.getElementById('dailyDaysInMonth')?.value) || 26;
+                const goalPaceLine = sortedDaily.map((d, idx) => {
+                    const dayNum = d.day_number || (idx + 1);
+                    return totalGrossGoal > 0 ? Math.round((totalGrossGoal / workingDaysTotal) * dayNum) : 0;
+                });
+
+                const chartDatasets = [{
+                    label: 'Tracking (MTD)',
+                    data: trackingLine,
+                    borderColor: '#4ade80',
+                    backgroundColor: 'rgba(74, 222, 128, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#4ade80'
+                }];
+
+                if (totalGrossGoal > 0) {
+                    chartDatasets.push({
+                        label: 'Goal Pace',
+                        data: goalPaceLine,
+                        borderColor: '#f97316',
+                        borderDash: [8, 4],
+                        tension: 0.1,
+                        fill: false,
+                        borderWidth: 2,
+                        pointRadius: 2,
+                        pointBackgroundColor: '#f97316'
+                    });
+                }
 
                 loadChart('trendChart', 'line', {
                     labels: dailyLabels,
-                    datasets: [{
-                        label: 'Daily Total Gross',
-                        data: dailyTotals,
-                        borderColor: '#cc0000',
-                        backgroundColor: 'rgba(204, 0, 0, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }]
+                    datasets: chartDatasets
                 });
 
                 loadChart('advisorComparisonChart', 'bar', {
@@ -2739,38 +2775,40 @@
 
         function createGoalPieCard(label, actual, goal, pct) {
             const pctVal = Math.min(pct, 100);
-            const color = pct >= 95 ? '#22c55e' : pct >= 80 ? '#eab308' : '#cc0000';
+            // Brighter, more visible colors
+            const color = pct >= 95 ? '#4ade80' : pct >= 80 ? '#facc15' : '#f97316';
+            const colorGlow = pct >= 95 ? '#22c55e' : pct >= 80 ? '#eab308' : '#ea580c';
             const goalStr = goal > 0 ? formatCurrency(goal) : 'No goal set';
-            const cx = 65, cy = 65;
+            const trackingStr = formatCurrency(actual);
+            const cx = 85, cy = 85;
 
-            // Build tread blocks around the outer edge
-            const numTreads = 48;
+            // Build tread blocks — larger tire
+            const numTreads = 60;
             let treads = '';
             for (let i = 0; i < numTreads; i++) {
                 const angle = (i / numTreads) * 360;
                 const rad = (angle * Math.PI) / 180;
-                const x = cx + 56 * Math.cos(rad);
-                const y = cy + 56 * Math.sin(rad);
-                treads += `<rect x="${x - 3}" y="${y - 1.5}" width="6" height="3" rx="0.5" fill="#555" transform="rotate(${angle}, ${x}, ${y})"/>`;
+                const x = cx + 73 * Math.cos(rad);
+                const y = cy + 73 * Math.sin(rad);
+                treads += `<rect x="${x - 4}" y="${y - 2}" width="8" height="4" rx="0.8" fill="#555" transform="rotate(${angle}, ${x}, ${y})"/>`;
             }
 
-            // Progress arc (conic style via stroke-dasharray)
-            const progressR = 42;
+            // Progress arc
+            const progressR = 54;
             const circumference = 2 * Math.PI * progressR;
             const filled = (pctVal / 100) * circumference;
             const empty = circumference - filled;
 
-            // Glow filter for the progress
             const glowId = 'glow_' + label.replace(/\s/g,'');
 
             return `
-                <div class="kpi-card" style="text-align:center;">
-                    <div class="kpi-label">${label}</div>
-                    <div style="position:relative;display:inline-block;margin:6px 0;">
-                        <svg width="130" height="130" viewBox="0 0 130 130">
+                <div class="kpi-card" style="text-align:center;padding:12px 8px;">
+                    <div class="kpi-label" style="font-size:14px;font-weight:700;margin-bottom:4px;">${label}</div>
+                    <div style="position:relative;display:inline-block;margin:4px 0;">
+                        <svg width="170" height="170" viewBox="0 0 170 170">
                             <defs>
                                 <filter id="${glowId}" x="-20%" y="-20%" width="140%" height="140%">
-                                    <feGaussianBlur stdDeviation="2" result="blur"/>
+                                    <feGaussianBlur stdDeviation="3" result="blur"/>
                                     <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
                                 </filter>
                                 <radialGradient id="tireGrad_${glowId}" cx="40%" cy="35%">
@@ -2779,53 +2817,56 @@
                                 </radialGradient>
                                 <radialGradient id="sideGrad_${glowId}" cx="45%" cy="40%">
                                     <stop offset="0%" stop-color="#555"/>
-                                    <stop offset="60%" stop-color="#333"/>
-                                    <stop offset="100%" stop-color="#222"/>
+                                    <stop offset="60%" stop-color="#383838"/>
+                                    <stop offset="100%" stop-color="#252525"/>
                                 </radialGradient>
                             </defs>
 
                             <!-- Outer tire body -->
-                            <circle cx="${cx}" cy="${cy}" r="60" fill="#1a1a1a"/>
-                            <!-- Tire shoulder (outer ring) -->
-                            <circle cx="${cx}" cy="${cy}" r="58" fill="none" stroke="#2a2a2a" stroke-width="4"/>
+                            <circle cx="${cx}" cy="${cy}" r="78" fill="#1a1a1a"/>
+                            <!-- Tire shoulder -->
+                            <circle cx="${cx}" cy="${cy}" r="76" fill="none" stroke="#2a2a2a" stroke-width="4"/>
                             <!-- Tread surface -->
-                            <circle cx="${cx}" cy="${cy}" r="56" fill="none" stroke="url(#tireGrad_${glowId})" stroke-width="8"/>
+                            <circle cx="${cx}" cy="${cy}" r="73" fill="none" stroke="url(#tireGrad_${glowId})" stroke-width="10"/>
                             <!-- Tread blocks -->
                             ${treads}
                             <!-- Inner sidewall -->
-                            <circle cx="${cx}" cy="${cy}" r="50" fill="url(#sideGrad_${glowId})"/>
+                            <circle cx="${cx}" cy="${cy}" r="65" fill="url(#sideGrad_${glowId})"/>
                             <!-- Sidewall texture rings -->
-                            <circle cx="${cx}" cy="${cy}" r="49" fill="none" stroke="#3a3a3a" stroke-width="0.5"/>
-                            <circle cx="${cx}" cy="${cy}" r="47" fill="none" stroke="#333" stroke-width="0.3"/>
+                            <circle cx="${cx}" cy="${cy}" r="64" fill="none" stroke="#3a3a3a" stroke-width="0.5"/>
+                            <circle cx="${cx}" cy="${cy}" r="61" fill="none" stroke="#333" stroke-width="0.4"/>
+                            <circle cx="${cx}" cy="${cy}" r="58" fill="none" stroke="#2e2e2e" stroke-width="0.3"/>
                             <!-- Bead / rim edge -->
-                            <circle cx="${cx}" cy="${cy}" r="35" fill="none" stroke="#666" stroke-width="1.5"/>
-                            <circle cx="${cx}" cy="${cy}" r="34" fill="none" stroke="#444" stroke-width="0.5"/>
+                            <circle cx="${cx}" cy="${cy}" r="46" fill="none" stroke="#777" stroke-width="2"/>
+                            <circle cx="${cx}" cy="${cy}" r="44.5" fill="none" stroke="#555" stroke-width="0.5"/>
 
-                            <!-- Progress track (dark ring inside sidewall) -->
-                            <circle cx="${cx}" cy="${cy}" r="${progressR}" fill="none" stroke="#222" stroke-width="8" opacity="0.6"/>
+                            <!-- Progress track -->
+                            <circle cx="${cx}" cy="${cy}" r="${progressR}" fill="none" stroke="#1a1a1a" stroke-width="10"/>
+                            <circle cx="${cx}" cy="${cy}" r="${progressR}" fill="none" stroke="#2a2a2a" stroke-width="9"/>
                             <!-- Progress fill -->
-                            <circle cx="${cx}" cy="${cy}" r="${progressR}" fill="none" stroke="${color}" stroke-width="8"
+                            <circle cx="${cx}" cy="${cy}" r="${progressR}" fill="none" stroke="${color}" stroke-width="9"
                                 stroke-dasharray="${filled} ${empty}" stroke-linecap="round"
                                 transform="rotate(-90, ${cx}, ${cy})"
-                                filter="url(#${glowId})"/>
+                                filter="url(#${glowId})" opacity="0.95"/>
 
                             <!-- Hub center -->
-                            <circle cx="${cx}" cy="${cy}" r="26" fill="#111"/>
-                            <circle cx="${cx}" cy="${cy}" r="24" fill="#1a1a1a" stroke="#333" stroke-width="0.5"/>
+                            <circle cx="${cx}" cy="${cy}" r="34" fill="#111"/>
+                            <circle cx="${cx}" cy="${cy}" r="32" fill="#1a1a1a" stroke="#333" stroke-width="0.8"/>
                             <!-- Hub bolt pattern -->
                             ${[0,72,144,216,288].map(a => {
                                 const r2 = (a * Math.PI) / 180;
-                                return `<circle cx="${cx + 14 * Math.cos(r2)}" cy="${cy + 14 * Math.sin(r2)}" r="2.5" fill="#333" stroke="#444" stroke-width="0.5"/>`;
+                                return `<circle cx="${cx + 19 * Math.cos(r2)}" cy="${cy + 19 * Math.sin(r2)}" r="3" fill="#2a2a2a" stroke="#444" stroke-width="0.5"/>`;
                             }).join('')}
                             <!-- Center cap -->
-                            <circle cx="${cx}" cy="${cy}" r="6" fill="#222" stroke="#444" stroke-width="0.5"/>
+                            <circle cx="${cx}" cy="${cy}" r="8" fill="#222" stroke="#444" stroke-width="0.5"/>
                         </svg>
-                        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:22px;font-weight:900;color:${color};text-shadow:0 0 8px rgba(0,0,0,0.8),0 0 4px ${color}40;">
+                        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:28px;font-weight:900;color:#fff;text-shadow:0 0 12px ${colorGlow}, 0 2px 4px rgba(0,0,0,0.9);">
                             ${pct.toFixed(0)}%
                         </div>
                     </div>
-                    <div class="kpi-value" style="font-size:18px;">${formatCurrency(actual)}</div>
-                    <div class="kpi-subtext" style="font-size:12px;color:#888;">Goal: ${goalStr}</div>
+                    <div style="font-size:11px;color:#aaa;margin-top:2px;">TRACKING</div>
+                    <div class="kpi-value" style="font-size:20px;font-weight:800;">${trackingStr}</div>
+                    <div class="kpi-subtext" style="font-size:13px;color:#888;margin-top:2px;">Goal: ${goalStr}</div>
                 </div>
             `;
         }
