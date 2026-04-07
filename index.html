@@ -1282,7 +1282,8 @@
                         <thead>
                             <tr>
                                 <th>Display Name</th>
-                                <th>Email (login)</th>
+                                <th>Username</th>
+                                <th>Email</th>
                                 <th>Role</th>
                                 <th>Status</th>
                                 <th>Last Login</th>
@@ -1336,51 +1337,6 @@
                 </form>
             </div>
 
-<div class="card">
-                <h2 class="card-title">Management Staff</h2>
-                <div style="overflow-x: auto;">
-                    <table id="staffManagementTable">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Store</th>
-                                <th>Title/Position</th>
-                                <th>Phone</th>
-                                <th>Email</th>
-                                <th>Status</th>
-                                <th style="width:120px">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="staffManagementBody">
-                        </tbody>
-                    </table>
-                </div>
-                <div class="btn-group">
-                    <button class="btn" id="addManagementStaffBtn">+ Add Management Staff</button>
-                </div>
-            </div>
-
-            <div class="card" id="executiveStaffCard">
-                <h2 class="card-title">Executive Staff</h2>
-                <div style="overflow-x: auto;">
-                    <table id="staffExecutiveTable">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Title</th>
-                                <th>Email</th>
-                                <th>Status</th>
-                                <th style="width:120px">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="staffExecutiveBody">
-                        </tbody>
-                    </table>
-                </div>
-                <div class="btn-group">
-                    <button class="btn" id="addExecutiveStaffBtn">+ Add Executive Staff</button>
-                </div>
-            </div>
 
             <div class="card">
                 <h2 class="card-title">Manage Advisors</h2>
@@ -2529,8 +2485,8 @@
             document.getElementById('addTechnicianBtn').addEventListener('click', addNewTechnician);
             document.getElementById('addTechBtn').addEventListener('click', addNewTech);
             document.getElementById('addApprenticeBtn').addEventListener('click', addNewApprentice);
-            document.getElementById('addManagementStaffBtn').addEventListener('click', addNewManagementStaff);
-            document.getElementById('addExecutiveStaffBtn').addEventListener('click', addNewExecutiveStaff);
+            document.getElementById('addManagementStaffBtn')?.addEventListener('click', addNewManagementStaff);
+            document.getElementById('addExecutiveStaffBtn')?.addEventListener('click', addNewExecutiveStaff);
         }
 
         // ============================================================================
@@ -4419,15 +4375,17 @@
                 document.getElementById('staffTechnicianBody').innerHTML = '';
                 document.getElementById('staffTechBody').innerHTML = '';
                 document.getElementById('staffApprenticeBody').innerHTML = '';
-                document.getElementById('staffManagementBody').innerHTML = '';
-                document.getElementById('staffExecutiveBody').innerHTML = '';
+                const mgmtBody = document.getElementById('staffManagementBody');
+                if (mgmtBody) mgmtBody.innerHTML = '';
+                const execBody = document.getElementById('staffExecutiveBody');
+                if (execBody) execBody.innerHTML = '';
                 return;
             }
 
-            // Load and render management & executive staff
+            // Load and render management & executive staff (if cards exist)
             await loadManagementAndExecutiveStaff();
-            renderManagementStaff();
-            renderExecutiveStaff();
+            if (document.getElementById('staffManagementBody')) renderManagementStaff();
+            if (document.getElementById('staffExecutiveBody')) renderExecutiveStaff();
 
             const getStoreName = (sid) => stores.find(s => s.id === sid)?.name || '';
 
@@ -4762,7 +4720,8 @@
                     </tr>
                 `;
             });
-            document.getElementById('staffManagementBody').innerHTML = html || '<tr><td colspan="7" style="text-align:center;color:#888;padding:20px;">No management staff added yet</td></tr>';
+            const mgmtEl = document.getElementById('staffManagementBody');
+            if (mgmtEl) mgmtEl.innerHTML = html || '<tr><td colspan="7" style="text-align:center;color:#888;padding:20px;">No management staff added yet</td></tr>';
         }
 
         function renderExecutiveStaff() {
@@ -4787,7 +4746,8 @@
                     </tr>
                 `;
             });
-            document.getElementById('staffExecutiveBody').innerHTML = html || '<tr><td colspan="5" style="text-align:center;color:#888;padding:20px;">No executive staff added yet</td></tr>';
+            const execEl = document.getElementById('staffExecutiveBody');
+            if (execEl) execEl.innerHTML = html || '<tr><td colspan="5" style="text-align:center;color:#888;padding:20px;">No executive staff added yet</td></tr>';
         }
 
         function addNewManagementStaff() {
