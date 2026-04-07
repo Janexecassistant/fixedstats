@@ -49,6 +49,121 @@
             color: #cc0000;
         }
 
+        .navbar-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding-right: 24px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .role-badge {
+            background-color: #cc0000;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* Login Screen Styles */
+        .login-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #111111 0%, #2a2a2a 100%);
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 380px;
+        }
+
+        .login-card h1 {
+            text-align: center;
+            margin-bottom: 8px;
+            color: #1a1a1a;
+            font-size: 28px;
+        }
+
+        .login-card p {
+            text-align: center;
+            color: #666;
+            margin-bottom: 32px;
+            font-size: 14px;
+        }
+
+        .login-field {
+            margin-bottom: 20px;
+        }
+
+        .login-field label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .login-field input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .login-field input:focus {
+            outline: none;
+            border-color: #cc0000;
+            box-shadow: 0 0 0 3px rgba(204, 0, 0, 0.1);
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 12px;
+            background-color: #cc0000;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .login-button:hover {
+            background-color: #a30000;
+        }
+
+        .login-button:active {
+            background-color: #8b0000;
+        }
+
+        .login-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            display: none;
+        }
+
         .nav-tabs {
             display: flex;
             flex: 1;
@@ -464,6 +579,29 @@
     </style>
 </head>
 <body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-card">
+            <h1>Dyer Service</h1>
+            <p>Intelligence Platform</p>
+            <div class="login-error" id="loginError"></div>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="login-field">
+                    <label for="loginUsername">Username</label>
+                    <input type="text" id="loginUsername" placeholder="Enter your username" required autofocus>
+                </div>
+                <div class="login-field">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="login-button">Sign In</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App (hidden until logged in) -->
+    <div id="appContent" style="display: none;">
+
     <!-- Navigation -->
     <nav class="navbar">
         <div class="navbar-content">
@@ -480,8 +618,16 @@
                 <li class="nav-tab"><button class="nav-btn" data-tab="advisor">Advisor View</button></li>
                 <li class="nav-tab"><button class="nav-btn" data-tab="goals">Goals & Settings</button></li>
                 <li class="nav-tab"><button class="nav-btn" data-tab="roster">Capacity & Roster</button></li>
+                <li class="nav-tab"><button class="nav-btn" id="adminConsoleTab" data-tab="admin" style="display:none;">Admin Console</button></li>
                 <li class="nav-tab"><button class="nav-btn" data-tab="staff">Staff Management</button></li>
             </ul>
+            <div class="navbar-right">
+                <div class="user-info">
+                    <span id="navbarUserName">User</span>
+                    <span class="role-badge" id="navbarUserRole">user</span>
+                </div>
+                <button class="btn btn-secondary" id="logoutBtn" style="padding: 8px 12px; font-size: 13px;">Logout</button>
+            </div>
         </div>
     </nav>
 
@@ -941,7 +1087,122 @@
             </div>
         </div>
         <!-- TAB 7: STAFF MANAGEMENT -->
+        <!-- ADMIN CONSOLE TAB -->
+        <div id="admin" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">User Management</h2>
+                <div style="overflow-x: auto;">
+                    <table id="userManagementTable">
+                        <thead>
+                            <tr>
+                                <th>Display Name</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Last Login</th>
+                                <th style="width:150px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userManagementBody">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="btn-group">
+                    <button class="btn" id="addUserBtn" onclick="openAddUserForm()">+ Add User</button>
+                </div>
+            </div>
+
+            <div class="card" id="addUserFormCard" style="display:none;">
+                <h2 class="card-title" id="addUserFormTitle">Add New User</h2>
+                <form id="addUserForm" onsubmit="saveNewUser(event)">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="control-group">
+                            <label>Display Name *</label>
+                            <input type="text" id="formDisplayName" required>
+                        </div>
+                        <div class="control-group">
+                            <label>Username *</label>
+                            <input type="text" id="formUsername" required>
+                        </div>
+                        <div class="control-group">
+                            <label>Email</label>
+                            <input type="email" id="formEmail">
+                        </div>
+                        <div class="control-group">
+                            <label>Role *</label>
+                            <select id="formRole" onchange="updateStoreCheckboxesForRole()" required>
+                                <option value="">Select role...</option>
+                                <option value="admin">Admin</option>
+                                <option value="manager">Manager</option>
+                                <option value="executive">Executive</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label id="passwordLabel">Password *</label>
+                            <input type="password" id="formPassword" required>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <label style="font-weight: 600; color: #555;">Store Access:</label>
+                        <div id="storeCheckboxes" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px;">
+                        </div>
+                    </div>
+                    <div class="btn-group" style="margin-top: 24px;">
+                        <button type="submit" class="btn">Save User</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeAddUserForm()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <div id="staff" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">Management Staff</h2>
+                <div style="overflow-x: auto;">
+                    <table id="staffManagementTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Store</th>
+                                <th>Title/Position</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th style="width:120px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staffManagementBody">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="btn-group">
+                    <button class="btn" id="addManagementStaffBtn">+ Add Management Staff</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">Executive Staff</h2>
+                <div style="overflow-x: auto;">
+                    <table id="staffExecutiveTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Title</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th style="width:120px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staffExecutiveBody">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="btn-group">
+                    <button class="btn" id="addExecutiveStaffBtn">+ Add Executive Staff</button>
+                </div>
+            </div>
+
             <div class="card">
                 <h2 class="card-title">Manage Advisors</h2>
                 <div style="overflow-x: auto;">
@@ -1006,15 +1267,16 @@
                     <button class="btn" id="addTechBtn">+ Add Lube Tech</button>
                 </div>
             </div>
-        </div>
+        </div> <!-- End appContent -->
+    </div>
     </div>
 
     <script>
         // ============================================================================
         // SUPABASE INITIALIZATION
         // ============================================================================
-        const SUPABASE_URL = 'https://vhmyqgerucfrrwyxsloq.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZobXlxZ2VydWNmcnJ3eXhzbG9xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NzQ4NTcsImV4cCI6MjA5MTA1MDg1N30.yKSr3SvW5jyNCFFVNAJWRjTOumJrNloRCWQ9pItekk0';
+        const SUPABASE_URL = 'https://eflnjrorpgrqbvzljewu.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmbG5qcm9ycGdycWJ2emxqZXd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1Njg5ODMsImV4cCI6MjA5MTE0NDk4M30.4qVg6A4kynixs-Dm-Et1geJ56jqymekdnI0LexbIr_g';
         const { createClient } = window.supabase;
         const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -1027,8 +1289,343 @@
         let technicians = [];
         let currentDate = new Date();
         let charts = {};
+        let currentUser = null;
+        let allUsers = [];
+
 
         // ============================================================================
+        // AUTHENTICATION & USER MANAGEMENT
+        // ============================================================================
+        function showLoginScreen() {
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('appContent').style.display = 'none';
+        }
+
+        function hideLoginScreen() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('appContent').style.display = 'block';
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.style.display = 'none';
+
+            if (!username || !password) {
+                errorDiv.textContent = 'Username and password are required';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                // Call authentication RPC
+                const { data, error } = await db.rpc('authenticate_user', {
+                    p_username: username,
+                    p_password: password
+                });
+
+                if (error || !data) {
+                    errorDiv.textContent = error?.message || 'Authentication failed';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+
+                // Store session in sessionStorage
+                currentUser = {
+                    id: data.user_id,
+                    username: data.username,
+                    display_name: data.display_name,
+                    role: data.role,
+                    email: data.email,
+                    store_access: data.store_access || [],
+                    token: data.token
+                };
+
+                sessionStorage.setItem('dyer_session', JSON.stringify(currentUser));
+
+                // Update UI
+                updateNavbarUser();
+                applyRoleAccess();
+                hideLoginScreen();
+                showToast('Logged in successfully');
+
+                // Load initial data
+                await initialize();
+            } catch (error) {
+                console.error('Login error:', error);
+                errorDiv.textContent = 'Login failed: ' + (error.message || 'Unknown error');
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        async function validateSession() {
+            const sessionJson = sessionStorage.getItem('dyer_session');
+            if (!sessionJson) {
+                showLoginScreen();
+                return false;
+            }
+
+            try {
+                currentUser = JSON.parse(sessionJson);
+                const { data, error } = await db.rpc('validate_session', {
+                    p_token: currentUser.token
+                });
+
+                if (error || !data || !data.valid) {
+                    sessionStorage.removeItem('dyer_session');
+                    currentUser = null;
+                    showLoginScreen();
+                    return false;
+                }
+
+                updateNavbarUser();
+                applyRoleAccess();
+                hideLoginScreen();
+                return true;
+            } catch (error) {
+                console.error('Session validation error:', error);
+                sessionStorage.removeItem('dyer_session');
+                currentUser = null;
+                showLoginScreen();
+                return false;
+            }
+        }
+
+        function updateNavbarUser() {
+            if (!currentUser) return;
+            document.getElementById('navbarUserName').textContent = currentUser.display_name || currentUser.username;
+            document.getElementById('navbarUserRole').textContent = currentUser.role.toUpperCase();
+        }
+
+        function applyRoleAccess() {
+            if (!currentUser) return;
+
+            // Show/hide tabs based on role
+            const adminTab = document.getElementById('adminConsoleTab');
+            const staffTab = document.querySelector('[data-tab="staff"]');
+
+            if (currentUser.role === 'admin') {
+                adminTab.style.display = 'block';
+                staffTab.style.display = 'block';
+            } else if (currentUser.role === 'manager') {
+                adminTab.style.display = 'none';
+                staffTab.style.display = 'block';
+            } else if (currentUser.role === 'executive') {
+                adminTab.style.display = 'none';
+                staffTab.style.display = 'none';
+                // Make content read-only for executive
+                document.querySelectorAll('input:not([readonly]), select').forEach(el => {
+                    if (!el.closest('#loginScreen')) {
+                        el.disabled = true;
+                    }
+                });
+            }
+
+            // Filter store dropdown based on role
+            if (currentUser.role !== 'admin' && currentUser.role !== 'executive') {
+                filterStoreDropdown();
+            }
+        }
+
+        function filterStoreDropdown() {
+            const select = document.getElementById('globalStoreSelect');
+            const stores = Array.from(select.options);
+            stores.forEach((opt, idx) => {
+                if (idx === 0) return; // Keep "All Stores" option
+                const storeId = opt.value;
+                if (!currentUser.store_access.includes(storeId)) {
+                    opt.style.display = 'none';
+                }
+            });
+            // If current value not in access list, select first available
+            if (!currentUser.store_access.includes(select.value) && select.value !== 'all') {
+                const available = Array.from(select.options).find(opt => opt.style.display !== 'none' && opt.value !== 'all');
+                if (available) select.value = available.value;
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                if (currentUser && currentUser.token) {
+                    await db.rpc('logout_session', { p_token: currentUser.token });
+                }
+            } catch (error) {
+                console.warn('Logout RPC error:', error);
+            }
+            sessionStorage.removeItem('dyer_session');
+            currentUser = null;
+            location.reload();
+        }
+
+        function openAddUserForm() {
+            document.getElementById('addUserFormCard').style.display = 'block';
+            document.getElementById('addUserForm').reset();
+            document.getElementById('addUserFormTitle').textContent = 'Add New User';
+            populateStoreCheckboxes();
+        }
+
+        function closeAddUserForm() {
+            document.getElementById('addUserFormCard').style.display = 'none';
+        }
+
+        function populateStoreCheckboxes() {
+            const container = document.getElementById('storeCheckboxes');
+            container.innerHTML = '';
+            FALLBACK_STORES.forEach(store => {
+                const label = document.createElement('label');
+                label.style.display = 'flex';
+                label.style.alignItems = 'center';
+                label.style.gap = '8px';
+                label.style.fontSize = '14px';
+                label.style.cursor = 'pointer';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = store.id;
+                checkbox.className = 'storeAccessCheckbox';
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(store.code));
+                container.appendChild(label);
+            });
+        }
+
+        function updateStoreCheckboxesForRole() {
+            const role = document.getElementById('formRole').value;
+            const checkboxes = document.querySelectorAll('.storeAccessCheckbox');
+            
+            if (role === 'admin' || role === 'executive') {
+                checkboxes.forEach(cb => {
+                    cb.checked = true;
+                    cb.disabled = (role === 'executive');
+                });
+            } else {
+                checkboxes.forEach(cb => {
+                    cb.disabled = false;
+                });
+            }
+        }
+
+        async function saveNewUser(event) {
+            event.preventDefault();
+            const displayName = document.getElementById('formDisplayName').value.trim();
+            const username = document.getElementById('formUsername').value.trim();
+            const email = document.getElementById('formEmail').value.trim();
+            const role = document.getElementById('formRole').value;
+            const password = document.getElementById('formPassword').value.trim();
+
+            if (!displayName || !username || !role || !password) {
+                showToast('Please fill in all required fields', 'error');
+                return;
+            }
+
+            const storeAccess = Array.from(document.querySelectorAll('.storeAccessCheckbox:checked'))
+                .map(cb => cb.value);
+
+            if (storeAccess.length === 0 && role === 'manager') {
+                showToast('Managers must have at least one store assigned', 'error');
+                return;
+            }
+
+            try {
+                // Hash password
+                const { data: hashResult, error: hashError } = await db.rpc('hash_password', {
+                    password: password
+                });
+
+                if (hashError) {
+                    showToast('Failed to process password', 'error');
+                    return;
+                }
+
+                // Insert user
+                const { data: userData, error: userError } = await db.from('app_users').insert({
+                    username: username,
+                    password_hash: hashResult,
+                    display_name: displayName,
+                    email: email || null,
+                    role: role,
+                    is_active: true,
+                    last_login: null
+                }).select();
+
+                if (userError) {
+                    showToast('Failed to create user: ' + userError.message, 'error');
+                    return;
+                }
+
+                const userId = userData[0].id;
+
+                // Insert store access
+                if (storeAccess.length > 0) {
+                    const accessRecords = storeAccess.map(storeId => ({
+                        user_id: userId,
+                        store_id: storeId
+                    }));
+                    await db.from('user_store_access').insert(accessRecords);
+                }
+
+                showToast('User created successfully');
+                closeAddUserForm();
+                await loadAdminUsers();
+            } catch (error) {
+                console.error('Save user error:', error);
+                showToast('Failed to save user', 'error');
+            }
+        }
+
+        async function loadAdminUsers() {
+            try {
+                const { data, error } = await db.from('app_users').select('*, user_store_access(store_id)');
+                if (error) {
+                    showToast('Failed to load users', 'error');
+                    return;
+                }
+
+                allUsers = data || [];
+                const tbody = document.getElementById('userManagementBody');
+                tbody.innerHTML = '';
+
+                allUsers.forEach(user => {
+                    const storeList = (user.user_store_access || []).map(a => a.store_id).join(', ') || 'None';
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${user.display_name}</td>
+                        <td>${user.username}</td>
+                        <td>${user.email || '-'}</td>
+                        <td>${user.role}</td>
+                        <td>${user.is_active ? 'Active' : 'Inactive'}</td>
+                        <td>${user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}</td>
+                        <td>
+                            <button class="btn" style="padding:6px 10px;font-size:12px;" onclick="editUser(${user.id})">Edit</button>
+                            <button class="btn btn-danger" style="padding:6px 10px;font-size:12px;" onclick="deleteUser(${user.id})">Delete</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Load users error:', error);
+                showToast('Failed to load users', 'error');
+            }
+        }
+
+        function editUser(userId) {
+            showToast('Edit user feature coming soon', 'warning');
+        }
+
+        async function deleteUser(userId) {
+            if (!confirm('Deactivate this user? They will not be able to log in.')) return;
+            try {
+                await db.from('app_users').update({ is_active: false }).eq('id', userId);
+                showToast('User deactivated');
+                await loadAdminUsers();
+            } catch (error) {
+                console.error('Delete user error:', error);
+                showToast('Failed to delete user', 'error');
+            }
+        }
+
+                // ============================================================================
         // UTILITY FUNCTIONS
         // ============================================================================
         function getSelectedStore() {
@@ -1242,7 +1839,8 @@
                             parts_day: entry.parts_day || entry.total_parts || 0,
                             day_number: entry.day_number || entry.day_of_month || 0,
                             days_in_month: entry.days_in_month || 0,
-                            updated_at: new Date().toISOString() };
+                            updated_at: new Date().toISOString(),
+                            updated_by: currentUser ? currentUser.id : null };
                         await db.from('daily_entries').upsert(row, { onConflict: 'store_id,entry_date' });
                     } catch(e) { console.warn('Supabase saveDailyEntry failed', e); }
                 }
@@ -1271,7 +1869,8 @@
                             parts_gross: entry.parts_gross || 0, total_gross: entry.total_gross || 0,
                             csi_score: entry.csi_score || entry.csi || 0,
                             mpvi_pct: entry.mpvi_pct || 0,
-                            updated_at: new Date().toISOString() };
+                            updated_at: new Date().toISOString(),
+                            updated_by: currentUser ? currentUser.id : null };
                         await db.from('advisor_entries').upsert(row, { onConflict: 'advisor_id,entry_date' });
                     } catch(e) { console.warn('Supabase saveAdvisorEntry failed', e); }
                 }
@@ -1298,7 +1897,8 @@
                             labor_goal: goal.labor_goal || 0, parts_goal: goal.parts_goal || 0,
                             total_gross_goal: goal.total_gross_goal || goal.gross_goal || 0,
                             gross_per_ro_target: goal.gross_per_ro_target || 0,
-                            updated_at: new Date().toISOString() };
+                            updated_at: new Date().toISOString(),
+                            updated_by: currentUser ? currentUser.id : null };
                         await db.from('goals').upsert(row, { onConflict: 'store_id,month,year' });
                     } catch(e) { console.warn('Supabase saveGoal failed', e); }
                 }
@@ -1398,6 +1998,12 @@
         // ============================================================================
         async function initialize() {
             try {
+                // Check for valid session first
+                const hasValidSession = await validateSession();
+                if (!hasValidSession && !currentUser) {
+                    return; // User not authenticated
+                }
+
                 // Use local fallback data with any saved staff changes applied
                 stores = FALLBACK_STORES;
                 const overrides = await LS.getStaffOverrides();
@@ -1557,6 +2163,19 @@
         // ============================================================================
         // TAB 1: DAILY ENTRY
         // ============================================================================
+        // Setup logout button
+        document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+        
+        // Setup admin console tab click
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                if (e.target.dataset.tab === 'admin') {
+                    loadAdminUsers();
+                }
+            });
+        });
+
+
         function isAllStores() { return getSelectedStore() === 'all'; }
 
         function getStoreIds() {
@@ -3296,6 +3915,8 @@
                     record.id = parseInt(id);
                     const idx = arr.findIndex(a => a.id === parseInt(id));
                     if (idx >= 0) Object.assign(arr[idx], record);
+                    record.updated_by = currentUser ? currentUser.id : null;
+                    record.updated_at = new Date().toISOString();
                     await LS.recordStaffChange(type, record.id, record, 'update');
                 } else {
                     record.id = Math.max(0, ...arr.map(a => a.id)) + 1;
@@ -3305,7 +3926,7 @@
                 }
 
                 if (type === 'advisor') populateAdvisorSelect();
-                showToast(`${type === 'advisor' ? 'Advisor' : 'Tech'} saved`);
+                showToast(`${type === 'advisor' ? 'Advisor' : 'Tech'} saved` + (currentUser ? ` (by ${currentUser.display_name})` : ''));
             } catch (error) {
                 console.error('Save staff error:', error);
                 showToast('Failed to save', 'error');
@@ -3458,7 +4079,12 @@
         // ============================================================================
         // APP START
         // ============================================================================
-        initialize();
+        // Check for existing session on page load
+        validateSession().then(isValid => {
+            if (isValid && currentUser) {
+                initialize();
+            }
+        });
 
         // Load goals when tab is first shown
         document.querySelectorAll('.nav-btn')[4].addEventListener('click', loadGoals);
