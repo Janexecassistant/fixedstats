@@ -1088,7 +1088,7 @@
         <!-- TAB 7: STAFF MANAGEMENT -->
         <!-- ADMIN CONSOLE TAB -->
         <div id="admin" class="tab-content">
-            <div class="card">
+            <div class="card" id="userAccountsCard">
                 <h2 class="card-title">User Accounts</h2>
                 <div style="overflow-x: auto;">
                     <table id="userManagementTable">
@@ -1173,7 +1173,7 @@
                 </div>
             </div>
 
-            <div class="card">
+            <div class="card" id="executiveStaffCard">
                 <h2 class="card-title">Executive Staff</h2>
                 <div style="overflow-x: auto;">
                     <table id="staffExecutiveTable">
@@ -1415,16 +1415,26 @@
         function applyRoleAccess() {
             if (!currentUser) return;
 
-            // Show/hide tabs based on role
             const adminTab = document.getElementById('adminConsoleTab');
+            const userAccountsCard = document.getElementById('userAccountsCard');
+            const addUserFormCard = document.getElementById('addUserFormCard');
+            const executiveStaffCard = document.getElementById('executiveStaffCard');
 
             if (currentUser.role === 'admin') {
+                // Admins see everything
                 adminTab.style.display = 'block';
+                if (userAccountsCard) userAccountsCard.style.display = 'block';
+                if (executiveStaffCard) executiveStaffCard.style.display = 'block';
             } else if (currentUser.role === 'manager') {
-                adminTab.style.display = 'none';
+                // Managers can see Admin Console but NOT user accounts or executive staff
+                adminTab.style.display = 'block';
+                if (userAccountsCard) userAccountsCard.style.display = 'none';
+                if (addUserFormCard) addUserFormCard.style.display = 'none';
+                if (executiveStaffCard) executiveStaffCard.style.display = 'none';
             } else if (currentUser.role === 'executive') {
+                // Executives: read-only, no admin console
                 adminTab.style.display = 'none';
-                // Make content read-only for executive
+                // Make content read-only
                 document.querySelectorAll('input:not([readonly]), select').forEach(el => {
                     if (!el.closest('#loginScreen')) {
                         el.disabled = true;
