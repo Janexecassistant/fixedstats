@@ -1469,6 +1469,7 @@
         }
 
         function openAddUserForm() {
+            resetUserForm();
             document.getElementById('addUserFormCard').style.display = 'block';
             document.getElementById('addUserForm').reset();
             document.getElementById('addUserFormTitle').textContent = 'Add New User';
@@ -1477,6 +1478,7 @@
 
         function closeAddUserForm() {
             document.getElementById('addUserFormCard').style.display = 'none';
+            resetUserForm();
         }
 
         function populateStoreCheckboxes() {
@@ -1522,8 +1524,13 @@
             const role = document.getElementById('formRole').value;
             const password = document.getElementById('formPassword').value.trim();
 
-            if (!displayName || !email || !role || !password) {
+            // For new users, password is required. For edits, it's optional.
+            if (!displayName || !email || !role) {
                 showToast('Please fill in all required fields', 'error');
+                return;
+            }
+            if (!editingUserId && !password) {
+                showToast('Password is required for new users', 'error');
                 return;
             }
 
@@ -1539,44 +1546,82 @@
             }
 
             try {
-                // Hash password
-                const { data: hashResult, error: hashError } = await db.rpc('hash_password', {
-                    password: password
-                });
-
-                if (hashError) {
-                    showToast('Failed to process password', 'error');
-                    return;
+                // Hash password if provided
+                let passwordHash = null;
+                if (password) {
+                    const { data: hashResult, error: hashError } = await db.rpc('hash_password', {
+                        password: password
+                    });
+                    if (hashError) {
+                        showToast('Failed to process password', 'error');
+                        return;
+                    }
+                    passwordHash = hashResult;
                 }
 
-                // Insert user
-                const { data: userData, error: userError } = await db.from('app_users').insert({
-                    username: username,
-                    password_hash: hashResult,
-                    display_name: displayName,
-                    email: email || null,
-                    role: role,
-                    is_active: true,
-                    last_login: null
-                }).select();
+                if (editingUserId) {
+                    // UPDATE existing user
+                    const updateData = {
+                        username: username,
+                        display_name: displayName,
+                        email: email || null,
+                        role: role
+                    };
+                    if (passwordHash) {
+                        updateData.password_hash = passwordHash;
+                    }
 
-                if (userError) {
-                    showToast('Failed to create user: ' + userError.message, 'error');
-                    return;
+                    const { error: updateError } = await db.from('app_users')
+                        .update(updateData)
+                        .eq('id', editingUserId);
+
+                    if (updateError) {
+                        showToast('Failed to update user: ' + updateError.message, 'error');
+                        return;
+                    }
+
+                    // Replace store access
+                    await db.from('user_store_access').delete().eq('user_id', editingUserId);
+                    if (storeAccess.length > 0) {
+                        const accessRecords = storeAccess.map(storeId => ({
+                            user_id: editingUserId,
+                            store_id: storeId
+                        }));
+                        await db.from('user_store_access').insert(accessRecords);
+                    }
+
+                    showToast('User updated successfully');
+                } else {
+                    // INSERT new user
+                    const { data: userData, error: userError } = await db.from('app_users').insert({
+                        username: username,
+                        password_hash: passwordHash,
+                        display_name: displayName,
+                        email: email || null,
+                        role: role,
+                        is_active: true,
+                        last_login: null
+                    }).select();
+
+                    if (userError) {
+                        showToast('Failed to create user: ' + userError.message, 'error');
+                        return;
+                    }
+
+                    const userId = userData[0].id;
+
+                    // Insert store access
+                    if (storeAccess.length > 0) {
+                        const accessRecords = storeAccess.map(storeId => ({
+                            user_id: userId,
+                            store_id: storeId
+                        }));
+                        await db.from('user_store_access').insert(accessRecords);
+                    }
+
+                    showToast('User created successfully');
                 }
 
-                const userId = userData[0].id;
-
-                // Insert store access
-                if (storeAccess.length > 0) {
-                    const accessRecords = storeAccess.map(storeId => ({
-                        user_id: userId,
-                        store_id: storeId
-                    }));
-                    await db.from('user_store_access').insert(accessRecords);
-                }
-
-                showToast('User created successfully');
                 closeAddUserForm();
                 await loadAdminUsers();
             } catch (error) {
@@ -1600,16 +1645,20 @@
                 allUsers.forEach(user => {
                     const storeList = (user.user_store_access || []).map(a => a.store_id).join(', ') || 'None';
                     const row = document.createElement('tr');
+                    const statusStyle = user.is_active ? 'color: #22c55e;' : 'color: #ef4444;';
+                    const toggleLabel = user.is_active ? 'Deactivate' : 'Activate';
+                    const toggleColor = user.is_active ? 'btn-danger' : '';
                     row.innerHTML = `
                         <td>${user.display_name}</td>
                         <td>${user.username}</td>
                         <td>${user.email || '-'}</td>
-                        <td>${user.role}</td>
-                        <td>${user.is_active ? 'Active' : 'Inactive'}</td>
+                        <td><span style="text-transform:capitalize;">${user.role}</span></td>
+                        <td><span style="${statusStyle} font-weight:600;">${user.is_active ? 'Active' : 'Inactive'}</span></td>
                         <td>${user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}</td>
-                        <td>
-                            <button class="btn" style="padding:6px 10px;font-size:12px;" onclick="editUser(${user.id})">Edit</button>
-                            <button class="btn btn-danger" style="padding:6px 10px;font-size:12px;" onclick="deleteUser(${user.id})">Delete</button>
+                        <td style="white-space:nowrap;">
+                            <button class="btn" style="padding:5px 8px;font-size:11px;" onclick="editUser(${user.id})">Edit</button>
+                            <button class="btn" style="padding:5px 8px;font-size:11px;" onclick="resetPassword(${user.id}, '${user.display_name.replace(/'/g, "\\'")}')">Reset PW</button>
+                            <button class="btn ${toggleColor}" style="padding:5px 8px;font-size:11px;" onclick="toggleUserActive(${user.id}, ${user.is_active})">${toggleLabel}</button>
                         </td>
                     `;
                     tbody.appendChild(row);
@@ -1620,19 +1669,75 @@
             }
         }
 
+        let editingUserId = null;
+
         function editUser(userId) {
-            showToast('Edit user feature coming soon', 'warning');
+            const user = allUsers.find(u => u.id === userId);
+            if (!user) return;
+
+            editingUserId = userId;
+            document.getElementById('addUserFormCard').style.display = 'block';
+            document.getElementById('addUserFormTitle').textContent = 'Edit User';
+            document.getElementById('formDisplayName').value = user.display_name || '';
+            document.getElementById('formEmail').value = user.email || '';
+            document.getElementById('formRole').value = user.role || 'manager';
+            document.getElementById('formPassword').value = '';
+            document.getElementById('formPassword').required = false;
+            document.getElementById('passwordLabel').textContent = 'Password (leave blank to keep current)';
+
+            // Update store checkboxes
+            updateStoreCheckboxesForRole();
+            setTimeout(() => {
+                const userStores = (user.user_store_access || []).map(a => a.store_id);
+                document.querySelectorAll('#storeCheckboxes input[type="checkbox"]').forEach(cb => {
+                    cb.checked = userStores.includes(cb.value);
+                });
+            }, 100);
+
+            // Scroll to form
+            document.getElementById('addUserFormCard').scrollIntoView({ behavior: 'smooth' });
         }
 
-        async function deleteUser(userId) {
-            if (!confirm('Deactivate this user? They will not be able to log in.')) return;
+        function resetUserForm() {
+            editingUserId = null;
+            document.getElementById('formPassword').required = true;
+            document.getElementById('passwordLabel').textContent = 'Password *';
+            document.getElementById('addUserFormTitle').textContent = 'Add New User';
+        }
+
+        async function toggleUserActive(userId, currentlyActive) {
+            const action = currentlyActive ? 'deactivate' : 'reactivate';
+            if (!confirm(`${currentlyActive ? 'Deactivate' : 'Reactivate'} this user?`)) return;
             try {
-                await db.from('app_users').update({ is_active: false }).eq('id', userId);
-                showToast('User deactivated');
+                await db.from('app_users').update({ is_active: !currentlyActive }).eq('id', userId);
+                showToast(`User ${action}d successfully`);
                 await loadAdminUsers();
             } catch (error) {
-                console.error('Delete user error:', error);
-                showToast('Failed to delete user', 'error');
+                console.error('Toggle user error:', error);
+                showToast(`Failed to ${action} user`, 'error');
+            }
+        }
+
+        async function resetPassword(userId, userName) {
+            const newPassword = prompt(`Enter new password for ${userName}:`);
+            if (!newPassword) return;
+            if (newPassword.length < 4) {
+                showToast('Password must be at least 4 characters', 'error');
+                return;
+            }
+            try {
+                const { data: hashResult, error: hashError } = await db.rpc('hash_password', {
+                    password: newPassword
+                });
+                if (hashError) {
+                    showToast('Failed to process password', 'error');
+                    return;
+                }
+                await db.from('app_users').update({ password_hash: hashResult }).eq('id', userId);
+                showToast(`Password reset for ${userName}`);
+            } catch (error) {
+                console.error('Reset password error:', error);
+                showToast('Failed to reset password', 'error');
             }
         }
 
