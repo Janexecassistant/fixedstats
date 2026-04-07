@@ -344,9 +344,14 @@
             z-index: 1;
         }
 
-        @media (max-width: 900px) {
+        @media (max-width: 1200px) {
             .capacity-kpi-grid {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(3, 1fr) !important;
+            }
+        }
+        @media (max-width: 768px) {
+            .capacity-kpi-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
             }
         }
 
@@ -1018,7 +1023,7 @@
             </div>
 
             <!-- CAPACITY KPIs -->
-            <div class="kpi-grid" id="rosterStaffingCards">
+            <div class="capacity-kpi-grid" id="rosterStaffingCards" style="grid-template-columns:repeat(6,1fr);
             </div>
 
             <!-- ADVISOR WEEKLY ROSTER -->
@@ -3650,32 +3655,32 @@
 
                 // Build staffing cards
                 document.getElementById('rosterStaffingCards').innerHTML = `
-                    <div class="kpi-card">
+                    <div class="capacity-kpi-card">
                         <div class="kpi-label">Advisors</div>
                         <div class="kpi-value">${storeAdvisors.length}</div>
                         <div class="kpi-subtext">Active on roster</div>
                     </div>
-                    <div class="kpi-card">
+                    <div class="capacity-kpi-card">
                         <div class="kpi-label">Technicians</div>
                         <div class="kpi-value">${storeTechs.length}</div>
                         <div class="kpi-subtext">A/B/C & Specialty</div>
                     </div>
-                    <div class="kpi-card">
+                    <div class="capacity-kpi-card">
                         <div class="kpi-label">Lube Techs</div>
                         <div class="kpi-value">${storeLubes.length}</div>
                         <div class="kpi-subtext">Express lane</div>
                     </div>
-                    <div class="kpi-card">
+                    <div class="capacity-kpi-card">
                         <div class="kpi-label">Bays</div>
                         <div class="kpi-value">${fc.bays || '—'}</div>
                         <div class="kpi-subtext">Facility total</div>
                     </div>
-                    <div class="kpi-card">
+                    <div class="capacity-kpi-card">
                         <div class="kpi-label">Weekly Shop Capacity</div>
                         <div class="kpi-value">${weeklyAvailTotal.toLocaleString()}h</div>
                         <div class="kpi-subtext">${totalTechHeadcount} techs × ${weeklyAvailPerTech}h/wk</div>
                     </div>
-                    <div class="kpi-card">
+                    <div class="capacity-kpi-card">
                         <div class="kpi-label">Monthly Shop Capacity</div>
                         <div class="kpi-value">${monthlyAvailTotal.toLocaleString()}h</div>
                         <div class="kpi-subtext">${totalTechHeadcount} techs × ${monthlyAvailPerTech}h/mo</div>
