@@ -1656,9 +1656,9 @@
                         <td><span style="${statusStyle} font-weight:600;">${user.is_active ? 'Active' : 'Inactive'}</span></td>
                         <td>${user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}</td>
                         <td style="white-space:nowrap;">
-                            <button class="btn" style="padding:5px 8px;font-size:11px;" onclick="editUser(${user.id})">Edit</button>
-                            <button class="btn" style="padding:5px 8px;font-size:11px;" onclick="resetPassword(${user.id}, '${user.display_name.replace(/'/g, "\\'")}')">Reset PW</button>
-                            <button class="btn ${toggleColor}" style="padding:5px 8px;font-size:11px;" onclick="toggleUserActive(${user.id}, ${user.is_active})">${toggleLabel}</button>
+                            <button class="btn" style="padding:5px 8px;font-size:11px;" onclick="editUser('${user.id}')">Edit</button>
+                            <button class="btn" style="padding:5px 8px;font-size:11px;" onclick="resetPassword('${user.id}', '${user.display_name.replace(/'/g, "\\'")}')">Reset PW</button>
+                            <button class="btn ${toggleColor}" style="padding:5px 8px;font-size:11px;" onclick="toggleUserActive('${user.id}', ${user.is_active})">${toggleLabel}</button>
                         </td>
                     `;
                     tbody.appendChild(row);
