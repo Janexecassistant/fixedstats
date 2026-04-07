@@ -2180,6 +2180,8 @@
             document.getElementById('addAdvisorBtn').addEventListener('click', addNewAdvisor);
             document.getElementById('addTechnicianBtn').addEventListener('click', addNewTechnician);
             document.getElementById('addTechBtn').addEventListener('click', addNewTech);
+            document.getElementById('addManagementStaffBtn').addEventListener('click', addNewManagementStaff);
+            document.getElementById('addExecutiveStaffBtn').addEventListener('click', addNewExecutiveStaff);
         }
 
         // ============================================================================
@@ -3823,15 +3825,22 @@
         // ============================================================================
         // TAB 7: STAFF MANAGEMENT
         // ============================================================================
-        function loadStaffManagement() {
+        async function loadStaffManagement() {
             const storeId = getSelectedStore();
             const allMode = isAllStores();
             if (!storeId) {
                 document.getElementById('staffAdvisorBody').innerHTML = '';
                 document.getElementById('staffTechnicianBody').innerHTML = '';
                 document.getElementById('staffTechBody').innerHTML = '';
+                document.getElementById('staffManagementBody').innerHTML = '';
+                document.getElementById('staffExecutiveBody').innerHTML = '';
                 return;
             }
+
+            // Load and render management & executive staff
+            await loadManagementAndExecutiveStaff();
+            renderManagementStaff();
+            renderExecutiveStaff();
 
             const getStoreName = (sid) => stores.find(s => s.id === sid)?.name || '';
 
@@ -4058,6 +4067,226 @@
             `;
             tbody.appendChild(row);
             row.querySelector('.staff-name').focus();
+        }
+
+        // ============================================================================
+        // MANAGEMENT & EXECUTIVE STAFF
+        // ============================================================================
+        let managementStaff = [];
+        let executiveStaff = [];
+
+        async function loadManagementAndExecutiveStaff() {
+            // Load from Supabase staff_overrides with type 'management' and 'executive'
+            try {
+                const overrides = await LS.getStaffOverrides();
+                managementStaff = overrides.filter(o => o.type === 'management' && o.action !== 'delete').map(o => ({ id: o.id, ...o.data }));
+                executiveStaff = overrides.filter(o => o.type === 'executive' && o.action !== 'delete').map(o => ({ id: o.id, ...o.data }));
+            } catch(e) {
+                console.warn('Error loading mgmt/exec staff:', e);
+            }
+        }
+
+        function renderManagementStaff() {
+            const storeId = getSelectedStore();
+            const allMode = isAllStores();
+            const getStoreName = (sid) => stores.find(s => s.id === sid)?.name || sid || '';
+            const filtered = allMode ? managementStaff : managementStaff.filter(m => m.store_id === storeId || !m.store_id);
+
+            let html = '';
+            filtered.forEach(m => {
+                const inactiveStyle = m.is_active === false ? 'opacity:0.45;' : '';
+                html += `
+                    <tr data-id="${m.id}" data-type="management" style="${inactiveStyle}">
+                        <td><input type="text" class="mgmt-name" value="${m.name || ''}" style="font-weight:600" placeholder="Name"></td>
+                        <td>
+                            <select class="mgmt-store">
+                                <option value="">-- Select Store --</option>
+                                ${stores.map(s => `<option value="${s.id}" ${m.store_id === s.id ? 'selected' : ''}>${s.code} - ${s.name}</option>`).join('')}
+                            </select>
+                        </td>
+                        <td><input type="text" class="mgmt-title" value="${m.title || ''}" placeholder="Title/Position"></td>
+                        <td><input type="text" class="mgmt-phone" value="${m.phone || ''}" placeholder="Phone"></td>
+                        <td><input type="text" class="mgmt-email" value="${m.email || ''}" placeholder="Email"></td>
+                        <td>
+                            <select class="mgmt-status">
+                                <option value="true" ${m.is_active !== false ? 'selected' : ''}>Active</option>
+                                <option value="false" ${m.is_active === false ? 'selected' : ''}>Inactive</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="btn" style="padding:6px 12px;font-size:12px;" onclick="saveManagementStaff(this)">Save</button>
+                            <button class="btn btn-danger" style="padding:6px 12px;font-size:12px;" onclick="removeManagementStaff(this)">Remove</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            document.getElementById('staffManagementBody').innerHTML = html || '<tr><td colspan="7" style="text-align:center;color:#888;padding:20px;">No management staff added yet</td></tr>';
+        }
+
+        function renderExecutiveStaff() {
+            let html = '';
+            executiveStaff.forEach(e => {
+                const inactiveStyle = e.is_active === false ? 'opacity:0.45;' : '';
+                html += `
+                    <tr data-id="${e.id}" data-type="executive" style="${inactiveStyle}">
+                        <td><input type="text" class="exec-name" value="${e.name || ''}" style="font-weight:600" placeholder="Name"></td>
+                        <td><input type="text" class="exec-title" value="${e.title || ''}" placeholder="Title"></td>
+                        <td><input type="text" class="exec-email" value="${e.email || ''}" placeholder="Email"></td>
+                        <td>
+                            <select class="exec-status">
+                                <option value="true" ${e.is_active !== false ? 'selected' : ''}>Active</option>
+                                <option value="false" ${e.is_active === false ? 'selected' : ''}>Inactive</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="btn" style="padding:6px 12px;font-size:12px;" onclick="saveExecutiveStaff(this)">Save</button>
+                            <button class="btn btn-danger" style="padding:6px 12px;font-size:12px;" onclick="removeExecutiveStaff(this)">Remove</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            document.getElementById('staffExecutiveBody').innerHTML = html || '<tr><td colspan="5" style="text-align:center;color:#888;padding:20px;">No executive staff added yet</td></tr>';
+        }
+
+        function addNewManagementStaff() {
+            // Remove empty-state placeholder if present
+            const tbody = document.getElementById('staffManagementBody');
+            if (tbody.querySelector('td[colspan]')) tbody.innerHTML = '';
+            const row = document.createElement('tr');
+            const newId = 'mgmt_' + Date.now();
+            row.dataset.id = newId;
+            row.dataset.type = 'management';
+            row.innerHTML = `
+                <td><input type="text" class="mgmt-name" value="" style="font-weight:600" placeholder="Name"></td>
+                <td>
+                    <select class="mgmt-store">
+                        <option value="">-- Select Store --</option>
+                        ${stores.map(s => `<option value="${s.id}">${s.code} - ${s.name}</option>`).join('')}
+                    </select>
+                </td>
+                <td><input type="text" class="mgmt-title" value="" placeholder="Title/Position"></td>
+                <td><input type="text" class="mgmt-phone" value="" placeholder="Phone"></td>
+                <td><input type="text" class="mgmt-email" value="" placeholder="Email"></td>
+                <td>
+                    <select class="mgmt-status">
+                        <option value="true" selected>Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </td>
+                <td>
+                    <button class="btn" style="padding:6px 12px;font-size:12px;" onclick="saveManagementStaff(this)">Save</button>
+                    <button class="btn btn-danger" style="padding:6px 12px;font-size:12px;" onclick="this.closest('tr').remove()">Cancel</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+            row.querySelector('.mgmt-name').focus();
+        }
+
+        function addNewExecutiveStaff() {
+            const tbody = document.getElementById('staffExecutiveBody');
+            if (tbody.querySelector('td[colspan]')) tbody.innerHTML = '';
+            const row = document.createElement('tr');
+            const newId = 'exec_' + Date.now();
+            row.dataset.id = newId;
+            row.dataset.type = 'executive';
+            row.innerHTML = `
+                <td><input type="text" class="exec-name" value="" style="font-weight:600" placeholder="Name"></td>
+                <td><input type="text" class="exec-title" value="" placeholder="Title"></td>
+                <td><input type="text" class="exec-email" value="" placeholder="Email"></td>
+                <td>
+                    <select class="exec-status">
+                        <option value="true" selected>Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </td>
+                <td>
+                    <button class="btn" style="padding:6px 12px;font-size:12px;" onclick="saveExecutiveStaff(this)">Save</button>
+                    <button class="btn btn-danger" style="padding:6px 12px;font-size:12px;" onclick="this.closest('tr').remove()">Cancel</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+            row.querySelector('.exec-name').focus();
+        }
+
+        async function saveManagementStaff(btn) {
+            const row = btn.closest('tr');
+            const id = row.dataset.id;
+            const name = row.querySelector('.mgmt-name').value.trim();
+            const storeId = row.querySelector('.mgmt-store').value;
+            const title = row.querySelector('.mgmt-title').value.trim();
+            const phone = row.querySelector('.mgmt-phone').value.trim();
+            const email = row.querySelector('.mgmt-email').value.trim();
+            const isActive = row.querySelector('.mgmt-status').value === 'true';
+
+            if (!name) { showToast('Name is required', 'error'); return; }
+
+            const data = { id, name, store_id: storeId, title, phone, email, is_active: isActive };
+            try {
+                await LS.recordStaffChange('management', id, data, 'add');
+                // Update local array
+                const idx = managementStaff.findIndex(m => m.id === id);
+                if (idx >= 0) managementStaff[idx] = data;
+                else managementStaff.push(data);
+                showToast('Management staff saved' + (currentUser ? ` (by ${currentUser.display_name})` : ''));
+            } catch(e) {
+                console.error('Save mgmt staff error:', e);
+                showToast('Failed to save', 'error');
+            }
+        }
+
+        async function saveExecutiveStaff(btn) {
+            const row = btn.closest('tr');
+            const id = row.dataset.id;
+            const name = row.querySelector('.exec-name').value.trim();
+            const title = row.querySelector('.exec-title').value.trim();
+            const email = row.querySelector('.exec-email').value.trim();
+            const isActive = row.querySelector('.exec-status').value === 'true';
+
+            if (!name) { showToast('Name is required', 'error'); return; }
+
+            const data = { id, name, title, email, is_active: isActive };
+            try {
+                await LS.recordStaffChange('executive', id, data, 'add');
+                const idx = executiveStaff.findIndex(e => e.id === id);
+                if (idx >= 0) executiveStaff[idx] = data;
+                else executiveStaff.push(data);
+                showToast('Executive staff saved' + (currentUser ? ` (by ${currentUser.display_name})` : ''));
+            } catch(e) {
+                console.error('Save exec staff error:', e);
+                showToast('Failed to save', 'error');
+            }
+        }
+
+        async function removeManagementStaff(btn) {
+            const row = btn.closest('tr');
+            const id = row.dataset.id;
+            const name = row.querySelector('.mgmt-name').value;
+            if (!confirm(`Remove ${name}?`)) return;
+            try {
+                await LS.recordStaffChange('management', id, { is_active: false }, 'delete');
+                managementStaff = managementStaff.filter(m => m.id !== id);
+                row.remove();
+                showToast(`${name} removed`);
+            } catch(e) {
+                console.error('Remove mgmt staff error:', e);
+                showToast('Failed to remove', 'error');
+            }
+        }
+
+        async function removeExecutiveStaff(btn) {
+            const row = btn.closest('tr');
+            const id = row.dataset.id;
+            const name = row.querySelector('.exec-name').value;
+            if (!confirm(`Remove ${name}?`)) return;
+            try {
+                await LS.recordStaffChange('executive', id, { is_active: false }, 'delete');
+                executiveStaff = executiveStaff.filter(e => e.id !== id);
+                row.remove();
+                showToast(`${name} removed`);
+            } catch(e) {
+                console.error('Remove exec staff error:', e);
+                showToast('Failed to remove', 'error');
+            }
         }
 
         // ============================================================================
