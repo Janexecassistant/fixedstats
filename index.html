@@ -286,6 +286,70 @@
             border-left: 4px solid #cc0000;
         }
 
+        .capacity-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .capacity-kpi-card {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            padding: 20px 16px;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+            border-left: 4px solid #cc0000;
+        }
+
+        .capacity-kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            opacity: 0.06;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cdefs%3E%3Cpattern id='tread' x='0' y='0' width='14' height='14' patternUnits='userSpaceOnUse' patternTransform='rotate(35)'%3E%3Crect x='2' y='0' width='4' height='10' rx='1' fill='white'/%3E%3Crect x='8' y='4' width='4' height='10' rx='1' fill='white'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='200' height='200' fill='url(%23tread)'/%3E%3C/svg%3E");
+            background-size: 100px;
+            pointer-events: none;
+        }
+
+        .capacity-kpi-card::after {
+            content: '';
+            position: absolute;
+            bottom: -30px; right: -20px;
+            width: 120px; height: 120px;
+            opacity: 0.04;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='none' stroke='white' stroke-width='6'/%3E%3Ccircle cx='50' cy='50' r='38' fill='none' stroke='white' stroke-width='3'/%3E%3Ccircle cx='50' cy='50' r='20' fill='none' stroke='white' stroke-width='2'/%3E%3Ccircle cx='50' cy='50' r='8' fill='white'/%3E%3C/svg%3E");
+            background-size: contain;
+            background-repeat: no-repeat;
+            pointer-events: none;
+        }
+
+        .capacity-kpi-card .kpi-label {
+            color: #aaa;
+            position: relative;
+            z-index: 1;
+        }
+
+        .capacity-kpi-card .kpi-value {
+            position: relative;
+            z-index: 1;
+            font-size: 28px;
+        }
+
+        .capacity-kpi-card .kpi-subtext {
+            color: #888;
+            position: relative;
+            z-index: 1;
+        }
+
+        @media (max-width: 900px) {
+            .capacity-kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
         .kpi-label {
             font-size: 13px;
             font-weight: 600;
@@ -1080,7 +1144,7 @@
             <!-- CAPACITY ANALYSIS -->
             <div class="card">
                 <h3 class="card-title">Capacity Analysis & Staffing Recommendations</h3>
-                <div class="kpi-grid" id="capacityAnalysisCards">
+                <div class="capacity-kpi-grid" id="capacityAnalysisCards">
                 </div>
                 <div id="capacityRecommendations" style="margin-top:16px;">
                 </div>
@@ -2566,10 +2630,13 @@
                 let goalsData = null;
                 if (allMode) {
                     if (allGoals.length > 0) {
+                        // For Gross/RO target in "All Stores" mode, average the per-RO targets instead of summing
+                        const roTargets = allGoals.filter(g => g.gross_per_ro_target > 0).map(g => g.gross_per_ro_target);
                         goalsData = {
                             labor_goal: allGoals.reduce((s, g) => s + (g.labor_goal || 0), 0),
                             parts_goal: allGoals.reduce((s, g) => s + (g.parts_goal || 0), 0),
-                            total_gross_goal: allGoals.reduce((s, g) => s + (g.total_gross_goal || 0), 0)
+                            total_gross_goal: allGoals.reduce((s, g) => s + (g.total_gross_goal || 0), 0),
+                            gross_per_ro_target: roTargets.length > 0 ? roTargets.reduce((s, v) => s + v, 0) / roTargets.length : 0
                         };
                     }
                 } else {
@@ -2619,11 +2686,16 @@
                 const partsPace = partsGoal > 0 ? (partsTracking / partsGoal) * 100 : 0;
                 const grossPace = totalGrossGoal > 0 ? (totalGrossTracking / totalGrossGoal) * 100 : 0;
 
+                // Gross/RO goal and pace
+                const grossPerRoGoal = goalsData?.gross_per_ro_target || 0;
+                // For Gross/RO: actual is current avg, tracking is same (doesn't project differently), goal is target
+                const grossPerRoPace = grossPerRoGoal > 0 ? (avgGrossPerRo / grossPerRoGoal) * 100 : 0;
+
                 document.getElementById('dashboardKpis').innerHTML = `
                     ${createGoalPieCard('Labor', laborMtd, laborTracking, laborGoal, laborPace)}
                     ${createGoalPieCard('Parts', partsMtd, partsTracking, partsGoal, partsPace)}
                     ${createGoalPieCard('Total Gross', totalGrossMtd, totalGrossTracking, totalGrossGoal, grossPace)}
-                    ${createKpiCard('Avg Gross/RO', formatCurrency(avgGrossPerRo), 'All advisors', 100)}
+                    ${createGoalPieCard('Gross / RO', avgGrossPerRo, avgGrossPerRo, grossPerRoGoal, grossPerRoPace)}
                 `;
 
                 // Build daily performance table — every day of the month
@@ -4035,25 +4107,25 @@
             const bayStatus = bays > 0 ? (bays >= recommendedBays ? 'Adequate' : 'Under') : 'Not configured';
 
             document.getElementById('capacityAnalysisCards').innerHTML = `
-                <div class="kpi-card">
+                <div class="capacity-kpi-card">
                     <div class="kpi-label">Tech Utilization</div>
-                    <div class="kpi-value" style="color:${utilizationPct >= 80 ? '#10b981' : utilizationPct >= 60 ? '#f59e0b' : '#ef4444'}">${utilizationPct > 0 ? utilizationPct.toFixed(0) + '%' : '—'}</div>
-                    <div class="kpi-subtext">Clock hrs / Available hrs this week</div>
+                    <div class="kpi-value" style="color:${utilizationPct >= 80 ? '#4ade80' : utilizationPct >= 60 ? '#facc15' : '#f97316'}">${utilizationPct > 0 ? utilizationPct.toFixed(0) + '%' : '—'}</div>
+                    <div class="kpi-subtext">${weeklyClockUsed > 0 ? weeklyClockUsed.toFixed(0) + 'h clocked / ' + weeklyTechHrs.toFixed(0) + 'h available' : 'No data this week'}</div>
                 </div>
-                <div class="kpi-card">
+                <div class="capacity-kpi-card">
                     <div class="kpi-label">Bay Utilization</div>
-                    <div class="kpi-value" style="color:${bayUtilPct >= 75 ? '#10b981' : bayUtilPct >= 50 ? '#f59e0b' : '#ef4444'}">${bays > 0 && weeklyClockUsed > 0 ? bayUtilPct.toFixed(0) + '%' : '—'}</div>
-                    <div class="kpi-subtext">${bays} bays × ${hrsPerDay}h × ${daysPerWeek}d = ${weeklyBayHrs}h capacity</div>
+                    <div class="kpi-value" style="color:${bayUtilPct >= 75 ? '#4ade80' : bayUtilPct >= 50 ? '#facc15' : '#f97316'}">${bays > 0 && weeklyClockUsed > 0 ? bayUtilPct.toFixed(0) + '%' : '—'}</div>
+                    <div class="kpi-subtext">${bays} bays · ${weeklyBayHrs}h weekly capacity</div>
                 </div>
-                <div class="kpi-card">
+                <div class="capacity-kpi-card">
                     <div class="kpi-label">Tech:Advisor Ratio</div>
-                    <div class="kpi-value">${totalAdvisors > 0 ? (totalTechs / totalAdvisors).toFixed(1) : '—'}:1</div>
+                    <div class="kpi-value" style="color:${totalAdvisors > 0 && (totalTechs / totalAdvisors) >= 2.5 ? '#4ade80' : '#facc15'}">${totalAdvisors > 0 ? (totalTechs / totalAdvisors).toFixed(1) : '—'}:1</div>
                     <div class="kpi-subtext">Target: ${idealTechsPerAdvisor}:1</div>
                 </div>
-                <div class="kpi-card">
+                <div class="capacity-kpi-card">
                     <div class="kpi-label">Staffing Need</div>
-                    <div class="kpi-value" style="color:${techShortage <= 0 ? '#10b981' : '#ef4444'}">${techShortage <= 0 ? 'Staffed' : '+' + techShortage + ' techs'}</div>
-                    <div class="kpi-subtext">${totalTechs} of ${recommendedTechs} recommended (${totalAdvisors} advisors × ${idealTechsPerAdvisor})</div>
+                    <div class="kpi-value" style="color:${techShortage <= 0 ? '#4ade80' : '#f97316'}">${techShortage <= 0 ? 'Staffed' : '+' + techShortage + ' techs'}</div>
+                    <div class="kpi-subtext">${totalTechs} of ${recommendedTechs} needed (${totalAdvisors} advisors × ${idealTechsPerAdvisor})</div>
                 </div>
             `;
 
