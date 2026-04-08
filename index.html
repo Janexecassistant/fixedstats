@@ -924,7 +924,7 @@
                                 <th>Hours</th>
                                 <th>Gross/RO</th>
                                 <th>Running Total ($)</th>
-                                <th style="background:#1a1a1a;color:#cc0000;">MTD ($)</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">TRACKING ($)</th>
                             </tr>
                         </thead>
                         <tbody id="dashDailyBody">
@@ -2864,6 +2864,7 @@
 
                 let dailyHtml = '';
                 let runningTotal = 0;
+                let workingDayNum = 0;
                 let totLabor = 0, totParts = 0, totGross = 0, totRo = 0, totHours = 0;
                 const today = new Date();
                 const isCurrentMonth = today.getFullYear() === year && (today.getMonth() + 1) === month;
@@ -2877,11 +2878,17 @@
                     const isToday = isCurrentMonth && d === today.getDate();
                     const isFuture = isCurrentMonth && d > today.getDate();
 
+                    // Track working day number (Mon-Sat = working days)
+                    if (!isSunday) workingDayNum++;
+
                     const dep = dailyByDate[dateStr] || { labor: 0, parts: 0, gross: 0 };
                     const adv = advByDate[dateStr] || { roCount: 0, hours: 0, gross: 0 };
                     const dayGross = dep.gross || adv.gross || 0;
                     const grossPerRo = adv.roCount > 0 ? dayGross / adv.roCount : 0;
                     runningTotal += dayGross;
+
+                    // Tracking = (Running Total / Working Day #) * Working Days in Month
+                    const trackingValue = (workingDayNum > 0 && runningTotal > 0) ? (runningTotal / workingDayNum) * daysInMonth : 0;
 
                     totLabor += dep.labor; totParts += dep.parts; totGross += dayGross;
                     totRo += adv.roCount; totHours += adv.hours;
@@ -2901,7 +2908,7 @@
                         <td>${hasData ? adv.hours.toFixed(1) : '—'}</td>
                         <td>${hasData && grossPerRo > 0 ? formatCurrency(grossPerRo) : '—'}</td>
                         <td style="font-weight:600;">${runningTotal > 0 ? formatCurrency(runningTotal) : '—'}</td>
-                        <td style="font-weight:700;color:#cc0000;">${runningTotal > 0 ? formatCurrency(runningTotal) : '—'}</td>
+                        <td style="font-weight:700;color:#cc0000;">${trackingValue > 0 ? formatCurrency(trackingValue) : '—'}</td>
                     </tr>`;
                 }
                 document.getElementById('dashDailyBody').innerHTML = dailyHtml;
@@ -2917,7 +2924,7 @@
                         <td>${totHours.toFixed(1)}</td>
                         <td>${formatCurrency(avgGrossRo)}</td>
                         <td>${formatCurrency(runningTotal)}</td>
-                        <td style="color:#cc0000;">${formatCurrency(totalGrossMtd)}</td>
+                        <td style="color:#cc0000;">${formatCurrency(totalGrossTracking)}</td>
                     </tr>`;
 
                 // Advisor comparison chart — only active advisors with data
