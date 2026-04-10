@@ -2343,18 +2343,27 @@
                 if (useSupabase) {
                     try {
                         const row = { store_id: entry.store_id, entry_date: entry.entry_date,
-                            labor_day: entry.labor_day || entry.total_labor || 0,
-                            parts_day: entry.parts_day || entry.total_parts || 0,
-                            total_ros: entry.total_ros || 0,
-                            store_nps: entry.store_nps || null,
-                            region_nps: entry.region_nps || null,
+                            labor_day: entry.labor_day ?? entry.total_labor ?? 0,
+                            parts_day: entry.parts_day ?? entry.total_parts ?? 0,
+                            total_ros: entry.total_ros ?? 0,
+                            store_nps: (entry.store_nps === undefined || entry.store_nps === '' ? null : entry.store_nps),
+                            region_nps: (entry.region_nps === undefined || entry.region_nps === '' ? null : entry.region_nps),
                             day_number: entry.day_number || entry.day_of_month || 0,
                             days_in_month: entry.days_in_month || 0,
                             updated_at: new Date().toISOString(),
                             updated_by: currentUser ? currentUser.id : null };
-                        await db.from('daily_entries').upsert(row, { onConflict: 'store_id,entry_date' });
-                    } catch(e) { console.warn('Supabase saveDailyEntry failed', e); }
+                        const { error } = await db.from('daily_entries').upsert(row, { onConflict: 'store_id,entry_date' });
+                        if (error) {
+                            console.error('Supabase saveDailyEntry error', error);
+                            return { ok: false, error };
+                        }
+                        return { ok: true };
+                    } catch(e) {
+                        console.error('Supabase saveDailyEntry threw', e);
+                        return { ok: false, error: e };
+                    }
                 }
+                return { ok: true, offline: true };
             },
 
             // --- Advisor daily entries ---
@@ -2375,18 +2384,27 @@
                 if (useSupabase) {
                     try {
                         const row = { advisor_id: parseInt(entry.advisor_id), store_id: entry.store_id, entry_date: entry.entry_date,
-                            ro_count: entry.ro_count || entry.total_ros || 0,
-                            total_ros: entry.total_ros || entry.ro_count || 0,
-                            cp_ros: entry.cp_ros || entry.cp_ro || 0,
-                            hours: entry.hours || 0, labor_gross: entry.labor_gross || 0,
-                            parts_gross: entry.parts_gross || 0, total_gross: entry.total_gross || 0,
-                            csi_score: entry.csi_score || entry.csi || 0,
-                            mpvi_pct: entry.mpvi_pct || 0,
+                            ro_count: entry.ro_count ?? entry.total_ros ?? 0,
+                            total_ros: entry.total_ros ?? entry.ro_count ?? 0,
+                            cp_ros: entry.cp_ros ?? entry.cp_ro ?? 0,
+                            hours: entry.hours ?? 0, labor_gross: entry.labor_gross ?? 0,
+                            parts_gross: entry.parts_gross ?? 0, total_gross: entry.total_gross ?? 0,
+                            csi_score: entry.csi_score ?? entry.csi ?? 0,
+                            mpvi_pct: entry.mpvi_pct ?? 0,
                             updated_at: new Date().toISOString(),
                             updated_by: currentUser ? currentUser.id : null };
-                        await db.from('advisor_entries').upsert(row, { onConflict: 'advisor_id,entry_date' });
-                    } catch(e) { console.warn('Supabase saveAdvisorEntry failed', e); }
+                        const { error } = await db.from('advisor_entries').upsert(row, { onConflict: 'advisor_id,entry_date' });
+                        if (error) {
+                            console.error('Supabase saveAdvisorEntry error', error);
+                            return { ok: false, error };
+                        }
+                        return { ok: true };
+                    } catch(e) {
+                        console.error('Supabase saveAdvisorEntry threw', e);
+                        return { ok: false, error: e };
+                    }
                 }
+                return { ok: true, offline: true };
             },
 
             // --- Goals ---
@@ -2532,14 +2550,30 @@
                 technicians = staffData.technicians;
                 apprentices = staffData.apprentices || [];
 
-                // Set default date to today
+                // Set default date — restore last-used entry date if present, otherwise today.
+                // This fixes the "my data is gone" bug where a user enters data for a past date,
+                // reloads the page, and sees today's (blank) row instead of what they saved.
                 const today = new Date();
-                document.getElementById('dailyDatePicker').valueAsDate = today;
+                let pickerInitDate = today;
+                try {
+                    const savedDs = localStorage.getItem('dyer_last_entry_date');
+                    if (savedDs && /^\d{4}-\d{2}-\d{2}$/.test(savedDs)) {
+                        const [yy, mm, dd] = savedDs.split('-').map(Number);
+                        const candidate = new Date(yy, mm - 1, dd);
+                        // Only restore if the saved date is within the last 45 days — avoids stale dates from months ago
+                        const diffDays = (today - candidate) / (1000 * 60 * 60 * 24);
+                        if (!isNaN(candidate.getTime()) && diffDays >= -1 && diffDays <= 45) {
+                            pickerInitDate = candidate;
+                        }
+                    }
+                } catch(e) { /* ignore */ }
+                // date picker expects a UTC-based Date for valueAsDate
+                document.getElementById('dailyDatePicker').valueAsDate = new Date(Date.UTC(pickerInitDate.getFullYear(), pickerInitDate.getMonth(), pickerInitDate.getDate()));
                 document.getElementById('rosterWeekPicker').valueAsDate = today;
 
-                // Set working day # and working days in month (auto-calculated)
-                document.getElementById('dailyDayNumber').value = getWorkingDayOfMonth(today);
-                const wd = getWorkingDaysInMonth(today.getFullYear(), today.getMonth() + 1);
+                // Set working day # and working days in month (auto-calculated from picker date)
+                document.getElementById('dailyDayNumber').value = getWorkingDayOfMonth(pickerInitDate);
+                const wd = getWorkingDaysInMonth(pickerInitDate.getFullYear(), pickerInitDate.getMonth() + 1);
                 document.getElementById('dailyDaysInMonth').value = wd.totalDays;
 
                 // Populate store dropdowns
@@ -2567,15 +2601,41 @@
                 technicians = fbStaff.technicians;
                 apprentices = fbStaff.apprentices || [];
                 const fallbackToday = new Date();
-                document.getElementById('dailyDatePicker').valueAsDate = fallbackToday;
-                document.getElementById('dailyDayNumber').value = getWorkingDayOfMonth(fallbackToday);
-                const fwd = getWorkingDaysInMonth(fallbackToday.getFullYear(), fallbackToday.getMonth() + 1);
+                let fbPickerDate = fallbackToday;
+                try {
+                    const savedDs = localStorage.getItem('dyer_last_entry_date');
+                    if (savedDs && /^\d{4}-\d{2}-\d{2}$/.test(savedDs)) {
+                        const [yy, mm, dd] = savedDs.split('-').map(Number);
+                        const candidate = new Date(yy, mm - 1, dd);
+                        const diffDays = (fallbackToday - candidate) / (1000 * 60 * 60 * 24);
+                        if (!isNaN(candidate.getTime()) && diffDays >= -1 && diffDays <= 45) {
+                            fbPickerDate = candidate;
+                        }
+                    }
+                } catch(e) {}
+                document.getElementById('dailyDatePicker').valueAsDate = new Date(Date.UTC(fbPickerDate.getFullYear(), fbPickerDate.getMonth(), fbPickerDate.getDate()));
+                document.getElementById('dailyDayNumber').value = getWorkingDayOfMonth(fbPickerDate);
+                const fwd = getWorkingDaysInMonth(fbPickerDate.getFullYear(), fbPickerDate.getMonth() + 1);
                 document.getElementById('dailyDaysInMonth').value = fwd.totalDays;
                 populateStoreSelects();
                 populateAdvisorSelect();
                 setupEventListeners();
-                showToast('Running in offline mode — data will not be saved to cloud', 'error');
+                showOfflineBanner('Running in offline mode — changes are NOT being saved to the cloud. Reload the page to retry.');
+                showToast('Running in offline mode — data will NOT be saved to cloud', 'error');
             }
+        }
+
+        // Persistent offline-mode banner — unlike a toast, this stays visible until dismissed or reloaded.
+        function showOfflineBanner(message) {
+            if (document.getElementById('offlineBanner')) return; // already shown
+            const banner = document.createElement('div');
+            banner.id = 'offlineBanner';
+            banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc2626;color:#fff;padding:12px 20px;font-weight:700;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.2);font-size:14px;';
+            banner.innerHTML = `⚠️ ${message} <button id="offlineBannerReload" style="margin-left:16px;background:#fff;color:#dc2626;border:none;padding:4px 12px;border-radius:4px;font-weight:700;cursor:pointer;">Reload now</button>`;
+            document.body.appendChild(banner);
+            document.getElementById('offlineBannerReload').addEventListener('click', () => window.location.reload());
+            // Push the page content down so the banner doesn't overlap
+            document.body.style.paddingTop = (banner.offsetHeight + 8) + 'px';
         }
 
         function populateStoreSelects() {
@@ -2749,14 +2809,15 @@
             try {
                 const ds = dateToString(date);
 
-                // Load daily department entry from localStorage
+                // Load daily department entry from localStorage.
+                // Use ?? '' (not || '') so that a legitimate 0 renders as 0, not as blank.
                 const dailyData = (await LS.getDailyEntries()).find(d => d.store_id === storeId && d.entry_date === ds);
                 if (dailyData) {
-                    document.getElementById('laborDay').value = dailyData.labor_day || '';
-                    document.getElementById('partsDay').value = dailyData.parts_day || '';
-                    document.getElementById('dailyTotalRos').value = dailyData.total_ros || '';
-                    document.getElementById('dailyStoreNps').value = dailyData.store_nps || '';
-                    document.getElementById('dailyRegionNps').value = dailyData.region_nps || '';
+                    document.getElementById('laborDay').value = dailyData.labor_day ?? '';
+                    document.getElementById('partsDay').value = dailyData.parts_day ?? '';
+                    document.getElementById('dailyTotalRos').value = dailyData.total_ros ?? '';
+                    document.getElementById('dailyStoreNps').value = dailyData.store_nps ?? '';
+                    document.getElementById('dailyRegionNps').value = dailyData.region_nps ?? '';
                 } else {
                     document.getElementById('laborDay').value = '';
                     document.getElementById('partsDay').value = '';
@@ -2778,14 +2839,14 @@
                     html += `
                         <tr>
                             <td>${advisor.name}</td>
-                            <td><input type="number" class="input-yellow advisor-labor" data-advisor="${advisor.id}" value="${entry?.labor_gross || ''}" placeholder="0"></td>
-                            <td><input type="number" class="input-yellow advisor-parts" data-advisor="${advisor.id}" value="${entry?.parts_gross || ''}" placeholder="0"></td>
+                            <td><input type="number" class="input-yellow advisor-labor" data-advisor="${advisor.id}" value="${entry?.labor_gross ?? ''}" placeholder="0"></td>
+                            <td><input type="number" class="input-yellow advisor-parts" data-advisor="${advisor.id}" value="${entry?.parts_gross ?? ''}" placeholder="0"></td>
                             <td class="input-gray advisor-gross" data-advisor="${advisor.id}" style="font-weight:700">-</td>
-                            <td><input type="number" class="input-yellow advisor-total-ros" data-advisor="${advisor.id}" value="${entry?.total_ros || entry?.ro_count || ''}" placeholder="0"></td>
-                            <td><input type="number" class="input-yellow advisor-cp" data-advisor="${advisor.id}" value="${entry?.cp_ros || ''}" placeholder="0"></td>
-                            <td><input type="number" step="0.1" class="input-yellow advisor-hours" data-advisor="${advisor.id}" value="${entry?.hours || ''}" placeholder="0"></td>
-                            <td><input type="number" step="0.1" class="input-yellow advisor-csi" data-advisor="${advisor.id}" value="${entry?.csi_score || ''}" placeholder="0"></td>
-                            <td><input type="number" step="0.1" class="input-yellow advisor-mpvi" data-advisor="${advisor.id}" value="${entry?.mpvi_pct || ''}" placeholder="0"></td>
+                            <td><input type="number" class="input-yellow advisor-total-ros" data-advisor="${advisor.id}" value="${entry?.total_ros ?? entry?.ro_count ?? ''}" placeholder="0"></td>
+                            <td><input type="number" class="input-yellow advisor-cp" data-advisor="${advisor.id}" value="${entry?.cp_ros ?? ''}" placeholder="0"></td>
+                            <td><input type="number" step="0.1" class="input-yellow advisor-hours" data-advisor="${advisor.id}" value="${entry?.hours ?? ''}" placeholder="0"></td>
+                            <td><input type="number" step="0.1" class="input-yellow advisor-csi" data-advisor="${advisor.id}" value="${entry?.csi_score ?? ''}" placeholder="0"></td>
+                            <td><input type="number" step="0.1" class="input-yellow advisor-mpvi" data-advisor="${advisor.id}" value="${entry?.mpvi_pct ?? ''}" placeholder="0"></td>
                             <td class="input-gray advisor-gross-ro" data-advisor="${advisor.id}" style="font-weight:700">-</td>
                             <td class="input-gray advisor-cp-per-ro" data-advisor="${advisor.id}" style="font-weight:700">-</td>
                             <td class="input-gray advisor-elr" data-advisor="${advisor.id}" style="font-weight:700">-</td>
@@ -3140,11 +3201,19 @@
             try {
                 const ds = dateToString(date);
 
+                // Remember the last date the user entered so we can restore it on reload
+                try { localStorage.setItem('dyer_last_entry_date', ds); } catch(e) {}
+
                 // Save daily department entry to localStorage
-                const totalRos = parseFloat(document.getElementById('dailyTotalRos').value) || 0;
-                const storeNps = parseFloat(document.getElementById('dailyStoreNps').value) || null;
-                const regionNps = parseFloat(document.getElementById('dailyRegionNps').value) || null;
-                await LS.saveDailyEntry({
+                const totalRosEl = document.getElementById('dailyTotalRos');
+                const storeNpsEl = document.getElementById('dailyStoreNps');
+                const regionNpsEl = document.getElementById('dailyRegionNps');
+                const totalRos = totalRosEl.value === '' ? 0 : (parseFloat(totalRosEl.value) || 0);
+                const storeNps = storeNpsEl.value === '' ? null : parseFloat(storeNpsEl.value);
+                const regionNps = regionNpsEl.value === '' ? null : parseFloat(regionNpsEl.value);
+
+                const failedSaves = [];
+                const dailyResult = await LS.saveDailyEntry({
                     store_id: storeId,
                     entry_date: ds,
                     day_number: dayNum,
@@ -3155,6 +3224,9 @@
                     store_nps: storeNps,
                     region_nps: regionNps
                 });
+                if (dailyResult && dailyResult.ok === false) {
+                    failedSaves.push('daily totals');
+                }
 
                 // Save advisor entries
                 const advRows = document.querySelectorAll('#dailyAdvisorBody tr');
@@ -3167,10 +3239,12 @@
                     const totalRos = parseFloat(row.querySelector('.advisor-total-ros').value) || 0;
                     const cpRos = parseFloat(row.querySelector('.advisor-cp').value) || 0;
                     const hours = parseFloat(row.querySelector('.advisor-hours').value) || 0;
-                    const csiScore = parseFloat(row.querySelector('.advisor-csi').value) || null;
-                    const mpviPct = parseFloat(row.querySelector('.advisor-mpvi').value) || null;
+                    const csiRaw = row.querySelector('.advisor-csi').value;
+                    const mpviRaw = row.querySelector('.advisor-mpvi').value;
+                    const csiScore = csiRaw === '' ? null : (parseFloat(csiRaw) || 0);
+                    const mpviPct = mpviRaw === '' ? null : (parseFloat(mpviRaw) || 0);
 
-                    await LS.saveAdvisorEntry({
+                    const advResult = await LS.saveAdvisorEntry({
                         store_id: storeId,
                         advisor_id: parseInt(advisorId),
                         entry_date: ds,
@@ -3184,9 +3258,22 @@
                         csi_score: csiScore,
                         mpvi_pct: mpviPct
                     });
+                    if (advResult && advResult.ok === false) {
+                        const advName = row.querySelector('td')?.textContent || `advisor ${advisorId}`;
+                        failedSaves.push(advName);
+                    }
                 }
 
-                showToast('Daily entry saved!');
+                if (failedSaves.length > 0) {
+                    const msg = failedSaves.length === 1
+                        ? `Save FAILED for ${failedSaves[0]} — please try again`
+                        : `Save FAILED for ${failedSaves.length} rows (${failedSaves.slice(0,3).join(', ')}${failedSaves.length > 3 ? '…' : ''}) — please try again`;
+                    showToast(msg, 'error');
+                } else if (!useSupabase) {
+                    showToast('Saved locally only — cloud is offline, reload to retry', 'error');
+                } else {
+                    showToast('Daily entry saved!');
+                }
                 updateDailyCalculations(); // refresh MTD
             } catch (error) {
                 console.error('Save error:', error);
