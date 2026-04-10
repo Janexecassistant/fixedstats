@@ -267,7 +267,9 @@
             color: white;
             background: linear-gradient(135deg, rgba(204, 0, 0, 0.35), rgba(160, 0, 0, 0.25));
             border-color: rgba(204, 0, 0, 0.5);
-            box-shadow: 0 4px 14px rgba(204, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+            box-shadow: 0 4px 14px rgba(204, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 2px 0 #cc0000;
+            position: relative;
+            border-bottom: 3px solid #cc0000;
         }
 
         /* Main Content */
@@ -331,18 +333,24 @@
             background-color: rgba(255, 255, 255, 0.92);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+            border-radius: 10px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
             padding: 24px;
             margin-bottom: 24px;
-            border-top: 3px solid #cc0000;
+            border-left: 4px solid #cc0000;
+            transition: box-shadow 0.25s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.08);
         }
 
         .card-title {
-            font-size: 16px;
-            font-weight: 600;
+            font-size: 18px;
+            font-weight: 700;
             margin-bottom: 16px;
             color: #1a1a1a;
+            letter-spacing: -0.3px;
         }
 
         .kpi-grid {
@@ -356,10 +364,15 @@
             background-color: rgba(255, 255, 255, 0.92);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+            border-radius: 10px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
             padding: 20px;
             border-left: 4px solid #cc0000;
+            transition: box-shadow 0.25s ease;
+        }
+
+        .kpi-card:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.08);
         }
 
         .capacity-kpi-grid {
@@ -373,13 +386,18 @@
             background: rgba(255, 255, 255, 0.92);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-radius: 10px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
             padding: 20px 16px;
             color: #1a1a2e;
             position: relative;
             overflow: hidden;
             border-left: 4px solid #cc0000;
+            transition: box-shadow 0.25s ease;
+        }
+
+        .capacity-kpi-card:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.08);
         }
 
         .capacity-kpi-card::before {
@@ -491,29 +509,42 @@
         }
 
         th {
-            background-color: #222;
-            border: 1px solid #333;
-            padding: 12px;
+            background-color: #1a1a1a;
+            border: 1px solid #d1d5db;
+            padding: 14px 12px;
             text-align: left;
             font-size: 13px;
             font-weight: 600;
-            color: #fff;
+            color: #ffffff;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            border-bottom: 2px solid #6b7280;
+        }
+
+        th[data-sort]:hover {
+            background-color: #2a2a2a;
+        }
+
+        .sort-arrow {
+            font-size: 10px;
+            color: #cc0000;
+            margin-left: 4px;
         }
 
         td {
-            border: 1px solid #ddd;
+            border: 1px solid #e5e7eb;
             padding: 12px;
             font-size: 14px;
+            color: #374151;
         }
 
         tr:nth-child(even) {
-            background-color: #f5f5f5;
+            background-color: #f9fafb;
         }
 
-        tr:hover {
-            background-color: #eee;
+        tr:hover:not(:first-child) {
+            background-color: #f3f4f6;
+            transition: background-color 0.15s ease;
         }
 
         td input,
@@ -534,15 +565,17 @@
         }
 
         .input-yellow {
-            background-color: #fefce8;
+            background-color: #fffde7 !important;
             border-color: #fde68a !important;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.03);
         }
 
         .input-gray {
-            background-color: #f3f4f6;
+            background-color: #f3f4f6 !important;
             color: #6b7280;
             font-weight: 500;
             border-color: #d1d5db !important;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.02) !important;
         }
 
         .row-success {
@@ -557,41 +590,71 @@
             background-color: #fee2e2 !important;
         }
 
+        /* Goal indicators */
+        .goal-above {
+            color: #059669 !important;
+            font-weight: 700;
+        }
+
+        .goal-below {
+            color: #dc2626 !important;
+            font-weight: 700;
+        }
+
         /* Buttons */
         .btn {
-            background-color: #cc0000;
+            background: linear-gradient(135deg, #cc0000 0%, #a30000 100%);
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             padding: 10px 16px;
             font-size: 14px;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.2s ease;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 8px rgba(204, 0, 0, 0.25);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.15);
         }
 
         .btn:hover {
-            background-color: #a30000;
+            background: linear-gradient(135deg, #dd1111 0%, #b30000 100%);
+            box-shadow: 0 4px 14px rgba(204, 0, 0, 0.35);
+            transform: translateY(-1px);
         }
 
         .btn:active {
-            background-color: #8b0000;
+            background: linear-gradient(135deg, #aa0000 0%, #880000 100%);
+            transform: translateY(0);
         }
 
         .btn-secondary {
-            background-color: #555;
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
         .btn-secondary:hover {
-            background-color: #333;
+            background: linear-gradient(135deg, #7b8794 0%, #5b6573 100%);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary:active {
+            transform: translateY(0);
         }
 
         .btn-danger {
-            background-color: #8b0000;
+            background: linear-gradient(135deg, #8b0000 0%, #5c0000 100%);
+            box-shadow: 0 2px 8px rgba(139, 0, 0, 0.3);
         }
 
         .btn-danger:hover {
-            background-color: #5c0000;
+            background: linear-gradient(135deg, #a30000 0%, #6b0000 100%);
+            box-shadow: 0 4px 14px rgba(139, 0, 0, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger:active {
+            transform: translateY(0);
         }
 
         .btn-group {
@@ -725,6 +788,23 @@
             font-weight: 600;
             color: #991b1b;
         }
+
+        /* Fix dropdown option visibility — dark text on light background */
+        #globalStoreSelect option {
+            background-color: #1e293b;
+            color: #ffffff;
+            padding: 8px 12px;
+            font-weight: 500;
+        }
+        #globalStoreSelect option:hover,
+        #globalStoreSelect option:checked {
+            background-color: #cc0000;
+            color: #ffffff;
+        }
+        #globalStoreSelect optgroup {
+            background-color: #1e293b;
+            color: #ffffff;
+        }
     </style>
 </head>
 <body>
@@ -803,6 +883,13 @@
             <!-- Department Section -->
             <div class="card">
                 <h3 class="card-title">Department Sales</h3>
+                <!-- Daily Goal Banner -->
+                <div id="dailyGoalBanner" style="display:none;background:linear-gradient(180deg,#111111 0%,#1a1a1a 40%,#555555 100%);border-radius:8px;padding:10px 20px;margin-bottom:16px;justify-content:space-around;flex-wrap:wrap;gap:0;box-shadow:0 2px 10px rgba(0,0,0,0.25);">
+                    <div style="text-align:center;flex:1;min-width:130px;padding:6px 12px;border-right:1px solid rgba(255,255,255,0.1);"><span style="font-size:11px;color:rgba(255,255,255,0.55);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Daily Labor Goal</span><br><span id="dailyLaborGoalDisplay" style="font-size:20px;font-weight:800;color:#ffffff;margin-top:4px;display:block;">—</span></div>
+                    <div style="text-align:center;flex:1;min-width:130px;padding:6px 12px;border-right:1px solid rgba(255,255,255,0.1);"><span style="font-size:11px;color:rgba(255,255,255,0.55);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Daily Parts Goal</span><br><span id="dailyPartsGoalDisplay" style="font-size:20px;font-weight:800;color:#ffffff;margin-top:4px;display:block;">—</span></div>
+                    <div style="text-align:center;flex:1;min-width:130px;padding:6px 12px;border-right:1px solid rgba(255,255,255,0.1);"><span style="font-size:11px;color:rgba(255,255,255,0.55);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Daily Gross Goal</span><br><span id="dailyGrossGoalDisplay" style="font-size:20px;font-weight:800;color:#ffffff;margin-top:4px;display:block;">—</span></div>
+                    <div style="text-align:center;flex:1;min-width:130px;padding:6px 12px;"><span style="font-size:11px;color:rgba(255,255,255,0.55);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Gross/RO Goal</span><br><span id="dailyGrossRoGoalDisplay" style="font-size:20px;font-weight:800;color:#ffffff;margin-top:4px;display:block;">—</span></div>
+                </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 32px;">
                 <table style="flex:1;">
                     <tbody>
@@ -880,7 +967,7 @@
                                 <th>CSI</th>
                                 <th>MPVI %</th>
                                 <th style="background:#1a1a1a;color:#cc0000;">Gross/RO</th>
-                                <th style="background:#1a1a1a;color:#cc0000;">CP$/RO</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">Parts Gross/RO</th>
                                 <th style="background:#1a1a1a;color:#cc0000;">ELR</th>
                                 <th style="background:#1a1a1a;color:#cc0000;">CP %</th>
                             </tr>
@@ -1020,25 +1107,26 @@
             <!-- Ranking Report Table -->
             <div class="card">
                 <h3 class="card-title" id="advisorRankTitle">Advisor Ranking Report — MTD</h3>
+                <p style="font-size:12px;color:#666;margin:-8px 0 12px 0;">Click any column header to sort. Click again to reverse.</p>
                 <div style="overflow-x: auto;">
-                    <table>
+                    <table id="advisorRankTable">
                         <thead>
                             <tr>
-                                <th style="background:#1a1a1a;color:#cc0000;">Rank</th>
-                                <th>Advisor</th>
-                                <th>Store</th>
-                                <th>Labor ($)</th>
-                                <th>Parts ($)</th>
-                                <th>Total Gross ($)</th>
-                                <th>RO Count</th>
-                                <th>CP ROs</th>
-                                <th>CP %</th>
-                                <th>Hours</th>
-                                <th>Gross/RO</th>
-                                <th>ELR</th>
-                                <th>HRO</th>
-                                <th>CSI</th>
-                                <th>MPVI %</th>
+                                <th style="background:#1a1a1a;color:#cc0000;cursor:pointer;user-select:none;" data-sort="rank">Rank <span class="sort-arrow"></span></th>
+                                <th style="cursor:pointer;user-select:none;" data-sort="name">Advisor <span class="sort-arrow"></span></th>
+                                <th style="cursor:pointer;user-select:none;" data-sort="store">Store <span class="sort-arrow"></span></th>
+                                <th style="cursor:pointer;user-select:none;" data-sort="labor">Labor ($) <span class="sort-arrow"></span></th>
+                                <th style="cursor:pointer;user-select:none;" data-sort="parts">Parts ($) <span class="sort-arrow"></span></th>
+                                <th style="cursor:pointer;user-select:none;" data-sort="gross">Total Gross ($) <span class="sort-arrow">▼</span></th>
+                                <th style="cursor:pointer;user-select:none;" data-sort="ros">RO Count <span class="sort-arrow"></span></th>
+                                <th style="cursor:pointer;user-select:none;" data-sort="cpRos">CP ROs <span class="sort-arrow"></span></th>
+                                <th style="cursor:pointer;user-select:none;" data-sort="cpPct">CP % <span class="sort-arrow"></span></th>
+                                <th style="cursor:pointer;user-select:none;" data-sort="hours">Hours <span class="sort-arrow"></span></th>
+                                <th style="cursor:pointer;user-select:none;" data-sort="grossRo">Gross/RO <span class="sort-arrow"></span></th>
+                                <th style="cursor:pointer;user-select:none;" data-sort="elr">ELR <span class="sort-arrow"></span></th>
+                                <th style="cursor:pointer;user-select:none;" data-sort="hro">HRO <span class="sort-arrow"></span></th>
+                                <th style="cursor:pointer;user-select:none;" data-sort="csi">CSI <span class="sort-arrow"></span></th>
+                                <th style="cursor:pointer;user-select:none;" data-sort="mpvi">MPVI % <span class="sort-arrow"></span></th>
                             </tr>
                         </thead>
                         <tbody id="advisorRankBody">
@@ -1046,6 +1134,29 @@
                         <tfoot id="advisorRankFooter">
                         </tfoot>
                     </table>
+                </div>
+            </div>
+
+            <!-- Visual Charts -->
+            <div class="card">
+                <h3 class="card-title">Advisor Performance Charts</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+                    <div>
+                        <h4 style="font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:8px;text-align:center;">Top 10 Advisors — Total Gross</h4>
+                        <div style="height:340px;"><canvas id="advisorTopGrossChart"></canvas></div>
+                    </div>
+                    <div>
+                        <h4 style="font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:8px;text-align:center;">Labor vs Parts Breakdown</h4>
+                        <div style="height:340px;"><canvas id="advisorLaborPartsChart"></canvas></div>
+                    </div>
+                    <div>
+                        <h4 style="font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:8px;text-align:center;">Gross per RO (Efficiency)</h4>
+                        <div style="height:340px;"><canvas id="advisorGrossRoChart"></canvas></div>
+                    </div>
+                    <div>
+                        <h4 style="font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:8px;text-align:center;">RO Count (Volume)</h4>
+                        <div style="height:340px;"><canvas id="advisorRoVolumeChart"></canvas></div>
+                    </div>
                 </div>
             </div>
 
@@ -1285,6 +1396,8 @@
                                 <th>Username</th>
                                 <th>Email</th>
                                 <th>Role</th>
+                                <th>Store Access</th>
+                                <th>Default Store</th>
                                 <th>Status</th>
                                 <th>Last Login</th>
                                 <th style="width:150px">Actions</th>
@@ -1329,6 +1442,12 @@
                         <label style="font-weight: 600; color: #555;">Store Access:</label>
                         <div id="storeCheckboxes" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px;">
                         </div>
+                    </div>
+                    <div class="control-group" style="margin-top: 16px;">
+                        <label style="font-weight: 600; color: #555;">Default Store (auto-selected on login):</label>
+                        <select id="formDefaultStore" style="margin-top: 8px;">
+                            <option value="">None — show All Stores</option>
+                        </select>
                     </div>
                     <div class="btn-group" style="margin-top: 24px;">
                         <button type="submit" class="btn">Save User</button>
@@ -1499,6 +1618,7 @@
                     role: data.role,
                     email: data.email,
                     store_access: [],
+                    default_store: data.default_store || null,
                     token: data.token
                 };
 
@@ -1510,6 +1630,16 @@
                     }
                 } catch(e) { console.warn('Could not fetch store access', e); }
 
+                // Fetch default_store preference if not returned by auth RPC
+                if (!currentUser.default_store) {
+                    try {
+                        const { data: userData } = await db.from('app_users').select('default_store').eq('id', data.id).single();
+                        if (userData && userData.default_store) {
+                            currentUser.default_store = userData.default_store;
+                        }
+                    } catch(e) { /* default_store column may not exist yet — that's OK */ }
+                }
+
                 sessionStorage.setItem('dyer_session', JSON.stringify(currentUser));
 
                 // Update UI
@@ -1520,6 +1650,9 @@
 
                 // Load initial data
                 await initialize();
+
+                // Apply store defaults AFTER initialize so dropdown options exist
+                applyStoreDefaults();
             } catch (error) {
                 console.error('Login error:', error);
                 errorDiv.textContent = 'Login failed: ' + (error.message || 'Unknown error');
@@ -1555,6 +1688,7 @@
                     role: data.role,
                     email: data.email,
                     store_access: data.stores || [],
+                    default_store: data.default_store || null,
                     token: data.token
                 };
                 sessionStorage.setItem('dyer_session', JSON.stringify(currentUser));
@@ -1622,26 +1756,64 @@
                 });
             }
 
-            // Filter store dropdown based on role
+            // Store dropdown filtering and default store are applied AFTER initialize()
+            // to ensure store options are populated first. See applyStoreDefaults().
+        }
+
+        function applyStoreDefaults() {
+            // Called after initialize() so dropdown options exist
+            if (!currentUser) return;
+
             if (currentUser.role !== 'admin' && currentUser.role !== 'executive') {
                 filterStoreDropdown();
+            } else {
+                setDefaultStoreForUser();
             }
         }
 
         function filterStoreDropdown() {
             const select = document.getElementById('globalStoreSelect');
-            const stores = Array.from(select.options);
-            stores.forEach((opt, idx) => {
+            const allOptions = Array.from(select.options);
+
+            // Hide stores the user doesn't have access to
+            allOptions.forEach((opt, idx) => {
                 if (idx === 0) return; // Keep "All Stores" option
                 const storeId = opt.value;
                 if (!currentUser.store_access.includes(storeId)) {
                     opt.style.display = 'none';
                 }
             });
-            // If current value not in access list, select first available
-            if (!currentUser.store_access.includes(select.value) && select.value !== 'all') {
-                const available = Array.from(select.options).find(opt => opt.style.display !== 'none' && opt.value !== 'all');
-                if (available) select.value = available.value;
+
+            const accessibleStores = allOptions.filter(opt => opt.value !== 'all' && opt.style.display !== 'none');
+
+            if (accessibleStores.length === 1) {
+                // Single store access — auto-select it and hide "All Stores"
+                select.value = accessibleStores[0].value;
+                allOptions[0].style.display = 'none'; // Hide "All Stores" for single-store users
+            } else if (accessibleStores.length > 1) {
+                // Multiple stores — check for default_store, else select first accessible
+                if (currentUser.default_store && currentUser.store_access.includes(currentUser.default_store)) {
+                    select.value = currentUser.default_store;
+                } else {
+                    select.value = accessibleStores[0].value;
+                }
+            }
+
+            // Reload active tab with selected store
+            const activeTab = document.querySelector('.nav-btn.active')?.dataset.tab;
+            if (activeTab === 'daily') loadDailyEntry();
+        }
+
+        function setDefaultStoreForUser() {
+            // For admins/executives: if they have a default_store preference, select it
+            if (currentUser.default_store) {
+                const select = document.getElementById('globalStoreSelect');
+                const match = Array.from(select.options).find(opt => opt.value === currentUser.default_store);
+                if (match) {
+                    select.value = currentUser.default_store;
+                    const activeTab = document.querySelector('.nav-btn.active')?.dataset.tab;
+                    if (activeTab === 'daily') loadDailyEntry();
+                }
             }
         }
 
@@ -1674,7 +1846,11 @@
         function populateStoreCheckboxes() {
             const container = document.getElementById('storeCheckboxes');
             container.innerHTML = '';
+            const defaultStoreSelect = document.getElementById('formDefaultStore');
+            defaultStoreSelect.innerHTML = '<option value="">None — show All Stores</option>';
+
             FALLBACK_STORES.forEach(store => {
+                // Checkbox
                 const label = document.createElement('label');
                 label.style.display = 'flex';
                 label.style.alignItems = 'center';
@@ -1688,6 +1864,12 @@
                 label.appendChild(checkbox);
                 label.appendChild(document.createTextNode(store.code));
                 container.appendChild(label);
+
+                // Default store option
+                const opt = document.createElement('option');
+                opt.value = store.id;
+                opt.textContent = `${store.code} - ${store.name}`;
+                defaultStoreSelect.appendChild(opt);
             });
         }
 
@@ -1729,6 +1911,7 @@
 
             const storeAccess = Array.from(document.querySelectorAll('.storeAccessCheckbox:checked'))
                 .map(cb => cb.value);
+            const defaultStore = document.getElementById('formDefaultStore').value || null;
 
             if (storeAccess.length === 0 && role === 'manager') {
                 showToast('Managers must have at least one store assigned', 'error');
@@ -1755,7 +1938,8 @@
                         username: username,
                         display_name: displayName,
                         email: email || null,
-                        role: role
+                        role: role,
+                        default_store: defaultStore
                     };
                     if (passwordHash) {
                         updateData.password_hash = passwordHash;
@@ -1789,6 +1973,7 @@
                         display_name: displayName,
                         email: email || null,
                         role: role,
+                        default_store: defaultStore,
                         is_active: true,
                         last_login: null
                     }).select();
@@ -1833,7 +2018,14 @@
                 tbody.innerHTML = '';
 
                 allUsers.forEach(user => {
-                    const storeList = (user.user_store_access || []).map(a => a.store_id).join(', ') || 'None';
+                    const storeIds = (user.user_store_access || []).map(a => a.store_id);
+                    const storeLabels = storeIds.map(sid => {
+                        const s = FALLBACK_STORES.find(fs => fs.id === sid);
+                        return s ? s.code : sid;
+                    }).join(', ') || 'None';
+                    const defaultStoreLabel = user.default_store
+                        ? (FALLBACK_STORES.find(s => s.id === user.default_store)?.code || user.default_store)
+                        : '—';
                     const row = document.createElement('tr');
                     const statusStyle = user.is_active ? 'color: #22c55e;' : 'color: #ef4444;';
                     const toggleLabel = user.is_active ? 'Deactivate' : 'Activate';
@@ -1843,6 +2035,8 @@
                         <td>${user.username}</td>
                         <td>${user.email || '-'}</td>
                         <td><span style="text-transform:capitalize;">${user.role}</span></td>
+                        <td style="font-size:12px;">${storeLabels}</td>
+                        <td style="font-size:12px;">${defaultStoreLabel}</td>
                         <td><span style="${statusStyle} font-weight:600;">${user.is_active ? 'Active' : 'Inactive'}</span></td>
                         <td>${user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}</td>
                         <td style="white-space:nowrap;">
@@ -1875,13 +2069,18 @@
             document.getElementById('formPassword').required = false;
             document.getElementById('passwordLabel').textContent = 'Password (leave blank to keep current)';
 
-            // Update store checkboxes
+            // Populate store checkboxes and default store dropdown
+            populateStoreCheckboxes();
             updateStoreCheckboxesForRole();
+
+            // Check the stores this user has access to
             setTimeout(() => {
                 const userStores = (user.user_store_access || []).map(a => a.store_id);
                 document.querySelectorAll('#storeCheckboxes input[type="checkbox"]').forEach(cb => {
                     cb.checked = userStores.includes(cb.value);
                 });
+                // Set default store after dropdown is populated
+                document.getElementById('formDefaultStore').value = user.default_store || '';
             }, 100);
 
             // Scroll to form
@@ -1893,6 +2092,7 @@
             document.getElementById('formPassword').required = true;
             document.getElementById('passwordLabel').textContent = 'Password *';
             document.getElementById('addUserFormTitle').textContent = 'Add New User';
+            document.getElementById('formDefaultStore').value = '';
         }
 
         async function toggleUserActive(userId, currentlyActive) {
@@ -2145,6 +2345,9 @@
                         const row = { store_id: entry.store_id, entry_date: entry.entry_date,
                             labor_day: entry.labor_day || entry.total_labor || 0,
                             parts_day: entry.parts_day || entry.total_parts || 0,
+                            total_ros: entry.total_ros || 0,
+                            store_nps: entry.store_nps || null,
+                            region_nps: entry.region_nps || null,
                             day_number: entry.day_number || entry.day_of_month || 0,
                             days_in_month: entry.days_in_month || 0,
                             updated_at: new Date().toISOString(),
@@ -2172,7 +2375,9 @@
                 if (useSupabase) {
                     try {
                         const row = { advisor_id: parseInt(entry.advisor_id), store_id: entry.store_id, entry_date: entry.entry_date,
-                            ro_count: entry.ro_count || 0, cp_ros: entry.cp_ros || entry.cp_ro || 0,
+                            ro_count: entry.ro_count || entry.total_ros || 0,
+                            total_ros: entry.total_ros || entry.ro_count || 0,
+                            cp_ros: entry.cp_ros || entry.cp_ro || 0,
                             hours: entry.hours || 0, labor_gross: entry.labor_gross || 0,
                             parts_gross: entry.parts_gross || 0, total_gross: entry.total_gross || 0,
                             csi_score: entry.csi_score || entry.csi || 0,
@@ -2340,6 +2545,9 @@
                 // Populate store dropdowns
                 populateStoreSelects();
                 populateAdvisorSelect();
+
+                // Apply store filtering and default store AFTER options are populated
+                applyStoreDefaults();
 
                 // Load daily entry
                 await loadDailyEntry();
@@ -2524,11 +2732,19 @@
             }
 
             if (isAllStores()) {
-                document.getElementById('dailyAdvisorBody').innerHTML = '<tr><td colspan="11" style="text-align:center;padding:24px;color:#888;">Select a specific store to enter daily data</td></tr>';
-                document.getElementById('laborDay').value = '';
-                document.getElementById('partsDay').value = '';
+                await loadDailyEntryAllStores(date);
                 return;
             }
+
+            // Restore editable state (in case switching from All Stores)
+            ['laborDay', 'partsDay', 'dailyTotalRos', 'dailyStoreNps', 'dailyRegionNps'].forEach(id => {
+                const el = document.getElementById(id);
+                el.readOnly = false;
+                el.classList.remove('input-gray');
+                el.classList.add('input-yellow');
+                el.style.backgroundColor = '';
+            });
+            document.getElementById('saveDailyBtn').style.display = '';
 
             try {
                 const ds = dateToString(date);
@@ -2565,7 +2781,7 @@
                             <td><input type="number" class="input-yellow advisor-labor" data-advisor="${advisor.id}" value="${entry?.labor_gross || ''}" placeholder="0"></td>
                             <td><input type="number" class="input-yellow advisor-parts" data-advisor="${advisor.id}" value="${entry?.parts_gross || ''}" placeholder="0"></td>
                             <td class="input-gray advisor-gross" data-advisor="${advisor.id}" style="font-weight:700">-</td>
-                            <td><input type="number" class="input-yellow advisor-total-ros" data-advisor="${advisor.id}" value="${entry?.total_ros || ''}" placeholder="0"></td>
+                            <td><input type="number" class="input-yellow advisor-total-ros" data-advisor="${advisor.id}" value="${entry?.total_ros || entry?.ro_count || ''}" placeholder="0"></td>
                             <td><input type="number" class="input-yellow advisor-cp" data-advisor="${advisor.id}" value="${entry?.cp_ros || ''}" placeholder="0"></td>
                             <td><input type="number" step="0.1" class="input-yellow advisor-hours" data-advisor="${advisor.id}" value="${entry?.hours || ''}" placeholder="0"></td>
                             <td><input type="number" step="0.1" class="input-yellow advisor-csi" data-advisor="${advisor.id}" value="${entry?.csi_score || ''}" placeholder="0"></td>
@@ -2587,6 +2803,189 @@
                 updateDailyCalculations();
             } catch (error) {
                 console.error('Load daily error:', error);
+            }
+        }
+
+        async function loadDailyEntryAllStores(date) {
+            try {
+                const ds = dateToString(date);
+                const allDaily = await LS.getDailyEntries();
+                const allAdvisor = await LS.getAdvisorEntries();
+
+                // Aggregate department totals across all stores for this date
+                const dayEntries = allDaily.filter(d => d.entry_date === ds);
+                let totalLabor = 0, totalParts = 0, totalRos = 0;
+                let npsCount = 0, npsSum = 0, regionNpsCount = 0, regionNpsSum = 0;
+
+                dayEntries.forEach(d => {
+                    totalLabor += parseFloat(d.labor_day) || 0;
+                    totalParts += parseFloat(d.parts_day) || 0;
+                    totalRos += parseInt(d.total_ros) || 0;
+                    if (d.store_nps) { npsSum += parseFloat(d.store_nps); npsCount++; }
+                    if (d.region_nps) { regionNpsSum += parseFloat(d.region_nps); regionNpsCount++; }
+                });
+
+                // Set department fields as read-only with aggregated values
+                const laborEl = document.getElementById('laborDay');
+                const partsEl = document.getElementById('partsDay');
+                const rosEl = document.getElementById('dailyTotalRos');
+                const storeNpsEl = document.getElementById('dailyStoreNps');
+                const regionNpsEl = document.getElementById('dailyRegionNps');
+
+                laborEl.value = totalLabor || '';
+                partsEl.value = totalParts || '';
+                rosEl.value = totalRos || '';
+                storeNpsEl.value = npsCount > 0 ? (npsSum / npsCount).toFixed(1) : '';
+                regionNpsEl.value = regionNpsCount > 0 ? (regionNpsSum / regionNpsCount).toFixed(1) : '';
+
+                // Make department inputs read-only
+                [laborEl, partsEl, rosEl, storeNpsEl, regionNpsEl].forEach(el => {
+                    el.readOnly = true;
+                    el.classList.remove('input-yellow');
+                    el.classList.add('input-gray');
+                    el.style.backgroundColor = '#f0f0f0';
+                });
+
+                // Calculate total gross
+                document.getElementById('totalGrossDay').textContent = formatCurrency(totalLabor + totalParts);
+
+                // Build advisor rows — read-only, grouped by store
+                const dayAdvisors = allAdvisor.filter(d => d.entry_date === ds);
+                const activeAdvisors = advisors.filter(a => a.is_active !== false);
+
+                let html = '';
+                // Group by store
+                const storeGroups = {};
+                activeAdvisors.forEach(adv => {
+                    if (!storeGroups[adv.store_id]) storeGroups[adv.store_id] = [];
+                    storeGroups[adv.store_id].push(adv);
+                });
+
+                Object.keys(storeGroups).forEach(sid => {
+                    const store = stores.find(s => s.id === sid) || FALLBACK_STORES.find(s => s.id === sid);
+                    const storeName = store ? store.code : sid;
+                    html += `<tr style="background:#e2e8f0;"><td colspan="13" style="font-weight:700;padding:8px 12px;color:#334155;">${storeName}</td></tr>`;
+
+                    storeGroups[sid].forEach(advisor => {
+                        const entry = dayAdvisors.find(e => e.advisor_id === advisor.id);
+                        const labor = parseFloat(entry?.labor_gross) || 0;
+                        const parts = parseFloat(entry?.parts_gross) || 0;
+                        const gross = labor + parts;
+                        const ros = parseInt(entry?.total_ros || entry?.ro_count) || 0;
+                        const cpRos = parseInt(entry?.cp_ros) || 0;
+                        const hours = parseFloat(entry?.hours) || 0;
+                        const csi = entry?.csi_score || '';
+                        const mpvi = entry?.mpvi_pct || '';
+                        const grossPerRo = ros > 0 ? gross / ros : 0;
+                        const partsPerRo = ros > 0 ? parts / ros : 0;
+                        const elr = hours > 0 ? labor / hours : 0;
+                        const cpPct = ros > 0 ? ((cpRos / ros) * 100) : 0;
+
+                        html += `
+                            <tr>
+                                <td>${advisor.name}</td>
+                                <td class="input-gray" style="background:#f0f0f0;">${labor ? formatCurrency(labor) : '—'}</td>
+                                <td class="input-gray" style="background:#f0f0f0;">${parts ? formatCurrency(parts) : '—'}</td>
+                                <td class="input-gray" style="font-weight:700">${gross ? formatCurrency(gross) : '—'}</td>
+                                <td class="input-gray" style="background:#f0f0f0;">${ros || '—'}</td>
+                                <td class="input-gray" style="background:#f0f0f0;">${cpRos || '—'}</td>
+                                <td class="input-gray" style="background:#f0f0f0;">${hours || '—'}</td>
+                                <td class="input-gray" style="background:#f0f0f0;">${csi || '—'}</td>
+                                <td class="input-gray" style="background:#f0f0f0;">${mpvi || '—'}</td>
+                                <td class="input-gray" style="font-weight:700">${ros > 0 ? formatCurrency(grossPerRo) : '—'}</td>
+                                <td class="input-gray" style="font-weight:700">${ros > 0 ? formatCurrency(partsPerRo) : '—'}</td>
+                                <td class="input-gray" style="font-weight:700">${hours > 0 ? formatCurrency(elr) : '—'}</td>
+                                <td class="input-gray" style="font-weight:700">${ros > 0 ? cpPct.toFixed(0) + '%' : '—'}</td>
+                            </tr>
+                        `;
+                    });
+                });
+
+                document.getElementById('dailyAdvisorBody').innerHTML = html;
+
+                // Hide save button for All Stores
+                document.getElementById('saveDailyBtn').style.display = 'none';
+
+                // Update MTD calculations
+                updateDailyCalculationsAllStores(date);
+
+            } catch (error) {
+                console.error('Load all stores daily error:', error);
+            }
+        }
+
+        async function updateDailyCalculationsAllStores(date) {
+            const d = date || pickerDate(document.getElementById('dailyDatePicker').valueAsDate);
+            const ds = dateToString(d);
+            const month = ds.substring(0, 7);
+            const monthStart = month + '-01';
+            const monthEnd = month + '-31';
+            const dayNum = parseInt(document.getElementById('dailyDayNumber').value) || 0;
+            const daysInMonth = parseInt(document.getElementById('dailyDaysInMonth').value) || 0;
+
+            const allDaily = (await LS.getDailyEntries()).filter(d => d.entry_date >= monthStart && d.entry_date <= monthEnd);
+
+            // Sum MTD across all stores
+            let mtdLabor = 0, mtdParts = 0, mtdRos = 0;
+            allDaily.forEach(d => {
+                mtdLabor += parseFloat(d.labor_day) || 0;
+                mtdParts += parseFloat(d.parts_day) || 0;
+                mtdRos += parseInt(d.total_ros) || 0;
+            });
+
+            const mtdGross = mtdLabor + mtdParts;
+            document.getElementById('laborMtd').textContent = formatCurrency(mtdLabor);
+            document.getElementById('partsMtd').textContent = formatCurrency(mtdParts);
+            document.getElementById('totalGrossMtd').textContent = formatCurrency(mtdGross);
+
+            // Pacing
+            if (dayNum > 0 && daysInMonth > 0) {
+                const laborPace = (mtdLabor / dayNum) * daysInMonth;
+                const partsPace = (mtdParts / dayNum) * daysInMonth;
+                document.getElementById('laborPace').textContent = formatCurrency(laborPace);
+                document.getElementById('partsPace').textContent = formatCurrency(partsPace);
+            }
+
+            // Tracking RO Count
+            if (dayNum > 0 && daysInMonth > 0) {
+                const roPace = Math.round((mtdRos / dayNum) * daysInMonth);
+                document.getElementById('dailyTrackingRos').textContent = roPace;
+            }
+
+            // Load and display aggregated daily goals for All Stores
+            if (isAllStores()) {
+                const allGoals = await LS.getGoals();
+                const goalMonth = d.getMonth() + 1;
+                const goalYear = d.getFullYear();
+                const monthGoals = allGoals.filter(g => g.month === goalMonth && g.year === goalYear);
+
+                let totalLaborGoal = 0, totalPartsGoal = 0, totalGrossGoal = 0, grossRoGoalSum = 0, goalCount = 0;
+
+                monthGoals.forEach(g => {
+                    totalLaborGoal += parseFloat(g.labor_goal) || 0;
+                    totalPartsGoal += parseFloat(g.parts_goal) || 0;
+                    totalGrossGoal += parseFloat(g.total_gross_goal) || 0;
+                    if (g.gross_per_ro_target && g.gross_per_ro_target > 0) {
+                        grossRoGoalSum += parseFloat(g.gross_per_ro_target);
+                        goalCount++;
+                    }
+                });
+
+                const dailyLaborGoal = daysInMonth > 0 ? totalLaborGoal / daysInMonth : 0;
+                const dailyPartsGoal = daysInMonth > 0 ? totalPartsGoal / daysInMonth : 0;
+                const dailyGrossGoal = daysInMonth > 0 ? totalGrossGoal / daysInMonth : 0;
+                const grossRoGoal = goalCount > 0 ? grossRoGoalSum / goalCount : 0;
+
+                const banner = document.getElementById('dailyGoalBanner');
+                if (dailyLaborGoal > 0 || dailyPartsGoal > 0 || dailyGrossGoal > 0 || grossRoGoal > 0) {
+                    banner.style.display = 'flex';
+                    document.getElementById('dailyLaborGoalDisplay').textContent = dailyLaborGoal > 0 ? formatCurrency(dailyLaborGoal) : '—';
+                    document.getElementById('dailyPartsGoalDisplay').textContent = dailyPartsGoal > 0 ? formatCurrency(dailyPartsGoal) : '—';
+                    document.getElementById('dailyGrossGoalDisplay').textContent = dailyGrossGoal > 0 ? formatCurrency(dailyGrossGoal) : '—';
+                    document.getElementById('dailyGrossRoGoalDisplay').textContent = grossRoGoal > 0 ? formatCurrency(grossRoGoal) : '—';
+                } else {
+                    banner.style.display = 'none';
+                }
             }
         }
 
@@ -2621,9 +3020,9 @@
                 const grossRo = totalRos > 0 ? gross / totalRos : 0;
                 row.querySelector('.advisor-gross-ro').textContent = grossRo > 0 ? formatCurrency(grossRo) : '-';
 
-                // CP$ Per RO (total gross / CP ROs)
-                const cpPerRo = cpRos > 0 ? gross / cpRos : 0;
-                row.querySelector('.advisor-cp-per-ro').textContent = cpPerRo > 0 ? formatCurrency(cpPerRo) : '-';
+                // Parts Gross/RO (parts / total ROs)
+                const partsPerRo = totalRos > 0 ? parts / totalRos : 0;
+                row.querySelector('.advisor-cp-per-ro').textContent = partsPerRo > 0 ? formatCurrency(partsPerRo) : '-';
 
                 // ELR (gross / hours)
                 const elr = hours > 0 ? gross / hours : 0;
@@ -2661,6 +3060,68 @@
             const daysWorked = monthlyData.filter(d => (d.labor_day || 0) > 0 || (d.total_ros || 0) > 0).length;
             const trackingRos = daysWorked > 0 && daysInMonth > 0 ? Math.round((roMtd / daysWorked) * daysInMonth) : 0;
             document.getElementById('dailyTrackingRos').textContent = trackingRos > 0 ? trackingRos.toLocaleString() : '0';
+
+            // Load goals and show daily targets + color coding
+            await updateDailyGoalDisplay(storeId, date, daysInMonth, laborDay, partsDay, totalGrossDay);
+        }
+
+        async function updateDailyGoalDisplay(storeId, date, daysInMonth, laborDay, partsDay, totalGrossDay) {
+            const banner = document.getElementById('dailyGoalBanner');
+            if (!storeId || isAllStores()) {
+                banner.style.display = 'none';
+                return;
+            }
+
+            const { month, year } = getMonthYear(date);
+            const goalsData = (await LS.getGoals()).find(g => g.store_id === storeId && g.month === month && g.year === year);
+
+            if (!goalsData || (!goalsData.labor_goal && !goalsData.parts_goal && !goalsData.total_gross_goal)) {
+                banner.style.display = 'none';
+                return;
+            }
+
+            const dailyLaborGoal = daysInMonth > 0 ? (goalsData.labor_goal || 0) / daysInMonth : 0;
+            const dailyPartsGoal = daysInMonth > 0 ? (goalsData.parts_goal || 0) / daysInMonth : 0;
+            const dailyGrossGoal = daysInMonth > 0 ? (goalsData.total_gross_goal || 0) / daysInMonth : 0;
+            const grossRoGoal = goalsData.gross_per_ro_target || 0;
+
+            // Show banner
+            banner.style.display = 'flex';
+            document.getElementById('dailyLaborGoalDisplay').textContent = dailyLaborGoal > 0 ? formatCurrency(dailyLaborGoal) : '—';
+            document.getElementById('dailyPartsGoalDisplay').textContent = dailyPartsGoal > 0 ? formatCurrency(dailyPartsGoal) : '—';
+            document.getElementById('dailyGrossGoalDisplay').textContent = dailyGrossGoal > 0 ? formatCurrency(dailyGrossGoal) : '—';
+            document.getElementById('dailyGrossRoGoalDisplay').textContent = grossRoGoal > 0 ? formatCurrency(grossRoGoal) : '—';
+
+            // Color-code the actual values vs daily goals
+            function applyGoalColor(elementId, actual, goal) {
+                const el = document.getElementById(elementId);
+                if (!el || !goal || goal <= 0 || !actual) {
+                    el.style.color = '';
+                    return;
+                }
+                el.style.color = actual >= goal ? '#16a34a' : '#dc2626';
+                el.style.fontWeight = '700';
+            }
+
+            applyGoalColor('totalGrossDay', totalGrossDay, dailyGrossGoal);
+
+            // Color-code labor and parts inputs
+            const laborEl = document.getElementById('laborDay');
+            const partsEl = document.getElementById('partsDay');
+            if (laborDay > 0 && dailyLaborGoal > 0) {
+                laborEl.style.borderColor = laborDay >= dailyLaborGoal ? '#16a34a' : '#dc2626';
+                laborEl.style.borderWidth = '2px';
+            } else {
+                laborEl.style.borderColor = '';
+                laborEl.style.borderWidth = '';
+            }
+            if (partsDay > 0 && dailyPartsGoal > 0) {
+                partsEl.style.borderColor = partsDay >= dailyPartsGoal ? '#16a34a' : '#dc2626';
+                partsEl.style.borderWidth = '2px';
+            } else {
+                partsEl.style.borderColor = '';
+                partsEl.style.borderWidth = '';
+            }
         }
 
         async function saveDailyEntry() {
@@ -2864,12 +3325,23 @@
                     advByDate[d.entry_date].gross += (d.total_gross || 0);
                 });
 
+                // Calculate daily goal targets (monthly goal / working days)
+                const dailyLaborGoal = (daysInMonth > 0 && laborGoal > 0) ? laborGoal / daysInMonth : 0;
+                const dailyPartsGoal = (daysInMonth > 0 && partsGoal > 0) ? partsGoal / daysInMonth : 0;
+                const dailyGrossGoal = (daysInMonth > 0 && totalGrossGoal > 0) ? totalGrossGoal / daysInMonth : 0;
+
                 let dailyHtml = '';
                 let runningTotal = 0;
                 let workingDayNum = 0;
                 let totLabor = 0, totParts = 0, totGross = 0, totRo = 0, totHours = 0;
                 const today = new Date();
                 const isCurrentMonth = today.getFullYear() === year && (today.getMonth() + 1) === month;
+
+                // Helper: color style for goal comparison
+                function goalColor(actual, dailyTarget) {
+                    if (!dailyTarget || dailyTarget <= 0 || !actual) return '';
+                    return actual >= dailyTarget ? 'color:#16a34a;font-weight:700;' : 'color:#dc2626;font-weight:700;';
+                }
 
                 for (let d = 1; d <= daysInMonthCount; d++) {
                     const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
@@ -2899,24 +3371,46 @@
                     const rowStyle = isSunday ? 'opacity:0.35;' : isToday ? 'background:#fff3cd;font-weight:700;' : isFuture ? 'opacity:0.4;' : '';
                     const hasData = dep.labor > 0 || dep.parts > 0 || adv.roCount > 0;
 
+                    // Color code labor, parts, gross, and gross/RO vs daily goals
+                    const laborStyle = hasData ? goalColor(dep.labor, dailyLaborGoal) : '';
+                    const partsStyle = hasData ? goalColor(dep.parts, dailyPartsGoal) : '';
+                    const grossStyle = hasData ? goalColor(dayGross, dailyGrossGoal) : '';
+                    const grossRoStyle = (hasData && grossPerRo > 0) ? goalColor(grossPerRo, grossPerRoGoal) : '';
+
                     dailyHtml += `<tr style="${rowStyle}">
                         <td style="font-weight:700;${isToday ? 'color:#cc0000;' : ''}">${d}</td>
                         <td>${dayName} ${month}/${d}</td>
                         <td>${dayType}</td>
-                        <td>${hasData ? formatCurrency(dep.labor) : '—'}</td>
-                        <td>${hasData ? formatCurrency(dep.parts) : '—'}</td>
-                        <td>${hasData ? formatCurrency(dayGross) : '—'}</td>
+                        <td style="${laborStyle}">${hasData ? formatCurrency(dep.labor) : '—'}</td>
+                        <td style="${partsStyle}">${hasData ? formatCurrency(dep.parts) : '—'}</td>
+                        <td style="${grossStyle}">${hasData ? formatCurrency(dayGross) : '—'}</td>
                         <td>${hasData ? adv.roCount : '—'}</td>
                         <td>${hasData ? adv.hours.toFixed(1) : '—'}</td>
-                        <td>${hasData && grossPerRo > 0 ? formatCurrency(grossPerRo) : '—'}</td>
+                        <td style="${grossRoStyle}">${hasData && grossPerRo > 0 ? formatCurrency(grossPerRo) : '—'}</td>
                         <td style="font-weight:600;">${runningTotal > 0 ? formatCurrency(runningTotal) : '—'}</td>
                         <td style="font-weight:700;color:#cc0000;">${trackingValue > 0 ? formatCurrency(trackingValue) : '—'}</td>
                     </tr>`;
                 }
+
+                // Daily goal target row shown above totals
+                const goalRowHtml = (dailyLaborGoal > 0 || dailyPartsGoal > 0 || dailyGrossGoal > 0 || grossPerRoGoal > 0) ? `
+                    <tr style="background:#1a1a1a;font-weight:700;border-top:2px solid #cc0000;">
+                        <td colspan="3" style="color:#cc0000;">DAILY GOAL</td>
+                        <td style="color:#cc0000;">${dailyLaborGoal > 0 ? formatCurrency(dailyLaborGoal) : '—'}</td>
+                        <td style="color:#cc0000;">${dailyPartsGoal > 0 ? formatCurrency(dailyPartsGoal) : '—'}</td>
+                        <td style="color:#cc0000;">${dailyGrossGoal > 0 ? formatCurrency(dailyGrossGoal) : '—'}</td>
+                        <td style="color:#cc0000;">—</td>
+                        <td style="color:#cc0000;">—</td>
+                        <td style="color:#cc0000;">${grossPerRoGoal > 0 ? formatCurrency(grossPerRoGoal) : '—'}</td>
+                        <td style="color:#cc0000;">—</td>
+                        <td style="color:#cc0000;">—</td>
+                    </tr>` : '';
+
                 document.getElementById('dashDailyBody').innerHTML = dailyHtml;
 
                 const avgGrossRo = totRo > 0 ? totGross / totRo : 0;
                 document.getElementById('dashDailyFooter').innerHTML = `
+                    ${goalRowHtml}
                     <tr style="background:#1a1a1a;color:white;font-weight:700;">
                         <td colspan="3">TOTALS</td>
                         <td>${formatCurrency(totLabor)}</td>
@@ -3409,40 +3903,14 @@
                 assignRanks(ranked, 'mpvi', true);
                 assignRanks(ranked, 'hro', false); // lower HRO is better (fewer hrs per RO)
 
-                const rankBadge = (val, total) => {
-                    if (val === '—' || val === undefined) return '<span style="color:#888">—</span>';
-                    const color = val === 1 ? '#10b981' : val <= 3 ? '#3b82f6' : val >= total ? '#ef4444' : '#888';
-                    return `<span style="color:${color};font-weight:600;font-size:11px;">#${val}</span>`;
-                };
-                const activeCount = ranked.filter(r => r.gross > 0).length;
+                // Store for sort callbacks
+                window._rankedAdvisors = ranked;
 
                 // Render ranking table
-                let html = '';
-                ranked.forEach((r, idx) => {
-                    const rank = r.gross > 0 ? idx + 1 : '—';
-                    const rankColor = rank === 1 ? '#10b981' : (rank === ranked.length && rank !== '—') ? '#ef4444' : '#1a1a1a';
-                    const rowBg = rank === 1 ? 'background:rgba(16,185,129,0.08);' : (rank === ranked.length && rank !== '—') ? 'background:rgba(239,68,68,0.08);' : '';
-                    html += `
-                        <tr style="${rowBg}">
-                            <td style="font-weight:700;color:${rankColor};text-align:center;font-size:16px;">${rank}</td>
-                            <td style="font-weight:600">${r.name}</td>
-                            <td>${r.store}</td>
-                            <td>${formatCurrency(r.labor)} ${rankBadge(r.laborRank, activeCount)}</td>
-                            <td>${formatCurrency(r.parts)} ${rankBadge(r.partsRank, activeCount)}</td>
-                            <td style="font-weight:700">${formatCurrency(r.gross)}</td>
-                            <td>${r.ros} ${rankBadge(r.rosRank, activeCount)}</td>
-                            <td>${r.cpRos}</td>
-                            <td>${r.cpPct > 0 ? r.cpPct.toFixed(1) + '%' : '—'}</td>
-                            <td>${r.hours > 0 ? r.hours.toFixed(1) : '—'}</td>
-                            <td style="font-weight:700">${r.grossRo > 0 ? formatCurrency(r.grossRo) : '—'} ${rankBadge(r.grossRoRank, activeCount)}</td>
-                            <td>${r.elr > 0 ? formatCurrency(r.elr) : '—'} ${rankBadge(r.elrRank, activeCount)}</td>
-                            <td>${r.hro > 0 ? r.hro.toFixed(2) : '—'} ${rankBadge(r.hroRank, activeCount)}</td>
-                            <td>${r.csi > 0 ? r.csi.toFixed(1) : '—'} ${rankBadge(r.csiRank, activeCount)}</td>
-                            <td>${r.mpvi > 0 ? r.mpvi.toFixed(1) + '%' : '—'} ${rankBadge(r.mpviRank, activeCount)}</td>
-                        </tr>
-                    `;
-                });
-                document.getElementById('advisorRankBody').innerHTML = html || '<tr><td colspan="15" class="empty-state">No advisor data for this period.</td></tr>';
+                renderAdvisorRankTable();
+
+                // Render charts
+                renderAdvisorCharts(ranked);
 
                 // Totals footer
                 const tCpPct = totals.ros > 0 ? (totals.cpRos / totals.ros * 100) : 0;
@@ -3473,6 +3941,210 @@
             } catch (error) {
                 console.error('Advisor load error:', error);
             }
+        }
+
+        // Sort state for advisor ranking table
+        window._advisorSort = { field: 'gross', dir: 'desc' };
+
+        function renderAdvisorRankTable() {
+            const ranked = window._rankedAdvisors || [];
+            if (!ranked.length) {
+                document.getElementById('advisorRankBody').innerHTML = '<tr><td colspan="15" class="empty-state">No advisor data for this period.</td></tr>';
+                return;
+            }
+
+            const sort = window._advisorSort;
+            const activeCount = ranked.filter(r => r.gross > 0).length;
+
+            // Sort a copy
+            const sorted = [...ranked];
+            if (sort.field === 'rank') {
+                sorted.sort((a, b) => sort.dir === 'desc' ? b.gross - a.gross : a.gross - b.gross);
+            } else if (sort.field === 'name' || sort.field === 'store') {
+                sorted.sort((a, b) => {
+                    const av = (a[sort.field] || '').toString().toLowerCase();
+                    const bv = (b[sort.field] || '').toString().toLowerCase();
+                    if (av < bv) return sort.dir === 'asc' ? -1 : 1;
+                    if (av > bv) return sort.dir === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            } else {
+                sorted.sort((a, b) => {
+                    const av = a[sort.field] || 0;
+                    const bv = b[sort.field] || 0;
+                    return sort.dir === 'desc' ? bv - av : av - bv;
+                });
+            }
+
+            // Update header arrows
+            document.querySelectorAll('#advisorRankTable th[data-sort]').forEach(th => {
+                const arrow = th.querySelector('.sort-arrow');
+                if (!arrow) return;
+                if (th.getAttribute('data-sort') === sort.field) {
+                    arrow.textContent = sort.dir === 'desc' ? '▼' : '▲';
+                } else {
+                    arrow.textContent = '';
+                }
+            });
+
+            const rankBadge = (val, total) => {
+                if (val === '—' || val === undefined) return '<span style="color:#888">—</span>';
+                const color = val === 1 ? '#10b981' : val <= 3 ? '#3b82f6' : val >= total ? '#ef4444' : '#888';
+                return `<span style="color:${color};font-weight:600;font-size:11px;">#${val}</span>`;
+            };
+
+            let html = '';
+            sorted.forEach((r) => {
+                // Rank is always based on gross (the natural ranking), not current sort
+                const rank = r.grossRank && r.grossRank !== '—' ? r.grossRank : '—';
+                const isTop = rank === 1;
+                const isBottom = rank === activeCount && activeCount > 0;
+                const rankColor = isTop ? '#10b981' : isBottom ? '#ef4444' : '#1a1a1a';
+                const rowBg = isTop ? 'background:rgba(16,185,129,0.08);' : isBottom ? 'background:rgba(239,68,68,0.08);' : '';
+                html += `
+                    <tr style="${rowBg}">
+                        <td style="font-weight:700;color:${rankColor};text-align:center;font-size:16px;">${rank}</td>
+                        <td style="font-weight:600">${r.name}</td>
+                        <td>${r.store}</td>
+                        <td>${formatCurrency(r.labor)} ${rankBadge(r.laborRank, activeCount)}</td>
+                        <td>${formatCurrency(r.parts)} ${rankBadge(r.partsRank, activeCount)}</td>
+                        <td style="font-weight:700">${formatCurrency(r.gross)}</td>
+                        <td>${r.ros} ${rankBadge(r.rosRank, activeCount)}</td>
+                        <td>${r.cpRos}</td>
+                        <td>${r.cpPct > 0 ? r.cpPct.toFixed(1) + '%' : '—'}</td>
+                        <td>${r.hours > 0 ? r.hours.toFixed(1) : '—'}</td>
+                        <td style="font-weight:700">${r.grossRo > 0 ? formatCurrency(r.grossRo) : '—'} ${rankBadge(r.grossRoRank, activeCount)}</td>
+                        <td>${r.elr > 0 ? formatCurrency(r.elr) : '—'} ${rankBadge(r.elrRank, activeCount)}</td>
+                        <td>${r.hro > 0 ? r.hro.toFixed(2) : '—'} ${rankBadge(r.hroRank, activeCount)}</td>
+                        <td>${r.csi > 0 ? r.csi.toFixed(1) : '—'} ${rankBadge(r.csiRank, activeCount)}</td>
+                        <td>${r.mpvi > 0 ? r.mpvi.toFixed(1) + '%' : '—'} ${rankBadge(r.mpviRank, activeCount)}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('advisorRankBody').innerHTML = html;
+        }
+
+        function renderAdvisorCharts(ranked) {
+            if (!window.Chart) return;
+            const withData = ranked.filter(r => r.gross > 0);
+            if (!withData.length) {
+                ['advisorTopGrossChart','advisorLaborPartsChart','advisorGrossRoChart','advisorRoVolumeChart'].forEach(id => {
+                    if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+                });
+                return;
+            }
+
+            // Top 10 by Total Gross (horizontal bar)
+            const top10 = [...withData].sort((a, b) => b.gross - a.gross).slice(0, 10);
+            makeBarChart('advisorTopGrossChart', {
+                labels: top10.map(r => r.name),
+                datasets: [{
+                    label: 'Total Gross',
+                    data: top10.map(r => r.gross),
+                    backgroundColor: top10.map((_, i) => i === 0 ? '#10b981' : i < 3 ? '#3b82f6' : '#cc0000'),
+                    borderRadius: 4
+                }]
+            }, { indexAxis: 'y', currency: true });
+
+            // Labor vs Parts stacked bar (top 10 by gross)
+            makeBarChart('advisorLaborPartsChart', {
+                labels: top10.map(r => r.name),
+                datasets: [
+                    { label: 'Labor', data: top10.map(r => r.labor), backgroundColor: '#1a1a1a', borderRadius: 3 },
+                    { label: 'Parts', data: top10.map(r => r.parts), backgroundColor: '#cc0000', borderRadius: 3 }
+                ]
+            }, { indexAxis: 'y', stacked: true, currency: true, legend: true });
+
+            // Gross/RO — all advisors with data, sorted
+            const byGrossRo = [...withData].filter(r => r.grossRo > 0).sort((a, b) => b.grossRo - a.grossRo).slice(0, 15);
+            makeBarChart('advisorGrossRoChart', {
+                labels: byGrossRo.map(r => r.name),
+                datasets: [{
+                    label: 'Gross per RO',
+                    data: byGrossRo.map(r => r.grossRo),
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 4
+                }]
+            }, { indexAxis: 'y', currency: true });
+
+            // RO volume — top 15 by RO count
+            const byRos = [...withData].filter(r => r.ros > 0).sort((a, b) => b.ros - a.ros).slice(0, 15);
+            makeBarChart('advisorRoVolumeChart', {
+                labels: byRos.map(r => r.name),
+                datasets: [{
+                    label: 'Total ROs',
+                    data: byRos.map(r => r.ros),
+                    backgroundColor: '#6b7280',
+                    borderRadius: 4
+                }]
+            }, { indexAxis: 'y', currency: false });
+        }
+
+        function makeBarChart(canvasId, data, opts) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            if (charts[canvasId]) { charts[canvasId].destroy(); }
+            const isCurrency = opts.currency;
+            const stacked = !!opts.stacked;
+            charts[canvasId] = new Chart(canvas, {
+                type: 'bar',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: opts.indexAxis || 'x',
+                    plugins: {
+                        legend: { display: !!opts.legend, position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    const v = ctx.parsed.x !== undefined ? ctx.parsed.x : ctx.parsed.y;
+                                    const label = ctx.dataset.label ? ctx.dataset.label + ': ' : '';
+                                    return label + (isCurrency ? '$' + v.toLocaleString(undefined, {maximumFractionDigits: 0}) : v.toLocaleString());
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: stacked,
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(v) { return isCurrency ? '$' + (v >= 1000 ? (v/1000).toFixed(0) + 'k' : v) : v; }
+                            }
+                        },
+                        y: {
+                            stacked: stacked,
+                            ticks: { font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Wire up click handlers on advisor rank table headers
+        function setupAdvisorSortHandlers() {
+            const table = document.getElementById('advisorRankTable');
+            if (!table || table.dataset.sortWired === '1') return;
+            table.dataset.sortWired = '1';
+            table.querySelectorAll('th[data-sort]').forEach(th => {
+                th.addEventListener('click', function() {
+                    const field = this.getAttribute('data-sort');
+                    const sort = window._advisorSort;
+                    if (sort.field === field) {
+                        sort.dir = sort.dir === 'desc' ? 'asc' : 'desc';
+                    } else {
+                        sort.field = field;
+                        sort.dir = (field === 'name' || field === 'store') ? 'asc' : 'desc';
+                    }
+                    renderAdvisorRankTable();
+                });
+            });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupAdvisorSortHandlers);
+        } else {
+            setupAdvisorSortHandlers();
         }
 
         async function loadAdvisorDrillDown(startDate, endDate) {
