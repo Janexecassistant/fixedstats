@@ -1057,7 +1057,7 @@
                                 <th>Labor MTD</th>
                                 <th>Parts MTD</th>
                                 <th>Total Gross</th>
-                                <th>Pace</th>
+                                <th>Tracking</th>
                                 <th>Goal</th>
                                 <th>% to Goal</th>
                                 <th>Avg Gross/RO</th>
@@ -3784,7 +3784,20 @@
                     const avgGrossRo = totalRoAdvisors > 0 ? totalGrossAdvisors / totalRoAdvisors : 0;
                     const avgCsi = csiCount > 0 ? csiSum / csiCount : 0;
                     const goal = storeGoals?.total_gross_goal || 0;
-                    const pacePercent = goal > 0 ? (totalGross / goal) * 100 : 0;
+
+                    // Calculate tracking (projected end-of-month) using working days
+                    const wd = getWorkingDaysInMonth(year, month);
+                    const wdTotal = wd.totalDays || new Date(year, month, 0).getDate();
+                    const now = new Date();
+                    let wdCurrent;
+                    if (year === now.getFullYear() && month === (now.getMonth() + 1)) {
+                        wdCurrent = getWorkingDayOfMonth(now);
+                    } else {
+                        wdCurrent = wdTotal;
+                    }
+                    const wdNum = wdCurrent || 1;
+                    const tracking = (totalGross / wdNum) * wdTotal;
+                    const pctToGoal = goal > 0 ? (tracking / goal) * 100 : 0;
 
                     return {
                         name: store.name,
@@ -3792,15 +3805,16 @@
                         laborMtd,
                         partsMtd,
                         totalGross,
-                        pace: pacePercent,
+                        tracking,
+                        pctToGoal,
                         goal,
                         avgGrossRo,
                         avgCsi
                     };
                 });
 
-                // Sort by pace descending
-                storeSummaries.sort((a, b) => b.pace - a.pace);
+                // Sort by pctToGoal descending
+                storeSummaries.sort((a, b) => b.pctToGoal - a.pctToGoal);
 
                 // Build table
                 let html = '';
@@ -3809,16 +3823,16 @@
                 let totalGross = 0;
 
                 storeSummaries.forEach(s => {
-                    const rowClass = s.pace >= 95 ? 'row-success' : s.pace >= 80 ? 'row-warning' : 'row-danger';
+                    const rowClass = s.pctToGoal >= 95 ? 'row-success' : s.pctToGoal >= 80 ? 'row-warning' : 'row-danger';
                     html += `
                         <tr class="${rowClass}">
                             <td>${s.code} - ${s.name}</td>
                             <td>${formatCurrency(s.laborMtd)}</td>
                             <td>${formatCurrency(s.partsMtd)}</td>
                             <td>${formatCurrency(s.totalGross)}</td>
-                            <td>${s.pace.toFixed(0)}%</td>
+                            <td>${formatCurrency(s.tracking)}</td>
                             <td>${formatCurrency(s.goal)}</td>
-                            <td>${s.pace.toFixed(0)}%</td>
+                            <td>${s.pctToGoal.toFixed(0)}%</td>
                             <td>${formatCurrency(s.avgGrossRo)}</td>
                             <td>${s.avgCsi.toFixed(1)}</td>
                         </tr>
@@ -3829,15 +3843,18 @@
                 });
 
                 // Grand total
+                const totalTracking = storeSummaries.reduce((s, x) => s + x.tracking, 0);
+                const totalGoal = storeSummaries.reduce((s, x) => s + x.goal, 0);
+                const totalPctToGoal = totalGoal > 0 ? (totalTracking / totalGoal) * 100 : 0;
                 html += `
                     <tr style="background-color: #e0e0e0; font-weight: 600;">
                         <td>TOTAL</td>
                         <td>${formatCurrency(totalLabor)}</td>
                         <td>${formatCurrency(totalParts)}</td>
                         <td>${formatCurrency(totalGross)}</td>
-                        <td>-</td>
-                        <td>${formatCurrency(storeSummaries.reduce((s, x) => s + x.goal, 0))}</td>
-                        <td>-</td>
+                        <td>${formatCurrency(totalTracking)}</td>
+                        <td>${formatCurrency(totalGoal)}</td>
+                        <td>${totalPctToGoal.toFixed(0)}%</td>
                         <td>-</td>
                         <td>-</td>
                     </tr>
