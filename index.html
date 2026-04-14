@@ -844,10 +844,10 @@
             </select>
             <ul class="nav-tabs">
                 <li class="nav-tab"><button class="nav-btn active" data-tab="daily">Daily Entry</button></li>
-                <li class="nav-tab"><button class="nav-btn" data-tab="dashboard">Store Dashboard</button></li>
-                <li class="nav-tab"><button class="nav-btn" data-tab="executive">Executive Overview</button></li>
-                <li class="nav-tab"><button class="nav-btn" data-tab="advisor">Advisor View</button></li>
-                <li class="nav-tab"><button class="nav-btn" data-tab="goals">Goals & Settings</button></li>
+                <li class="nav-tab"><button class="nav-btn" data-tab="dashboard">Dashboard</button></li>
+                <li class="nav-tab"><button class="nav-btn" data-tab="executive">Company</button></li>
+                <li class="nav-tab"><button class="nav-btn" data-tab="advisor">Advisors</button></li>
+                <li class="nav-tab"><button class="nav-btn" id="goalsTab" data-tab="goals" style="display:none;">Goals</button></li>
                 <li class="nav-tab"><button class="nav-btn" data-tab="roster">Roster</button></li>
                 <li class="nav-tab"><button class="nav-btn" id="adminConsoleTab" data-tab="admin" style="display:none;">Admin Console</button></li>
             </ul>
@@ -1724,9 +1724,12 @@
             const saveFacilityBtn = document.getElementById('saveFacilityBtn');
             const baysKpiCard = document.getElementById('baysKpiCard');
 
+            const goalsTab = document.getElementById('goalsTab');
+
             if (currentUser.role === 'admin') {
                 // Admins see everything
                 adminTab.style.display = 'block';
+                if (goalsTab) goalsTab.style.display = '';
                 if (userAccountsCard) userAccountsCard.style.display = 'block';
                 if (executiveStaffCard) executiveStaffCard.style.display = 'block';
                 if (facilityBaysGroup) facilityBaysGroup.style.display = '';
