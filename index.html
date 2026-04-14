@@ -846,7 +846,7 @@
                 <li class="nav-tab"><button class="nav-btn" data-tab="executive">Executive Overview</button></li>
                 <li class="nav-tab"><button class="nav-btn" data-tab="advisor">Advisor View</button></li>
                 <li class="nav-tab"><button class="nav-btn" data-tab="goals">Goals & Settings</button></li>
-                <li class="nav-tab"><button class="nav-btn" data-tab="roster">Capacity & Roster</button></li>
+                <li class="nav-tab"><button class="nav-btn" data-tab="roster">Roster</button></li>
                 <li class="nav-tab"><button class="nav-btn" id="adminConsoleTab" data-tab="admin" style="display:none;">Admin Console</button></li>
             </ul>
             <div class="navbar-right">
@@ -1263,7 +1263,6 @@
                             <tr>
                                 <th>Advisor</th>
                                 <th>Training Status</th>
-                                <th>XTIME %</th>
                                 <th>MPVI %</th>
                                 <th>Labor ($)</th>
                                 <th>Parts ($)</th>
@@ -4635,6 +4634,19 @@
                     weeklyAdvData = weeklyAdvData.filter(d => d.store_id === storeId);
                 }
 
+                // Fetch daily store entries to get region_nps for CSI Region
+                let weeklyDailyData = (await LS.getDailyEntries()).filter(d =>
+                    d.entry_date >= wsKey &&
+                    d.entry_date <= dateToString(weekEnd)
+                );
+                if (storeId && storeId !== 'all') {
+                    weeklyDailyData = weeklyDailyData.filter(d => d.store_id === storeId);
+                }
+                const regionNpsEntries = weeklyDailyData.filter(d => d.region_nps != null && d.region_nps !== '');
+                const avgRegionNps = regionNpsEntries.length > 0
+                    ? regionNpsEntries.reduce((s, d) => s + parseFloat(d.region_nps), 0) / regionNpsEntries.length
+                    : null;
+
                 // Aggregate daily entries per advisor for the week
                 const weeklyAdvAgg = {};
                 weeklyAdvData.forEach(d => {
@@ -4690,7 +4702,6 @@
                                 <option value="In Progress" ${entry.training_status === 'In Progress' ? 'selected' : ''}>In Progress</option>
                                 <option value="N/A" ${entry.training_status === 'N/A' ? 'selected' : ''}>N/A</option>
                             </select></td>
-                            <td><input type="number" step="0.1" class="roster-xtime input-yellow" data-advisor="${advisor.id}" value="${entry.xtime_pct || ''}" placeholder="0"></td>
                             <td class="input-gray" style="font-weight:600">${mpviAvg > 0 ? mpviAvg.toFixed(1) + '%' : (entry.mpvi_xtime_pct || '—')}</td>
                             <td class="input-gray roster-labor">${labor > 0 ? formatCurrency(labor) : '—'}</td>
                             <td class="input-gray roster-parts">${parts > 0 ? formatCurrency(parts) : '—'}</td>
@@ -4703,7 +4714,7 @@
                             <td class="input-gray">${hro > 0 ? hro.toFixed(2) : '—'}</td>
                             <td class="roster-rank" style="font-weight:700;color:${rankColor};text-align:center;">${rank}</td>
                             <td class="input-gray" style="font-weight:600">${csiAvg > 0 ? csiAvg.toFixed(1) : '—'}</td>
-                            <td><input type="number" step="0.1" class="roster-csi-region input-yellow" data-advisor="${advisor.id}" value="${entry.csi_region || ''}" placeholder="0"></td>
+                            <td class="input-gray" style="font-weight:600">${avgRegionNps != null ? avgRegionNps.toFixed(1) : (entry.csi_region || '—')}</td>
                         </tr>
                     `;
                 });
@@ -5109,25 +5120,12 @@
                 for (const row of rosterRows) {
                     const advisorId = parseInt(row.querySelector('.roster-training').dataset.advisor);
                     const trainingStatus = row.querySelector('.roster-training').value;
-                    const xtimePct = parseFloat(row.querySelector('.roster-xtime')?.value) || null;
-                    const mpviPct = parseFloat(row.querySelector('.roster-mpvi').value) || null;
-                    const grossTotal = parseFloat(row.querySelector('.roster-gross')?.value) || null;
-                    const roCount = parseInt(row.querySelector('.roster-ro-count')?.value) || null;
-                    const csi = parseFloat(row.querySelector('.roster-csi').value) || null;
-                    const csiRegion = parseFloat(row.querySelector('.roster-csi-region').value) || null;
-
-                    // Gross/RO and Rank are auto-calculated, read from display
-                    const grossPerRo = roCount > 0 ? grossTotal / roCount : null;
-                    const ranking = row.querySelector('.roster-rank')?.textContent;
-                    const rankNum = parseInt(ranking) || null;
 
                     await LS.saveRosterEntry({
                         store_id: storeId,
                         advisor_id: advisorId,
                         week_start: dateToString(weekStart),
-                        training_status: trainingStatus || null,
-                        xtime_pct: xtimePct,
-                        csi_region: csiRegion
+                        training_status: trainingStatus || null
                     });
                 }
 
