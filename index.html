@@ -2529,6 +2529,66 @@
                         await db.from('staff_overrides').upsert(row, { onConflict: 'override_type,staff_id' });
                     } catch(e) { console.warn('Supabase recordStaffChange failed', e); }
                 }
+            },
+
+            // --- Tech weekly entries ---
+            async getTechWeeklyEntries() {
+                if (useSupabase) {
+                    try {
+                        const { data, error } = await db.from('tech_weekly_entries').select('*');
+                        if (!error && data) {
+                            // Convert to keyed object for fast lookup
+                            const mapped = {};
+                            data.forEach(d => {
+                                const key = `${d.store_id}_${d.week_start}_${d.tech_type}_${d.tech_id}`;
+                                mapped[key] = {
+                                    training: d.training,
+                                    ros_worked: d.ros_worked || 0,
+                                    csi_score: d.csi_score,
+                                    hours_turned: d.hours_turned || 0,
+                                    clock_hours: d.clock_hours || 0,
+                                    store_id: d.store_id,
+                                    week_start: d.week_start,
+                                    month: d.month,
+                                    year: d.year,
+                                    tech_type: d.tech_type,
+                                    tech_id: d.tech_id
+                                };
+                            });
+                            this._set('dyer_tech_weekly', mapped);
+                            return mapped;
+                        }
+                    } catch(e) { console.warn('Supabase getTechWeeklyEntries failed, using cache', e); }
+                }
+                try { const raw = localStorage.getItem('dyer_tech_weekly'); return raw ? JSON.parse(raw) : {}; } catch(e) { return {}; }
+            },
+            async saveTechWeeklyEntry(entry) {
+                // Save to localStorage
+                const key = `${entry.store_id}_${entry.week_start}_${entry.tech_type}_${entry.tech_id}`;
+                let all = {};
+                try { const raw = localStorage.getItem('dyer_tech_weekly'); if (raw) all = JSON.parse(raw); } catch(e) {}
+                all[key] = entry;
+                this._set('dyer_tech_weekly', all);
+                // Sync to Supabase
+                if (useSupabase) {
+                    try {
+                        const row = {
+                            store_id: entry.store_id,
+                            tech_id: entry.tech_id,
+                            tech_type: entry.tech_type,
+                            week_start: entry.week_start,
+                            month: entry.month,
+                            year: entry.year,
+                            training: entry.training,
+                            ros_worked: entry.ros_worked || 0,
+                            csi_score: entry.csi_score,
+                            hours_turned: entry.hours_turned || 0,
+                            clock_hours: entry.clock_hours || 0,
+                            updated_at: new Date().toISOString()
+                        };
+                        await db.from('tech_weekly_entries').upsert(row, { onConflict: 'store_id,tech_id,tech_type,week_start' });
+                    } catch(e) { console.warn('Supabase saveTechWeeklyEntry failed', e); }
+                }
             }
         };
 
@@ -2553,6 +2613,9 @@
                 lubeTechs = staffData.lubeTechs;
                 technicians = staffData.technicians;
                 apprentices = staffData.apprentices || [];
+
+                // Load tech weekly data from Supabase
+                techWeeklyData = await LS.getTechWeeklyEntries() || {};
 
                 // Set default date — restore last-used entry date if present, otherwise today.
                 // This fixes the "my data is gone" bug where a user enters data for a past date,
@@ -4495,18 +4558,8 @@
         // ============================================================================
         // PERSISTENT DATA STORAGE (localStorage + Supabase)
         // ============================================================================
-        const STORAGE_KEY_TECH = 'dyer_tech_weekly';
         const STORAGE_KEY_FACILITY = 'dyer_facility';
 
-        function loadPersistedTechData() {
-            try {
-                const raw = localStorage.getItem(STORAGE_KEY_TECH);
-                return raw ? JSON.parse(raw) : {};
-            } catch (e) { return {}; }
-        }
-        function savePersistedTechData(data) {
-            try { localStorage.setItem(STORAGE_KEY_TECH, JSON.stringify(data)); } catch (e) {}
-        }
         function loadPersistedFacility() {
             try {
                 const raw = localStorage.getItem(STORAGE_KEY_FACILITY);
@@ -4517,10 +4570,13 @@
             try { localStorage.setItem(STORAGE_KEY_FACILITY, JSON.stringify(data)); } catch (e) {}
         }
 
-        let techWeeklyData = loadPersistedTechData();
+        let techWeeklyData = {};
         let facilityConfig = loadPersistedFacility();
 
         async function loadRoster() {
+            // Refresh tech data from Supabase each time roster loads
+            try { techWeeklyData = await LS.getTechWeeklyEntries() || {}; } catch(e) {}
+
             const storeId = getSelectedStore();
             const weekDate = pickerDate(document.getElementById('rosterWeekPicker').valueAsDate);
             const allMode = isAllStores();
@@ -4894,7 +4950,7 @@
             });
         }
 
-        function saveTechWeekly(tableBodyId, techType) {
+        async function saveTechWeekly(tableBodyId, techType) {
             const storeId = getSelectedStore();
             const weekDate = pickerDate(document.getElementById('rosterWeekPicker').valueAsDate);
             const wsKey = dateToString(getWeekStart(weekDate));
@@ -4905,27 +4961,33 @@
             const entryMonth = ws.getMonth() + 1;
             const entryYear = ws.getFullYear();
 
-            document.querySelectorAll(`#${tableBodyId} tr`).forEach(row => {
-                const techId = row.dataset.techId;
-                const key = `${storeId}_${wsKey}_${techType}_${techId}`;
-                techWeeklyData[key] = {
-                    training: row.querySelector('.tw-training').value || null,
-                    ros_worked: parseFloat(row.querySelector('.tw-ros').value) || 0,
-                    csi_score: parseFloat(row.querySelector('.tw-csi').value) || null,
-                    hours_turned: parseFloat(row.querySelector('.tw-hrs-turned').value) || 0,
-                    clock_hours: parseFloat(row.querySelector('.tw-clock-hrs').value) || 0,
-                    store_id: storeId,
-                    week_start: wsKey,
-                    month: entryMonth,
-                    year: entryYear,
-                    tech_type: techType,
-                    tech_id: parseInt(techId)
-                };
-            });
-
-            // Persist to localStorage
-            savePersistedTechData(techWeeklyData);
-            showToast(`${techType === 'tech' ? 'Technician' : 'Lube tech'} weekly data saved for week of ${wsKey}`);
+            try {
+                const rows = document.querySelectorAll(`#${tableBodyId} tr`);
+                for (const row of rows) {
+                    const techId = row.dataset.techId;
+                    const entry = {
+                        training: row.querySelector('.tw-training').value || null,
+                        ros_worked: parseFloat(row.querySelector('.tw-ros').value) || 0,
+                        csi_score: parseFloat(row.querySelector('.tw-csi').value) || null,
+                        hours_turned: parseFloat(row.querySelector('.tw-hrs-turned').value) || 0,
+                        clock_hours: parseFloat(row.querySelector('.tw-clock-hrs').value) || 0,
+                        store_id: storeId,
+                        week_start: wsKey,
+                        month: entryMonth,
+                        year: entryYear,
+                        tech_type: techType,
+                        tech_id: parseInt(techId)
+                    };
+                    const key = `${storeId}_${wsKey}_${techType}_${techId}`;
+                    techWeeklyData[key] = entry;
+                    await LS.saveTechWeeklyEntry(entry);
+                }
+                showToast(`${techType === 'tech' ? 'Technician' : 'Lube tech'} weekly data saved for week of ${wsKey}`);
+            } catch (error) {
+                console.error('Save tech weekly error:', error);
+                showToast('Failed to save tech data', 'error');
+                return;
+            }
 
             // Refresh the performance and capacity views
             const fc = facilityConfig[storeId] || { bays: 0 };
