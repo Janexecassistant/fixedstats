@@ -1258,7 +1258,7 @@
 
             <!-- ADVISOR WEEKLY ROSTER -->
             <div class="card">
-                <h3 class="card-title">Advisor Weekly Roster</h3>
+                <h3 class="card-title" id="advisorRosterTitle">Advisor Weekly Roster</h3>
                 <div style="overflow-x: auto;">
                     <table id="rosterTable">
                         <thead>
@@ -4678,18 +4678,52 @@
                     </div>
                 `;
 
-                // Fetch advisor roster entries (manual overrides) from localStorage
-                let rosterData = (await LS.getRosterEntries()).filter(r => r.week_start === wsKey);
-                if (storeId && storeId !== 'all') {
-                    rosterData = rosterData.filter(r => r.store_id === storeId);
+                // Determine aggregation range from View Period selector
+                const advPeriod = document.getElementById('rosterPeriod').value || 'week';
+                let aggStart, aggEnd, advPeriodLabel;
+                if (advPeriod === 'week') {
+                    aggStart = new Date(weekStart);
+                    aggEnd = new Date(weekStart); aggEnd.setDate(aggEnd.getDate() + 6);
+                    advPeriodLabel = `Week of ${dateToString(aggStart)}`;
+                } else if (advPeriod === 'mtd') {
+                    aggStart = new Date(currentYear, currentMonth - 1, 1);
+                    aggEnd = new Date(now);
+                    advPeriodLabel = `${now.toLocaleString('default',{month:'long'})} ${currentYear} MTD`;
+                } else if (advPeriod === 'ytd') {
+                    aggStart = new Date(currentYear, 0, 1);
+                    aggEnd = new Date(now);
+                    advPeriodLabel = `${currentYear} Year to Date`;
+                } else {
+                    const fromVal = document.getElementById('rosterFromMonth').value;
+                    const toVal = document.getElementById('rosterToMonth').value;
+                    const [fy, fm] = (fromVal || `${currentYear}-01`).split('-').map(Number);
+                    const [ty, tm] = (toVal || `${currentYear}-${String(currentMonth).padStart(2,'0')}`).split('-').map(Number);
+                    aggStart = new Date(fy, fm - 1, 1);
+                    aggEnd = new Date(ty, tm, 0);
+                    advPeriodLabel = `${fromVal || '—'} to ${toVal || '—'}`;
+                }
+                const aggStartKey = dateToString(aggStart);
+                const aggEndKey = dateToString(aggEnd);
+
+                // Update card title + hide save button when not viewing a single week
+                const advTitleEl = document.getElementById('advisorRosterTitle');
+                if (advTitleEl) advTitleEl.textContent = `Advisor Roster — ${advPeriodLabel}`;
+                const saveRosterBtnEl = document.getElementById('saveRosterBtn');
+                if (saveRosterBtnEl) saveRosterBtnEl.style.display = advPeriod === 'week' ? '' : 'none';
+
+                // Fetch advisor roster entries (manual overrides) — only meaningful for single-week view
+                let rosterData = [];
+                if (advPeriod === 'week') {
+                    rosterData = (await LS.getRosterEntries()).filter(r => r.week_start === wsKey);
+                    if (storeId && storeId !== 'all') {
+                        rosterData = rosterData.filter(r => r.store_id === storeId);
+                    }
                 }
 
-                // Fetch daily advisor entries for this week to auto-populate
-                const weekEnd = new Date(weekStart);
-                weekEnd.setDate(weekEnd.getDate() + 6);
+                // Fetch daily advisor entries across the selected period to auto-populate
                 let weeklyAdvData = (await LS.getAdvisorEntries()).filter(d =>
-                    d.entry_date >= wsKey &&
-                    d.entry_date <= dateToString(weekEnd)
+                    d.entry_date >= aggStartKey &&
+                    d.entry_date <= aggEndKey
                 );
                 if (storeId && storeId !== 'all') {
                     weeklyAdvData = weeklyAdvData.filter(d => d.store_id === storeId);
@@ -4697,8 +4731,8 @@
 
                 // Fetch daily store entries to get region_nps for CSI Region
                 let weeklyDailyData = (await LS.getDailyEntries()).filter(d =>
-                    d.entry_date >= wsKey &&
-                    d.entry_date <= dateToString(weekEnd)
+                    d.entry_date >= aggStartKey &&
+                    d.entry_date <= aggEndKey
                 );
                 if (storeId && storeId !== 'all') {
                     weeklyDailyData = weeklyDailyData.filter(d => d.store_id === storeId);
@@ -5057,41 +5091,92 @@
                 perfMap[key].training = d.training || perfMap[key].training;
             });
 
-            // Build all techs
+            // Build two groups — Technicians and Lube Techs (rendered separately)
             const filterFn = allMode ? (t => t.is_active !== false) : (t => t.store_id === storeId && t.is_active !== false);
-            const allStaff = [
-                ...technicians.filter(filterFn).map(t => ({ ...t, staffType: 'tech' })),
-                ...lubeTechs.filter(filterFn).map(t => ({ ...t, staffType: 'lube' }))
-            ];
+            const techList = technicians.filter(filterFn).map(t => ({ ...t, staffType: 'tech' }));
+            const lubeList = lubeTechs.filter(filterFn).map(t => ({ ...t, staffType: 'lube' }));
 
-            let html = '';
-            allStaff.forEach(s => {
-                const key = `${s.staffType}_${s.id}`;
-                const p = perfMap[key] || {};
-                const eff = (p.clockHrs || 0) > 0 ? ((p.hrsTurned || 0) / p.clockHrs * 100) : 0;
-                const prod = periodAvailPerTech > 0 ? ((p.clockHrs || 0) / periodAvailPerTech * 100) : 0;
-                const prof = periodAvailPerTech > 0 ? ((p.hrsTurned || 0) / periodAvailPerTech * 100) : 0;
-                const avgCsi = (p.csiCount || 0) > 0 ? (p.csiSum / p.csiCount) : 0;
-                const trend = (p.weeks || 0) >= 2 ? (eff >= 100 ? '▲' : '▼') : '—';
-                const trendColor = trend === '▲' ? '#10b981' : trend === '▼' ? '#ef4444' : '#777';
+            // Color helpers kept local so row + average styling stays in sync
+            const effColor = v => v >= 100 ? '#10b981' : v >= 75 ? '#f59e0b' : '#ef4444';
+            const prodColor = v => v >= 85 ? '#10b981' : v >= 70 ? '#f59e0b' : '#ef4444';
+            const profColor = v => v >= 100 ? '#10b981' : v >= 75 ? '#f59e0b' : '#ef4444';
 
-                html += `
-                    <tr>
-                        <td style="font-weight:600">${s.name}${allMode ? ' <span style="color:#888;font-weight:400;font-size:12px">(' + (stores.find(st=>st.id===s.store_id)?.name||'') + ')</span>' : ''}</td>
-                        <td>${s.staffType === 'tech' ? 'Technician' : 'Lube Tech'}</td>
-                        <td>${s.specialty || '—'}</td>
-                        <td>${p.training || '—'}</td>
-                        <td>${p.ros || 0}</td>
-                        <td>${avgCsi > 0 ? avgCsi.toFixed(1) : '—'}</td>
-                        <td>${(p.hrsTurned || 0).toFixed(1)}</td>
-                        <td>${(p.clockHrs || 0).toFixed(1)}</td>
-                        <td style="font-weight:700;color:${eff >= 100 ? '#10b981' : eff >= 75 ? '#f59e0b' : '#ef4444'}">${eff > 0 ? eff.toFixed(1) + '%' : '—'}</td>
-                        <td style="font-weight:700;color:${prod >= 85 ? '#10b981' : prod >= 70 ? '#f59e0b' : '#ef4444'}">${prod > 0 ? prod.toFixed(1) + '%' : '—'}</td>
-                        <td style="font-weight:700;color:${prof >= 100 ? '#10b981' : prof >= 75 ? '#f59e0b' : '#ef4444'}">${prof > 0 ? prof.toFixed(1) + '%' : '—'}</td>
-                        <td style="font-weight:700;color:${trendColor}">${trend}</td>
+            function renderGroup(staff, groupLabel) {
+                if (!staff.length) return '';
+                // Group header row
+                let block = `
+                    <tr style="background:#1a1a1a;color:#fff;">
+                        <td colspan="12" style="font-weight:700;letter-spacing:0.5px;padding:10px 12px;">${groupLabel}</td>
                     </tr>
                 `;
-            });
+                // Per-tech rows + running totals for the group average
+                let effSum = 0, effCount = 0;
+                let prodSum = 0, prodCount = 0;
+                let profSum = 0, profCount = 0;
+                let roSum = 0, hrsTurnedSum = 0, clockHrsSum = 0;
+                let csiSum = 0, csiCount = 0;
+                staff.forEach(s => {
+                    const key = `${s.staffType}_${s.id}`;
+                    const p = perfMap[key] || {};
+                    const eff = (p.clockHrs || 0) > 0 ? ((p.hrsTurned || 0) / p.clockHrs * 100) : 0;
+                    const prod = periodAvailPerTech > 0 ? ((p.clockHrs || 0) / periodAvailPerTech * 100) : 0;
+                    const prof = periodAvailPerTech > 0 ? ((p.hrsTurned || 0) / periodAvailPerTech * 100) : 0;
+                    const avgCsi = (p.csiCount || 0) > 0 ? (p.csiSum / p.csiCount) : 0;
+                    const trend = (p.weeks || 0) >= 2 ? (eff >= 100 ? '▲' : '▼') : '—';
+                    const trendColor = trend === '▲' ? '#10b981' : trend === '▼' ? '#ef4444' : '#777';
+
+                    // Only count techs who actually logged hours toward the group average
+                    if (eff > 0)  { effSum += eff;   effCount++; }
+                    if (prod > 0) { prodSum += prod; prodCount++; }
+                    if (prof > 0) { profSum += prof; profCount++; }
+                    roSum += (p.ros || 0);
+                    hrsTurnedSum += (p.hrsTurned || 0);
+                    clockHrsSum += (p.clockHrs || 0);
+                    if (avgCsi > 0) { csiSum += avgCsi; csiCount++; }
+
+                    block += `
+                        <tr>
+                            <td style="font-weight:600">${s.name}${allMode ? ' <span style="color:#888;font-weight:400;font-size:12px">(' + (stores.find(st=>st.id===s.store_id)?.name||'') + ')</span>' : ''}</td>
+                            <td>${s.staffType === 'tech' ? 'Technician' : 'Lube Tech'}</td>
+                            <td>${s.specialty || '—'}</td>
+                            <td>${p.training || '—'}</td>
+                            <td>${p.ros || 0}</td>
+                            <td>${avgCsi > 0 ? avgCsi.toFixed(1) : '—'}</td>
+                            <td>${(p.hrsTurned || 0).toFixed(1)}</td>
+                            <td>${(p.clockHrs || 0).toFixed(1)}</td>
+                            <td style="font-weight:700;color:${effColor(eff)}">${eff > 0 ? eff.toFixed(1) + '%' : '—'}</td>
+                            <td style="font-weight:700;color:${prodColor(prod)}">${prod > 0 ? prod.toFixed(1) + '%' : '—'}</td>
+                            <td style="font-weight:700;color:${profColor(prof)}">${prof > 0 ? prof.toFixed(1) + '%' : '—'}</td>
+                            <td style="font-weight:700;color:${trendColor}">${trend}</td>
+                        </tr>
+                    `;
+                });
+
+                // Average row for the group
+                const avgEff = effCount > 0 ? effSum / effCount : 0;
+                const avgProd = prodCount > 0 ? prodSum / prodCount : 0;
+                const avgProf = profCount > 0 ? profSum / profCount : 0;
+                const avgCsiGroup = csiCount > 0 ? csiSum / csiCount : 0;
+                block += `
+                    <tr style="background:#f3f4f6;font-weight:700;border-top:2px solid #1a1a1a;">
+                        <td colspan="4" style="text-align:right;text-transform:uppercase;letter-spacing:0.5px;">${groupLabel} Average</td>
+                        <td>${roSum}</td>
+                        <td>${avgCsiGroup > 0 ? avgCsiGroup.toFixed(1) : '—'}</td>
+                        <td>${hrsTurnedSum.toFixed(1)}</td>
+                        <td>${clockHrsSum.toFixed(1)}</td>
+                        <td style="color:${effColor(avgEff)}">${avgEff > 0 ? avgEff.toFixed(1) + '%' : '—'}</td>
+                        <td style="color:${prodColor(avgProd)}">${avgProd > 0 ? avgProd.toFixed(1) + '%' : '—'}</td>
+                        <td style="color:${profColor(avgProf)}">${avgProf > 0 ? avgProf.toFixed(1) + '%' : '—'}</td>
+                        <td>—</td>
+                    </tr>
+                `;
+                return block;
+            }
+
+            let html = '';
+            html += renderGroup(techList, 'Technicians');
+            html += renderGroup(lubeList, 'Lube Techs');
+
             document.getElementById('techPerfBody').innerHTML = html || '<tr><td colspan="12" class="empty-state">No data for this period. Enter tech weekly data above — it compiles automatically into monthly and YTD views.</td></tr>';
         }
 
