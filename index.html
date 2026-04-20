@@ -665,6 +665,22 @@
             margin-top: 20px;
         }
 
+        /* Unsaved-changes badge */
+        .unsaved-badge {
+            color: #f97316;
+            font-size: 13px;
+            font-weight: 600;
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            padding: 6px 12px;
+            border-radius: 6px;
+            animation: pulseBadge 2s ease-in-out infinite;
+        }
+        @keyframes pulseBadge {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
         /* Toast Notifications */
         .toast {
             position: fixed;
@@ -1284,8 +1300,9 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="btn-group">
+                <div class="btn-group" style="align-items:center;gap:12px;">
                     <button class="btn" id="saveRosterBtn">Save Roster</button>
+                    <span class="unsaved-badge" style="display:none;">● Unsaved changes</span>
                 </div>
             </div>
 
@@ -1314,8 +1331,9 @@
                         </tfoot>
                     </table>
                 </div>
-                <div class="btn-group">
+                <div class="btn-group" style="align-items:center;gap:12px;">
                     <button class="btn" id="saveTechWeeklyBtn">Save Tech Weekly</button>
+                    <span class="unsaved-badge" style="display:none;">● Unsaved changes</span>
                 </div>
             </div>
 
@@ -1343,8 +1361,9 @@
                         </tfoot>
                     </table>
                 </div>
-                <div class="btn-group">
+                <div class="btn-group" style="align-items:center;gap:12px;">
                     <button class="btn" id="saveLubeWeeklyBtn">Save Lube Tech Weekly</button>
+                    <span class="unsaved-badge" style="display:none;">● Unsaved changes</span>
                 </div>
             </div>
 
@@ -2756,14 +2775,31 @@
         // ============================================================================
         // --- Unsaved-data tracking for Roster tab ---
         let rosterDirty = false;
-        function markRosterDirty() { rosterDirty = true; }
-        function clearRosterDirty() { rosterDirty = false; }
+        function updateUnsavedBadges() {
+            document.querySelectorAll('.unsaved-badge').forEach(el => {
+                el.style.display = rosterDirty ? '' : 'none';
+            });
+        }
+        function markRosterDirty() {
+            if (rosterDirty) return;
+            rosterDirty = true;
+            updateUnsavedBadges();
+        }
+        function clearRosterDirty() {
+            rosterDirty = false;
+            updateUnsavedBadges();
+        }
         function confirmLeaveRoster() {
             if (!rosterDirty) return true;
-            return confirm('You have unsaved changes on the Roster tab. Leave without saving?');
+            return confirm('You have unsaved changes on the Roster tab. Leave without saving? Any numbers you entered will be lost.');
         }
         window.addEventListener('beforeunload', (e) => {
-            if (rosterDirty) { e.preventDefault(); e.returnValue = ''; return ''; }
+            if (rosterDirty) {
+                const msg = 'You have unsaved roster changes. Leave without saving?';
+                e.preventDefault();
+                e.returnValue = msg;
+                return msg;
+            }
         });
 
         function setupEventListeners() {
@@ -2822,8 +2858,18 @@
             // Goals
             document.getElementById('saveGoalsBtn').addEventListener('click', saveGoals);
 
-            // Roster
-            document.getElementById('rosterWeekPicker').addEventListener('change', loadRoster);
+            // Roster — week picker with unsaved-changes guard
+            const rosterWeekPicker = document.getElementById('rosterWeekPicker');
+            let lastWeekPickerValue = rosterWeekPicker.value;
+            rosterWeekPicker.addEventListener('change', () => {
+                if (!confirmLeaveRoster()) {
+                    rosterWeekPicker.value = lastWeekPickerValue;
+                    return;
+                }
+                lastWeekPickerValue = rosterWeekPicker.value;
+                clearRosterDirty();
+                loadRoster();
+            });
 
             // Advisor
             document.getElementById('advisorPeriod').addEventListener('change', () => {
@@ -2854,16 +2900,26 @@
                 document.getElementById('customRangeGroupTo').style.display = v === 'custom' ? '' : 'none';
                 loadRoster();
             });
-            document.getElementById('rosterFromMonth')?.addEventListener('change', () => {
-                if (!confirmLeaveRoster()) return;
-                clearRosterDirty();
-                loadRoster();
-            });
-            document.getElementById('rosterToMonth')?.addEventListener('change', () => {
-                if (!confirmLeaveRoster()) return;
-                clearRosterDirty();
-                loadRoster();
-            });
+            const rosterFromMonth = document.getElementById('rosterFromMonth');
+            if (rosterFromMonth) {
+                let lastFromVal = rosterFromMonth.value;
+                rosterFromMonth.addEventListener('change', () => {
+                    if (!confirmLeaveRoster()) { rosterFromMonth.value = lastFromVal; return; }
+                    lastFromVal = rosterFromMonth.value;
+                    clearRosterDirty();
+                    loadRoster();
+                });
+            }
+            const rosterToMonth = document.getElementById('rosterToMonth');
+            if (rosterToMonth) {
+                let lastToVal = rosterToMonth.value;
+                rosterToMonth.addEventListener('change', () => {
+                    if (!confirmLeaveRoster()) { rosterToMonth.value = lastToVal; return; }
+                    lastToVal = rosterToMonth.value;
+                    clearRosterDirty();
+                    loadRoster();
+                });
+            }
 
             // Staff management
             document.getElementById('addAdvisorBtn').addEventListener('click', addNewAdvisor);
