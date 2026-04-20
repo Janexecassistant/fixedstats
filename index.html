@@ -5384,15 +5384,62 @@
                 : `${activeTechs}/${totalTechs} w/ hours`;
             const periodScopeLabel = periodIsWeek ? 'this week' : (periodLabel || 'this period');
 
-            // Ideal ratios (industry standard)
-            const idealTechsPerAdvisor = 3;
-            const idealRosPerAdvisor = 12; // per day
-            const idealTechPerBay = 1.2;
-            const recommendedTechs = Math.ceil(totalAdvisors * idealTechsPerAdvisor);
-            const recommendedBays = Math.ceil(totalTechs / idealTechPerBay);
+            // === Smarter Staffing Need ===
+            // Combines three real-world constraints:
+            //   1. DEMAND: how many techs needed to produce the period's hours turned at a healthy
+            //              productivity target (85%). Uses actual shop output, not a fixed ratio.
+            //   2. ADVISOR FLOOR: keep a minimum tech/advisor ratio so advisors don't bottleneck flow.
+            //   3. BAY CEILING: can't have more techs than bays can physically accommodate
+            //                   (industry rule: ~1.2 techs per bay with staggered shifts).
+            // The recommended number = max(demand, advisor-floor), capped by bay-ceiling.
+            // We also surface which constraint is binding so the card explains WHY.
 
+            const targetProductivity = 0.85;
+            const advisorFloorRatio = 2.5;   // minimum tech:advisor ratio (3 is ideal, 2.5 is floor)
+            const techsPerBayMax = 1.2;       // shop layout ceiling
+            const idealTechsPerAdvisor = 3;   // kept for reference display
+
+            // 1. Demand-implied headcount from period output
+            const demandImpliedTechs = (periodHrsTurned > 0 && periodAvailPerTech > 0)
+                ? Math.ceil(periodHrsTurned / (periodAvailPerTech * targetProductivity))
+                : 0;
+
+            // 2. Advisor-flow floor
+            const advisorFloor = Math.ceil(totalAdvisors * advisorFloorRatio);
+
+            // 3. Bay ceiling (Infinity if no bay count configured)
+            const bayCeiling = bays > 0 ? Math.floor(bays * techsPerBayMax) : Infinity;
+
+            // Raw need before bay cap
+            const rawNeed = Math.max(demandImpliedTechs, advisorFloor);
+            const recommendedTechs = bays > 0 ? Math.min(rawNeed, bayCeiling) : rawNeed;
             const techShortage = recommendedTechs - totalTechs;
-            const bayStatus = bays > 0 ? (bays >= recommendedBays ? 'Adequate' : 'Under') : 'Not configured';
+
+            // Identify which constraint is binding (what's driving the number)
+            let staffingDriver = 'none';
+            if (bays > 0 && rawNeed > bayCeiling) {
+                staffingDriver = 'bay';
+            } else if (demandImpliedTechs >= advisorFloor && demandImpliedTechs > 0) {
+                staffingDriver = 'demand';
+            } else if (advisorFloor > 0) {
+                staffingDriver = 'advisor';
+            }
+
+            // Extra info for the bay-constrained case
+            const baysShortForDemand = (staffingDriver === 'bay')
+                ? Math.ceil(rawNeed / techsPerBayMax) - bays
+                : 0;
+
+            const bayStatus = bays > 0 ? (bays >= Math.ceil(totalTechs / techsPerBayMax) ? 'Adequate' : 'Under') : 'Not configured';
+
+            // Driver label + tooltip text
+            const driverLabelMap = {
+                bay: `bay-capped at ${bayCeiling}`,
+                demand: `demand-driven`,
+                advisor: `advisor-flow`,
+                none: `baseline`
+            };
+            const driverLabel = driverLabelMap[staffingDriver];
 
             document.getElementById('capacityAnalysisCards').innerHTML = `
                 <div class="capacity-kpi-card">
@@ -5411,21 +5458,39 @@
                     <div class="kpi-subtext">Target: ${idealTechsPerAdvisor}:1</div>
                 </div>
                 <div class="capacity-kpi-card">
-                    <div class="kpi-label">Staffing Need</div>
-                    <div class="kpi-value" style="color:${techShortage <= 0 ? '#4ade80' : '#f97316'}">${techShortage <= 0 ? 'Staffed' : '+' + techShortage + ' techs'}</div>
-                    <div class="kpi-subtext">${totalTechs} of ${recommendedTechs} needed (${totalAdvisors} advisors × ${idealTechsPerAdvisor})</div>
+                    <div class="kpi-label">Staffing Need <span style="font-weight:400;font-size:10px;color:#666;">(${driverLabel})</span></div>
+                    <div class="kpi-value" style="color:${techShortage <= 0 ? '#4ade80' : '#f97316'}">${techShortage <= 0 ? 'Staffed' : '+' + techShortage + ' tech' + (techShortage > 1 ? 's' : '')}</div>
+                    <div class="kpi-subtext">${totalTechs} on roster → ${recommendedTechs} target · demand implies ${demandImpliedTechs || '—'}, advisor floor ${advisorFloor}${bays > 0 ? ', bay max ' + bayCeiling : ''}</div>
                 </div>
             `;
 
             // Recommendations
             let recs = [];
+
+            // Staffing-need callout with the actual driver explained
             if (techShortage > 0) {
-                recs.push(`<div style="padding:10px;background:#fee2e2;border-radius:6px;margin-bottom:8px;border-left:4px solid #ef4444;">
-                    <strong>Understaffed:</strong> Based on ${totalAdvisors} advisors at a ${idealTechsPerAdvisor}:1 ratio, this store needs ${techShortage} more technician${techShortage > 1 ? 's' : ''} to handle projected workload without bottlenecks.</div>`);
+                if (staffingDriver === 'bay') {
+                    recs.push(`<div style="padding:10px;background:#fee2e2;border-radius:6px;margin-bottom:8px;border-left:4px solid #ef4444;">
+                        <strong>Bay-constrained shortage:</strong> Workload implies ${rawNeed} techs, but ${bays} bays cap the shop at ${bayCeiling} tech${bayCeiling === 1 ? '' : 's'}. Adding bodies without adding bays just creates lift-waiting. Would need ${baysShortForDemand} more bay${baysShortForDemand > 1 ? 's' : ''} to fully staff to demand.</div>`);
+                } else if (staffingDriver === 'demand') {
+                    recs.push(`<div style="padding:10px;background:#fee2e2;border-radius:6px;margin-bottom:8px;border-left:4px solid #ef4444;">
+                        <strong>Demand-driven shortage:</strong> Period output of ${periodHrsTurned.toFixed(0)}h implies ${demandImpliedTechs} techs at an 85% productivity target — currently ${totalTechs} on roster${activeTechs !== totalTechs ? ` (${activeTechs} active w/ hours)` : ''}. Add ${techShortage} tech${techShortage > 1 ? 's' : ''} or expect continued overtime pressure.</div>`);
+                } else {
+                    recs.push(`<div style="padding:10px;background:#fef3c7;border-radius:6px;margin-bottom:8px;border-left:4px solid #f59e0b;">
+                        <strong>Advisor-flow shortage:</strong> ${totalAdvisors} advisor${totalAdvisors === 1 ? '' : 's'} at a ${advisorFloorRatio}:1 ratio floor suggests ${advisorFloor} techs minimum. Advisors may out-write the tech line and stall flow.</div>`);
+                }
             }
+
+            // Overstaffed-for-demand signal (separate from advisor floor)
+            if (totalTechs > 0 && demandImpliedTechs > 0 && (totalTechs - demandImpliedTechs) >= 2 && utilizationPct > 0 && utilizationPct < 65) {
+                recs.push(`<div style="padding:10px;background:#fef3c7;border-radius:6px;margin-bottom:8px;border-left:4px solid #f59e0b;">
+                    <strong>Overstaffed for current demand:</strong> ${totalTechs} techs on roster but demand implies ${demandImpliedTechs}. If volume isn't growing, reallocate hours or cross-train before labor gross slides further.</div>`);
+            }
+
+            // Bay pressure (separate from staffing shortage — flags tight conditions even when staffed)
             if (bays > 0 && totalTechs > bays) {
                 recs.push(`<div style="padding:10px;background:#fef3c7;border-radius:6px;margin-bottom:8px;border-left:4px solid #f59e0b;">
-                    <strong>Bay constraint:</strong> ${totalTechs} techs sharing ${bays} bays means techs may be waiting for lifts. Consider staggered shifts or additional bays.</div>`);
+                    <strong>Bay pressure:</strong> ${totalTechs} techs sharing ${bays} bays means techs may be waiting for lifts. Stagger start times, assign lube techs to quick-turn bays, or plan a bay expansion.</div>`);
             }
             if (utilizationPct > 0 && utilizationPct < 65) {
                 recs.push(`<div style="padding:10px;background:#fef3c7;border-radius:6px;margin-bottom:8px;border-left:4px solid #f59e0b;">
