@@ -994,8 +994,9 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="btn-group">
+                <div class="btn-group" style="display:flex;align-items:center;gap:12px;">
                     <button class="btn" id="saveDailyBtn">Save Daily Entry</button>
+                    <span class="unsaved-badge" data-section="daily" style="display:none;">● Unsaved changes</span>
                 </div>
             </div>
         </div>
@@ -1308,7 +1309,7 @@
                 </div>
                 <div class="btn-group" style="align-items:center;gap:12px;">
                     <button class="btn" id="saveRosterBtn">Save Roster</button>
-                    <span class="unsaved-badge" style="display:none;">● Unsaved changes</span>
+                    <span class="unsaved-badge" data-section="roster" style="display:none;">● Unsaved changes</span>
                 </div>
             </div>
 
@@ -1339,7 +1340,7 @@
                 </div>
                 <div class="btn-group" style="align-items:center;gap:12px;">
                     <button class="btn" id="saveTechWeeklyBtn">Save Tech Weekly</button>
-                    <span class="unsaved-badge" style="display:none;">● Unsaved changes</span>
+                    <span class="unsaved-badge" data-section="roster" style="display:none;">● Unsaved changes</span>
                 </div>
             </div>
 
@@ -1369,7 +1370,7 @@
                 </div>
                 <div class="btn-group" style="align-items:center;gap:12px;">
                     <button class="btn" id="saveLubeWeeklyBtn">Save Lube Tech Weekly</button>
-                    <span class="unsaved-badge" style="display:none;">● Unsaved changes</span>
+                    <span class="unsaved-badge" data-section="roster" style="display:none;">● Unsaved changes</span>
                 </div>
             </div>
 
@@ -2218,11 +2219,11 @@
             btn.addEventListener('click', (e) => {
                 const currentTab = document.querySelector('.nav-btn.active')?.dataset.tab;
                 const tabId = e.target.dataset.tab;
-                // Warn if leaving Roster with unsaved changes
-                if (currentTab === 'roster' && tabId !== 'roster' && !confirmLeaveRoster()) {
-                    return;
+                // Warn if leaving a section with unsaved changes
+                if (currentTab && currentTab !== tabId && dirtyState[currentTab]) {
+                    if (!confirmLeaveSection(currentTab)) return;
+                    clearDirty(currentTab);
                 }
-                if (currentTab === 'roster' && tabId !== 'roster') clearRosterDirty();
 
                 document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
                 document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -2779,29 +2780,46 @@
         // ============================================================================
         // EVENT LISTENERS
         // ============================================================================
-        // --- Unsaved-data tracking for Roster tab ---
-        let rosterDirty = false;
+        // --- Unsaved-data tracking (section-scoped) ---
+        // Each editable tab (daily, roster, etc.) gets its own dirty flag so we can
+        // warn before navigation away and show a visible badge next to the save button.
+        // Badges are tagged with data-section="daily"/"roster" and only the badges for
+        // currently-dirty sections are visible.
+        const dirtyState = { daily: false, roster: false };
+        const sectionLabels = {
+            daily: 'the Daily Entry tab',
+            roster: 'the Roster tab'
+        };
         function updateUnsavedBadges() {
             document.querySelectorAll('.unsaved-badge').forEach(el => {
-                el.style.display = rosterDirty ? '' : 'none';
+                const section = el.dataset.section || 'roster';
+                el.style.display = dirtyState[section] ? '' : 'none';
             });
         }
-        function markRosterDirty() {
-            if (rosterDirty) return;
-            rosterDirty = true;
+        function markDirty(section) {
+            if (dirtyState[section]) return;
+            dirtyState[section] = true;
             updateUnsavedBadges();
         }
-        function clearRosterDirty() {
-            rosterDirty = false;
+        function clearDirty(section) {
+            dirtyState[section] = false;
             updateUnsavedBadges();
         }
-        function confirmLeaveRoster() {
-            if (!rosterDirty) return true;
-            return confirm('You have unsaved changes on the Roster tab. Leave without saving? Any numbers you entered will be lost.');
+        function isAnyDirty() {
+            return Object.values(dirtyState).some(Boolean);
         }
+        function confirmLeaveSection(section) {
+            if (!dirtyState[section]) return true;
+            const label = sectionLabels[section] || `the ${section} tab`;
+            return confirm(`You have unsaved changes on ${label}. Leave without saving? Any numbers you entered will be lost.`);
+        }
+        // Backward-compat aliases — older callsites still use these names
+        function markRosterDirty() { markDirty('roster'); }
+        function clearRosterDirty() { clearDirty('roster'); }
+        function confirmLeaveRoster() { return confirmLeaveSection('roster'); }
         window.addEventListener('beforeunload', (e) => {
-            if (rosterDirty) {
-                const msg = 'You have unsaved roster changes. Leave without saving?';
+            if (isAnyDirty()) {
+                const msg = 'You have unsaved changes. Leave without saving?';
                 e.preventDefault();
                 e.returnValue = msg;
                 return msg;
@@ -2814,12 +2832,13 @@
             let lastStore = gss.value;
             gss.addEventListener('change', () => {
                 const activeTab = document.querySelector('.nav-btn.active')?.dataset.tab;
-                if (activeTab === 'roster' && !confirmLeaveRoster()) {
+                // Guard dirty sections before switching stores — changing stores wipes the form
+                if (activeTab && dirtyState[activeTab] && !confirmLeaveSection(activeTab)) {
                     gss.value = lastStore;
                     return;
                 }
+                if (activeTab) clearDirty(activeTab);
                 lastStore = gss.value;
-                if (activeTab === 'roster') clearRosterDirty();
                 if (activeTab === 'daily') loadDailyEntry();
                 else if (activeTab === 'dashboard') loadDashboard();
                 else if (activeTab === 'executive') loadExecutive();
@@ -2837,9 +2856,17 @@
                 el.addEventListener('change', markRosterDirty);
             });
 
-            // Daily Entry
-            document.getElementById('dailyDatePicker').addEventListener('change', () => {
-                const date = pickerDate(document.getElementById('dailyDatePicker').valueAsDate);
+            // Daily Entry — guard against losing unsaved entries when switching date
+            const dailyDatePicker = document.getElementById('dailyDatePicker');
+            let lastDailyDateVal = dailyDatePicker.value;
+            dailyDatePicker.addEventListener('change', () => {
+                if (!confirmLeaveSection('daily')) {
+                    dailyDatePicker.value = lastDailyDateVal;
+                    return;
+                }
+                clearDirty('daily');
+                lastDailyDateVal = dailyDatePicker.value;
+                const date = pickerDate(dailyDatePicker.valueAsDate);
                 document.getElementById('dailyDayNumber').value = getWorkingDayOfMonth(date);
                 const wd = getWorkingDaysInMonth(date.getFullYear(), date.getMonth() + 1);
                 document.getElementById('dailyDaysInMonth').value = wd.totalDays;
@@ -2848,6 +2875,20 @@
             document.getElementById('laborDay').addEventListener('input', updateDailyCalculations);
             document.getElementById('partsDay').addEventListener('input', updateDailyCalculations);
             document.getElementById('saveDailyBtn').addEventListener('click', saveDailyEntry);
+
+            // Daily Entry dirty tracking — any input/change in the daily form marks it dirty.
+            // The advisor body is rendered later, so use event delegation on the container.
+            ['laborDay', 'partsDay', 'dailyTotalRos', 'dailyStoreNps', 'dailyRegionNps'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('input', () => markDirty('daily'));
+                el.addEventListener('change', () => markDirty('daily'));
+            });
+            const dailyAdvBody = document.getElementById('dailyAdvisorBody');
+            if (dailyAdvBody) {
+                dailyAdvBody.addEventListener('input', () => markDirty('daily'));
+                dailyAdvBody.addEventListener('change', () => markDirty('daily'));
+            }
 
             // Dashboard month picker
             const dashMP = document.getElementById('dashMonthPicker');
@@ -2960,6 +3001,8 @@
         }
 
         async function loadDailyEntry() {
+            // Loading fresh values — reset the dirty flag since we're painting the UI from storage
+            clearDirty('daily');
             const storeId = getSelectedStore();
             const date = pickerDate(document.getElementById('dailyDatePicker').valueAsDate);
 
@@ -3451,6 +3494,7 @@
                 } else {
                     showToast('Daily entry saved!');
                 }
+                if (failedSaves.length === 0) clearDirty('daily');
                 updateDailyCalculations(); // refresh MTD
             } catch (error) {
                 console.error('Save error:', error);
