@@ -1272,6 +1272,12 @@
             <div class="capacity-kpi-grid" id="rosterStaffingCards" style="grid-template-columns:repeat(6,1fr);">
             </div>
 
+            <!-- GOAL ATTAINMENT + MONTH-END FORECAST -->
+            <div class="card" id="goalForecastCard" style="display:none;">
+                <h3 class="card-title" id="goalForecastTitle">Goal Attainment & Month-End Forecast</h3>
+                <div id="goalForecastBody"></div>
+            </div>
+
             <!-- ADVISOR WEEKLY ROSTER -->
             <div class="card">
                 <h3 class="card-title" id="advisorRosterTitle">Advisor Weekly Roster</h3>
@@ -4696,6 +4702,8 @@
                 document.getElementById('capacityAnalysisCards').innerHTML = '';
                 document.getElementById('capacityRecommendations').innerHTML = '';
                 document.getElementById('facilityAutoCalc').innerHTML = '';
+                const gfc = document.getElementById('goalForecastCard');
+                if (gfc) gfc.style.display = 'none';
                 return;
             }
 
@@ -4844,6 +4852,28 @@
                     ? regionNpsEntries.reduce((s, d) => s + parseFloat(d.region_nps), 0) / regionNpsEntries.length
                     : null;
 
+                // Prior-equal-length advisor data for trend calculation
+                const advPeriodDays = Math.round((aggEnd - aggStart) / (1000 * 60 * 60 * 24)) + 1;
+                const priorAdvEnd = new Date(aggStart); priorAdvEnd.setDate(priorAdvEnd.getDate() - 1);
+                const priorAdvStart = new Date(priorAdvEnd); priorAdvStart.setDate(priorAdvStart.getDate() - (advPeriodDays - 1));
+                const priorAdvStartKey = dateToString(priorAdvStart);
+                const priorAdvEndKey = dateToString(priorAdvEnd);
+                let priorAdvData = (await LS.getAdvisorEntries()).filter(d =>
+                    d.entry_date >= priorAdvStartKey && d.entry_date <= priorAdvEndKey
+                );
+                if (storeId && storeId !== 'all') {
+                    priorAdvData = priorAdvData.filter(d => d.store_id === storeId);
+                }
+                const priorAdvAgg = {};
+                priorAdvData.forEach(d => {
+                    if (!priorAdvAgg[d.advisor_id]) {
+                        priorAdvAgg[d.advisor_id] = { gross: 0, ros: 0, labor: 0 };
+                    }
+                    priorAdvAgg[d.advisor_id].gross += d.total_gross || 0;
+                    priorAdvAgg[d.advisor_id].ros += d.ro_count || 0;
+                    priorAdvAgg[d.advisor_id].labor += d.labor_gross || 0;
+                });
+
                 // Aggregate daily entries per advisor for the week
                 const weeklyAdvAgg = {};
                 weeklyAdvData.forEach(d => {
@@ -4890,6 +4920,22 @@
                     const hro = roCount > 0 ? (hours / roCount) : 0;
                     const rankColor = rank === 1 ? '#10b981' : rank === ranked.length && rank !== '—' ? '#ef4444' : '#1a1a1a';
                     const autoTag = hasDaily ? ' <span style="color:#10b981;font-size:10px;" title="Auto-populated from daily entries">●</span>' : '';
+
+                    // Trend vs prior equal-length period — based on $/RO, which normalizes away volume changes
+                    const prior = priorAdvAgg[advisor.id];
+                    let grossPerRoTrend = '', grossPerRoTrendTitle = '';
+                    if (prior && prior.ros > 0 && grossPerRo > 0) {
+                        const priorGrossPerRo = prior.gross / prior.ros;
+                        const delta = grossPerRo - priorGrossPerRo;
+                        // Threshold: 3% of prior $/RO, minimum $5 so tiny absolute numbers don't pretend to be meaningful
+                        const threshold = Math.max(5, priorGrossPerRo * 0.03);
+                        let arrow = '→', color = '#888';
+                        if (delta >= threshold) { arrow = '▲'; color = '#10b981'; }
+                        else if (delta <= -threshold) { arrow = '▼'; color = '#ef4444'; }
+                        grossPerRoTrend = ` <span style="color:${color};font-weight:700;cursor:help;" title="Prior period $/RO: ${formatCurrency(priorGrossPerRo)} · Δ ${delta >= 0 ? '+' : ''}${formatCurrency(delta)}">${arrow}</span>`;
+                        grossPerRoTrendTitle = `vs prior period`;
+                    }
+
                     advHtml += `
                         <tr data-advisor="${advisor.id}">
                             <td style="font-weight:600">${advisor.name}${allMode ? ' <span style="color:#888;font-weight:400;font-size:12px">(' + (stores.find(s=>s.id===advisor.store_id)?.name||'') + ')</span>' : ''}${autoTag}</td>
@@ -4906,7 +4952,7 @@
                             <td class="input-gray roster-ro-count" style="font-weight:600">${roCount > 0 ? roCount : '—'}</td>
                             <td class="input-gray">${cpRos > 0 ? cpRos : '—'}</td>
                             <td class="input-gray">${hours > 0 ? hours.toFixed(1) : '—'}</td>
-                            <td class="roster-gross-ro input-gray" style="font-weight:700;">${grossPerRo > 0 ? formatCurrency(grossPerRo) : '—'}</td>
+                            <td class="roster-gross-ro input-gray" style="font-weight:700;">${grossPerRo > 0 ? formatCurrency(grossPerRo) + grossPerRoTrend : '—'}</td>
                             <td class="input-gray" style="font-weight:700;">${elr > 0 ? formatCurrency(elr) : '—'}</td>
                             <td class="input-gray">${hro > 0 ? hro.toFixed(2) : '—'}</td>
                             <td class="roster-rank" style="font-weight:700;color:${rankColor};text-align:center;">${rank}</td>
@@ -5138,6 +5184,7 @@
                 // Load tech perf MTD/YTD and capacity analysis
                 loadTechPerformance(storeId, fc);
                 loadCapacityAnalysis(storeId, fc, storeTechs, storeLubes, storeAdvisors, techTotals, lubeTotals, periodAvailPerTech, periodLabelTech, advPeriod);
+                loadGoalForecast(storeId, allMode, now, currentYear, currentMonth);
             } catch (error) {
                 console.error('Roster load error:', error);
             }
@@ -5301,6 +5348,30 @@
                 perfMap[key].training = d.training || perfMap[key].training;
             });
 
+            // Real trend: compare each tech's productivity to the immediately-preceding equal-length
+            // period. Example: MTD April compared to equal-length slice of March ending at same day-of-month.
+            // Uses tech_weekly_entries scanned into priorPerfMap with the same aggregation logic.
+            const periodDays = Math.round((rangeEnd - rangeStart) / (1000 * 60 * 60 * 24)) + 1;
+            const priorEnd = new Date(rangeStart); priorEnd.setDate(priorEnd.getDate() - 1);
+            const priorStart = new Date(priorEnd); priorStart.setDate(priorStart.getDate() - (periodDays - 1));
+            const priorStartStr = dateToString(priorStart);
+            const priorEndStr = dateToString(priorEnd);
+            const priorInfo = getAvailableHoursInRange(priorStart, priorEnd);
+            const priorAvailPerTech = priorInfo.hours;
+            const priorPerfMap = {};
+            Object.values(techWeeklyData).forEach(d => {
+                if (!allMode && d.store_id !== storeId) return;
+                if (!d.week_start) return;
+                if (d.week_start < priorStartStr || d.week_start > priorEndStr) return;
+                const key = `${d.tech_type}_${d.tech_id}`;
+                if (!priorPerfMap[key]) {
+                    priorPerfMap[key] = { hrsTurned: 0, clockHrs: 0 };
+                }
+                priorPerfMap[key].hrsTurned += d.hours_turned || 0;
+                priorPerfMap[key].clockHrs += d.clock_hours || 0;
+            });
+            const TREND_THRESHOLD = 3; // percentage-point delta to flip direction
+
             // Build two groups — Technicians and Lube Techs (rendered separately)
             const filterFn = allMode ? (t => t.is_active !== false) : (t => t.store_id === storeId && t.is_active !== false);
             const techList = technicians.filter(filterFn).map(t => ({ ...t, staffType: 'tech' }));
@@ -5327,8 +5398,19 @@
                     const prod = periodAvailPerTech > 0 ? ((p.hrsTurned || 0) / periodAvailPerTech * 100) : 0;
                     const prof = periodAvailPerTech > 0 ? ((p.clockHrs || 0) / periodAvailPerTech * 100) : 0;
                     const avgCsi = (p.csiCount || 0) > 0 ? (p.csiSum / p.csiCount) : 0;
-                    const trend = (p.weeks || 0) >= 2 ? (eff >= 100 ? '▲' : '▼') : '—';
-                    const trendColor = trend === '▲' ? '#10b981' : trend === '▼' ? '#ef4444' : '#777';
+
+                    // Real trend: compare current-period productivity to prior-equal-length-period productivity.
+                    // Arrow flips only when delta exceeds threshold so tiny fluctuations don't look like swings.
+                    const pp = priorPerfMap[key];
+                    let trend = '—', trendColor = '#777', trendTitle = 'No prior-period data';
+                    if (pp && priorAvailPerTech > 0 && (pp.hrsTurned > 0 || pp.clockHrs > 0) && prod > 0) {
+                        const priorProd = (pp.hrsTurned / priorAvailPerTech) * 100;
+                        const delta = prod - priorProd;
+                        if (delta >= TREND_THRESHOLD) { trend = '▲'; trendColor = '#10b981'; }
+                        else if (delta <= -TREND_THRESHOLD) { trend = '▼'; trendColor = '#ef4444'; }
+                        else { trend = '→'; trendColor = '#888'; }
+                        trendTitle = `Prior period prod: ${priorProd.toFixed(1)}% · Δ ${delta >= 0 ? '+' : ''}${delta.toFixed(1)} pts`;
+                    }
 
                     roSum += (p.ros || 0);
                     hrsTurnedSum += (p.hrsTurned || 0);
@@ -5336,7 +5418,7 @@
                     if (avgCsi > 0) { csiSum += avgCsi; csiCount++; }
                     if (hasData) techsWithData++;
 
-                    rows.push({ s, p, hasData, eff, prod, prof, avgCsi, trend, trendColor });
+                    rows.push({ s, p, hasData, eff, prod, prof, avgCsi, trend, trendColor, trendTitle });
                 });
 
                 // Shop-level available capacity uses only techs with hours logged
@@ -5356,11 +5438,20 @@
                     </tr>
                 `;
 
-                rows.forEach(({ s, p, eff, prod, prof, avgCsi, trend, trendColor }) => {
+                rows.forEach(({ s, p, eff, prod, prof, avgCsi, trend, trendColor, trendTitle }) => {
+                    // Attendance indicator: clock hours vs scheduled available hours.
+                    // Flags techs under 85% (absent/light) or over 105% (overtime). No badge when near-schedule.
+                    const attendancePct = periodAvailPerTech > 0 ? ((p.clockHrs || 0) / periodAvailPerTech * 100) : 0;
+                    let attendanceBadge = '';
+                    if (attendancePct > 0 && attendancePct < 85) {
+                        attendanceBadge = ` <span style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;cursor:help;" title="Low attendance: ${attendancePct.toFixed(0)}% of scheduled hours clocked (${(p.clockHrs || 0).toFixed(0)}h of ${periodAvailPerTech}h)">⏱ ${attendancePct.toFixed(0)}%</span>`;
+                    } else if (attendancePct > 105) {
+                        attendanceBadge = ` <span style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;cursor:help;" title="Overtime: clocked ${attendancePct.toFixed(0)}% of scheduled (${(p.clockHrs || 0).toFixed(0)}h of ${periodAvailPerTech}h)">OT ${attendancePct.toFixed(0)}%</span>`;
+                    }
 
                     block += `
                         <tr>
-                            <td style="font-weight:600">${s.name}${allMode ? ' <span style="color:#888;font-weight:400;font-size:12px">(' + (stores.find(st=>st.id===s.store_id)?.name||'') + ')</span>' : ''}</td>
+                            <td style="font-weight:600">${s.name}${allMode ? ' <span style="color:#888;font-weight:400;font-size:12px">(' + (stores.find(st=>st.id===s.store_id)?.name||'') + ')</span>' : ''}${attendanceBadge}</td>
                             <td>${s.staffType === 'tech' ? 'Technician' : 'Lube Tech'}</td>
                             <td>${s.specialty || '—'}</td>
                             <td>${p.training || '—'}</td>
@@ -5371,7 +5462,7 @@
                             <td style="font-weight:700;color:${effColor(eff)}">${eff > 0 ? eff.toFixed(1) + '%' : '—'}</td>
                             <td style="font-weight:700;color:${prodColor(prod)}">${prod > 0 ? prod.toFixed(1) + '%' : '—'}</td>
                             <td style="font-weight:700;color:${profColor(prof)}">${prof > 0 ? prof.toFixed(1) + '%' : '—'}</td>
-                            <td style="font-weight:700;color:${trendColor}">${trend}</td>
+                            <td style="font-weight:700;color:${trendColor};cursor:help;" title="${trendTitle}">${trend}</td>
                         </tr>
                     `;
                 });
@@ -5409,6 +5500,128 @@
             html += renderGroup(lubeList, 'Lube Techs');
 
             document.getElementById('techPerfBody').innerHTML = html || '<tr><td colspan="12" class="empty-state">No data for this period. Enter tech weekly data above — it compiles automatically into monthly and YTD views.</td></tr>';
+        }
+
+        // Goal attainment + month-end forecast card
+        // Pulls current-month goals from the Goals tab + MTD daily entries and shows:
+        //   - Actual vs goal % for labor, parts, total gross
+        //   - Projection to month-end based on working-days-elapsed pace
+        //   - Daily run-rate needed to hit goal over remaining working days
+        async function loadGoalForecast(storeId, allMode, now, currentYear, currentMonth) {
+            const card = document.getElementById('goalForecastCard');
+            const body = document.getElementById('goalForecastBody');
+            const titleEl = document.getElementById('goalForecastTitle');
+            if (!card || !body) return;
+
+            try {
+                const allGoals = (await LS.getGoals()).filter(g => g.month === currentMonth && g.year === currentYear);
+                const relevantGoals = allMode ? allGoals : allGoals.filter(g => g.store_id === storeId);
+
+                // If no goals set for any relevant store, show a helpful placeholder rather than hiding entirely
+                const hasAnyGoal = relevantGoals.some(g =>
+                    (g.labor_goal || 0) + (g.parts_goal || 0) + (g.total_gross_goal || 0) > 0
+                );
+                if (!hasAnyGoal) {
+                    card.style.display = '';
+                    titleEl.textContent = `Goal Attainment & Month-End Forecast — ${now.toLocaleString('default',{month:'long'})} ${currentYear}`;
+                    body.innerHTML = `<div style="padding:14px;background:#f9fafb;border:1px dashed #d1d5db;border-radius:8px;color:#555;font-size:13px;">
+                        No goals set for ${now.toLocaleString('default',{month:'long'})} ${currentYear} ${allMode ? 'at any store' : 'at this store'}. Set goals in the <strong>Goals & Settings</strong> tab to track attainment and projections here.
+                    </div>`;
+                    return;
+                }
+
+                // Sum goals across relevant stores
+                const goal = relevantGoals.reduce((acc, g) => {
+                    acc.labor += (g.labor_goal || 0);
+                    acc.parts += (g.parts_goal || 0);
+                    acc.gross += (g.total_gross_goal || 0);
+                    return acc;
+                }, { labor: 0, parts: 0, gross: 0 });
+
+                // MTD actuals — daily entries month-to-date
+                const mStart = dateToString(new Date(currentYear, currentMonth - 1, 1));
+                const mToday = dateToString(now);
+                let daily = (await LS.getDailyEntries()).filter(d =>
+                    d.entry_date >= mStart && d.entry_date <= mToday
+                );
+                if (!allMode) daily = daily.filter(d => d.store_id === storeId);
+
+                const actual = daily.reduce((acc, d) => {
+                    acc.labor += (d.labor_gross || 0);
+                    acc.parts += (d.parts_gross || 0);
+                    acc.gross += (d.total_gross || 0);
+                    return acc;
+                }, { labor: 0, parts: 0, gross: 0 });
+
+                // Working-day math: how far into the month are we?
+                const monthWd = getWorkingDaysInMonth(currentYear, currentMonth);
+                // Count working days elapsed including today
+                let elapsedDays = 0;
+                const todayDay = now.getDate();
+                for (let d = 1; d <= todayDay; d++) {
+                    const dow = new Date(currentYear, currentMonth - 1, d).getDay();
+                    if (dow >= 1 && dow <= 6) elapsedDays++; // Mon-Sat counts
+                }
+                const remainingDays = Math.max(0, monthWd.totalDays - elapsedDays);
+                const paceMultiplier = elapsedDays > 0 ? (monthWd.totalDays / elapsedDays) : 0;
+
+                // Build a metric row: actual · goal · pct · projection · needed/day
+                function metricRow(label, act, gl) {
+                    if (gl <= 0) return '';
+                    const pct = (act / gl) * 100;
+                    const projection = act * paceMultiplier;
+                    const projPct = (projection / gl) * 100;
+                    const gap = gl - act;
+                    const neededPerDay = remainingDays > 0 ? gap / remainingDays : 0;
+                    const currentPerDay = elapsedDays > 0 ? act / elapsedDays : 0;
+                    const paceColor = projPct >= 100 ? '#10b981' : projPct >= 90 ? '#f59e0b' : '#ef4444';
+                    const paceTag = projPct >= 100 ? 'On pace' : projPct >= 90 ? 'Close' : 'Behind';
+                    const neededNote = gap > 0 && remainingDays > 0
+                        ? `Need <strong>${formatCurrency(neededPerDay)}/day</strong> over ${remainingDays} working day${remainingDays === 1 ? '' : 's'} remaining · running <strong>${formatCurrency(currentPerDay)}/day</strong>`
+                        : gap <= 0
+                            ? `Already past goal — running <strong>${formatCurrency(currentPerDay)}/day</strong>`
+                            : `Month is over`;
+                    return `
+                        <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid ${paceColor};border-radius:8px;padding:14px 18px;margin-bottom:10px;">
+                            <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:12px;">
+                                <div>
+                                    <div style="font-size:12px;color:#666;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">${label}</div>
+                                    <div style="font-size:22px;font-weight:700;margin-top:2px;">${formatCurrency(act)} <span style="font-size:14px;color:#666;font-weight:500;">of ${formatCurrency(gl)}</span></div>
+                                </div>
+                                <div style="text-align:right;">
+                                    <div style="font-size:24px;font-weight:700;color:${paceColor};">${pct.toFixed(0)}%</div>
+                                    <div style="font-size:11px;color:#888;">MTD attainment</div>
+                                </div>
+                            </div>
+                            <div style="margin-top:12px;padding-top:10px;border-top:1px dashed #e5e7eb;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                                <div style="font-size:13px;">
+                                    <span style="display:inline-block;padding:2px 8px;border-radius:12px;background:${paceColor};color:#fff;font-size:11px;font-weight:700;letter-spacing:0.3px;">${paceTag}</span>
+                                    <span style="margin-left:8px;">Projected <strong>${formatCurrency(projection)}</strong> (${projPct.toFixed(0)}% of goal)</span>
+                                </div>
+                                <div style="font-size:12px;color:#555;">${neededNote}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                const storesInScope = allMode ? relevantGoals.length : 1;
+                const scopeLabel = allMode ? `${storesInScope} store${storesInScope === 1 ? '' : 's'}` : (stores.find(s => s.id === storeId)?.name || 'Store');
+                const monthLabel = `${now.toLocaleString('default',{month:'long'})} ${currentYear}`;
+                titleEl.textContent = `Goal Attainment & Month-End Forecast — ${monthLabel}`;
+
+                card.style.display = '';
+                body.innerHTML = `
+                    <div style="font-size:12px;color:#666;margin-bottom:12px;">
+                        ${scopeLabel} · Working day ${elapsedDays} of ${monthWd.totalDays} · ${remainingDays} working day${remainingDays === 1 ? '' : 's'} remaining
+                    </div>
+                    ${metricRow('Labor Gross', actual.labor, goal.labor)}
+                    ${metricRow('Parts Gross', actual.parts, goal.parts)}
+                    ${metricRow('Total Gross', actual.gross, goal.gross)}
+                `;
+            } catch (err) {
+                console.error('Goal/forecast load error:', err);
+                card.style.display = 'none';
+            }
         }
 
         function loadCapacityAnalysis(storeId, fc, storeTechs, storeLubes, storeAdvisors, techTotals, lubeTotals, periodAvailPerTech, periodLabel, advPeriod) {
