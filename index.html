@@ -5649,10 +5649,14 @@
                 );
                 if (!allMode) daily = daily.filter(d => d.store_id === storeId);
 
+                // Daily entries store labor_day / parts_day; total gross is computed as labor + parts.
+                // (Older schema fields total_labor / total_parts are kept as fallback to match saveDailyEntry.)
                 const actual = daily.reduce((acc, d) => {
-                    acc.labor += (d.labor_gross || 0);
-                    acc.parts += (d.parts_gross || 0);
-                    acc.gross += (d.total_gross || 0);
+                    const labor = d.labor_day ?? d.total_labor ?? 0;
+                    const parts = d.parts_day ?? d.total_parts ?? 0;
+                    acc.labor += labor;
+                    acc.parts += parts;
+                    acc.gross += labor + parts;
                     return acc;
                 }, { labor: 0, parts: 0, gross: 0 });
 
