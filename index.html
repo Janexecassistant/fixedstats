@@ -1291,7 +1291,7 @@
 
             <!-- TECHNICIAN WEEKLY ENTRY -->
             <div class="card">
-                <h3 class="card-title">Technician Weekly Entry</h3>
+                <h3 class="card-title" id="techWeeklyTitle">Technician Weekly Entry</h3>
                 <div style="overflow-x: auto;">
                     <table id="techWeeklyTable">
                         <thead>
@@ -1321,7 +1321,7 @@
 
             <!-- LUBE TECH WEEKLY ENTRY -->
             <div class="card">
-                <h3 class="card-title">Lube Tech Weekly Entry</h3>
+                <h3 class="card-title" id="lubeWeeklyTitle">Lube Tech Weekly Entry</h3>
                 <div style="overflow-x: auto;">
                     <table id="lubeWeeklyTable">
                         <thead>
@@ -4861,36 +4861,106 @@
                 });
                 document.getElementById('rosterBody').innerHTML = advHtml;
 
-                // Build Technician weekly entry
-                const availHrsPerTech = weeklyAvailPerTech;
+                // ----- Tech/Lube entry period-awareness -----
+                // Week view: one week's data, editable, denominator = weekly hours.
+                // MTD/YTD/Custom: aggregate tech_weekly_entries across the period, read-only,
+                //   denominator = period's available hours × headcount. Prevents the
+                //   "206% productivity" bug (MTD-scale numerator / weekly-scale denominator).
+                let periodAvailPerTech, periodLabelTech;
+                if (advPeriod === 'week') {
+                    periodAvailPerTech = weeklyAvailPerTech;
+                    periodLabelTech = `Week of ${wsKey}`;
+                } else if (advPeriod === 'mtd') {
+                    periodAvailPerTech = monthHrs;
+                    periodLabelTech = advPeriodLabel;
+                } else {
+                    const rangeInfo = getAvailableHoursInRange(aggStart, aggEnd);
+                    periodAvailPerTech = rangeInfo.hours;
+                    periodLabelTech = advPeriodLabel;
+                }
+                const isWeekView = advPeriod === 'week';
+
+                const techWeeklyTitleEl = document.getElementById('techWeeklyTitle');
+                if (techWeeklyTitleEl) techWeeklyTitleEl.textContent = isWeekView
+                    ? `Technician Weekly Entry — ${periodLabelTech}`
+                    : `Technician Performance — ${periodLabelTech} (${periodAvailPerTech}h/tech available)`;
+                const lubeWeeklyTitleEl = document.getElementById('lubeWeeklyTitle');
+                if (lubeWeeklyTitleEl) lubeWeeklyTitleEl.textContent = isWeekView
+                    ? `Lube Tech Weekly Entry — ${periodLabelTech}`
+                    : `Lube Tech Performance — ${periodLabelTech} (${periodAvailPerTech}h/tech available)`;
+                const saveTechBtnEl = document.getElementById('saveTechWeeklyBtn');
+                if (saveTechBtnEl) saveTechBtnEl.style.display = isWeekView ? '' : 'none';
+                const saveLubeBtnEl = document.getElementById('saveLubeWeeklyBtn');
+                if (saveLubeBtnEl) saveLubeBtnEl.style.display = isWeekView ? '' : 'none';
+
+                // Aggregate tech_weekly entries for one tech across the selected period
+                function aggregateTechEntries(techId, techType) {
+                    const matches = Object.values(techWeeklyData).filter(e => {
+                        if (e.tech_type !== techType) return false;
+                        if (e.tech_id !== techId) return false;
+                        if (!allMode && e.store_id !== storeId) return false;
+                        if (isWeekView) return e.week_start === wsKey;
+                        return e.week_start >= aggStartKey && e.week_start <= aggEndKey;
+                    });
+                    if (!matches.length) return {};
+                    let csiSum = 0, csiCount = 0, training = '';
+                    const agg = matches.reduce((acc, e) => {
+                        acc.ros_worked = (acc.ros_worked || 0) + (e.ros_worked || 0);
+                        acc.hours_turned = (acc.hours_turned || 0) + (e.hours_turned || 0);
+                        acc.clock_hours = (acc.clock_hours || 0) + (e.clock_hours || 0);
+                        if (e.csi_score) { csiSum += e.csi_score; csiCount++; }
+                        if (e.training) training = e.training;
+                        return acc;
+                    }, {});
+                    agg.csi_score = csiCount > 0 ? csiSum / csiCount : 0;
+                    agg.training = training;
+                    return agg;
+                }
+
+                // Build Technician section
                 let techHtml = '';
                 let techTotals = { ros: 0, hrsTurned: 0, clockHrs: 0 };
                 storeTechs.forEach(tech => {
-                    const key = `${tech.store_id}_${wsKey}_tech_${tech.id}`;
-                    const d = techWeeklyData[key] || {};
+                    const d = aggregateTechEntries(tech.id, 'tech');
                     const hrsTurned = d.hours_turned || 0;
                     const clockHrs = d.clock_hours || 0;
                     const eff = clockHrs > 0 ? (hrsTurned / clockHrs * 100) : 0;
-                    const prod = availHrsPerTech > 0 ? (clockHrs / availHrsPerTech * 100) : 0;
-                    const prof = availHrsPerTech > 0 ? (hrsTurned / availHrsPerTech * 100) : 0;
+                    const prod = periodAvailPerTech > 0 ? (clockHrs / periodAvailPerTech * 100) : 0;
+                    const prof = periodAvailPerTech > 0 ? (hrsTurned / periodAvailPerTech * 100) : 0;
                     techTotals.ros += (d.ros_worked || 0);
                     techTotals.hrsTurned += hrsTurned;
                     techTotals.clockHrs += clockHrs;
+
+                    const trainingCell = isWeekView
+                        ? `<td><select class="tw-training">
+                                <option value="">-</option>
+                                <option value="Complete" ${d.training === 'Complete' ? 'selected' : ''}>Complete</option>
+                                <option value="In Progress" ${d.training === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                <option value="Not Started" ${d.training === 'Not Started' ? 'selected' : ''}>Not Started</option>
+                            </select></td>`
+                        : `<td>${d.training || '—'}</td>`;
+                    const rosCell = isWeekView
+                        ? `<td><input type="number" class="tw-ros input-yellow" value="${d.ros_worked || ''}" placeholder="0"></td>`
+                        : `<td>${d.ros_worked || 0}</td>`;
+                    const csiCell = isWeekView
+                        ? `<td><input type="number" step="0.1" class="tw-csi input-yellow" value="${d.csi_score || ''}" placeholder="0"></td>`
+                        : `<td>${d.csi_score > 0 ? d.csi_score.toFixed(1) : '—'}</td>`;
+                    const hrsTurnedCell = isWeekView
+                        ? `<td><input type="number" step="0.1" class="tw-hrs-turned input-yellow" value="${d.hours_turned || ''}" placeholder="0"></td>`
+                        : `<td>${hrsTurned.toFixed(1)}</td>`;
+                    const clockHrsCell = isWeekView
+                        ? `<td><input type="number" step="0.1" class="tw-clock-hrs input-yellow" value="${d.clock_hours || ''}" placeholder="0"></td>`
+                        : `<td>${clockHrs.toFixed(1)}</td>`;
 
                     techHtml += `
                         <tr data-tech-id="${tech.id}" data-tech-type="tech">
                             <td style="font-weight:600">${tech.name}${allMode ? ' <span style="color:#888;font-weight:400;font-size:12px">(' + (stores.find(s=>s.id===tech.store_id)?.name||'') + ')</span>' : ''}</td>
                             <td>${tech.specialty || '—'}</td>
-                            <td><select class="tw-training">
-                                <option value="">-</option>
-                                <option value="Complete" ${d.training === 'Complete' ? 'selected' : ''}>Complete</option>
-                                <option value="In Progress" ${d.training === 'In Progress' ? 'selected' : ''}>In Progress</option>
-                                <option value="Not Started" ${d.training === 'Not Started' ? 'selected' : ''}>Not Started</option>
-                            </select></td>
-                            <td><input type="number" class="tw-ros input-yellow" value="${d.ros_worked || ''}" placeholder="0"></td>
-                            <td><input type="number" step="0.1" class="tw-csi input-yellow" value="${d.csi_score || ''}" placeholder="0"></td>
-                            <td><input type="number" step="0.1" class="tw-hrs-turned input-yellow" value="${d.hours_turned || ''}" placeholder="0"></td>
-                            <td><input type="number" step="0.1" class="tw-clock-hrs input-yellow" value="${d.clock_hours || ''}" placeholder="0"></td>
+                            ${trainingCell}
+                            ${rosCell}
+                            ${csiCell}
+                            ${hrsTurnedCell}
+                            ${clockHrsCell}
                             <td class="tw-eff" style="font-weight:700;color:${eff >= 100 ? '#10b981' : eff >= 75 ? '#f59e0b' : '#ef4444'}">${eff > 0 ? eff.toFixed(1) + '%' : '—'}</td>
                             <td class="tw-prod" style="font-weight:700;color:${prod >= 85 ? '#10b981' : prod >= 70 ? '#f59e0b' : '#ef4444'}">${prod > 0 ? prod.toFixed(1) + '%' : '—'}</td>
                             <td class="tw-prof" style="font-weight:700;color:${prof >= 100 ? '#10b981' : prof >= 75 ? '#f59e0b' : '#ef4444'}">${prof > 0 ? prof.toFixed(1) + '%' : '—'}</td>
@@ -4899,14 +4969,14 @@
                 });
                 document.getElementById('techWeeklyBody').innerHTML = techHtml;
 
-                // Tech totals footer
-                const totalTechAvail = storeTechs.length * availHrsPerTech;
+                // Shop totals footer (shop-weighted, period-aware denominator)
+                const totalTechAvail = storeTechs.length * periodAvailPerTech;
                 const tEff = techTotals.clockHrs > 0 ? (techTotals.hrsTurned / techTotals.clockHrs * 100) : 0;
                 const tProd = totalTechAvail > 0 ? (techTotals.clockHrs / totalTechAvail * 100) : 0;
                 const tProf = totalTechAvail > 0 ? (techTotals.hrsTurned / totalTechAvail * 100) : 0;
                 document.getElementById('techWeeklyFooter').innerHTML = `
                     <tr style="background:#e0e0e0;font-weight:700;">
-                        <td colspan="3">SHOP TOTALS</td>
+                        <td colspan="3">SHOP TOTALS <span style="font-weight:400;font-size:11px;color:#666;">(${storeTechs.length} techs × ${periodAvailPerTech}h = ${totalTechAvail}h avail)</span></td>
                         <td>${techTotals.ros}</td>
                         <td>—</td>
                         <td>${techTotals.hrsTurned.toFixed(1)}</td>
@@ -4917,34 +4987,49 @@
                     </tr>
                 `;
 
-                // Build Lube Tech weekly entry
+                // Build Lube Tech section (same period-awareness as technicians)
                 let lubeHtml = '';
                 let lubeTotals = { ros: 0, hrsTurned: 0, clockHrs: 0 };
                 storeLubes.forEach(tech => {
-                    const key = `${tech.store_id}_${wsKey}_lube_${tech.id}`;
-                    const d = techWeeklyData[key] || {};
+                    const d = aggregateTechEntries(tech.id, 'lube');
                     const hrsTurned = d.hours_turned || 0;
                     const clockHrs = d.clock_hours || 0;
                     const eff = clockHrs > 0 ? (hrsTurned / clockHrs * 100) : 0;
-                    const prod = availHrsPerTech > 0 ? (clockHrs / availHrsPerTech * 100) : 0;
-                    const prof = availHrsPerTech > 0 ? (hrsTurned / availHrsPerTech * 100) : 0;
+                    const prod = periodAvailPerTech > 0 ? (clockHrs / periodAvailPerTech * 100) : 0;
+                    const prof = periodAvailPerTech > 0 ? (hrsTurned / periodAvailPerTech * 100) : 0;
                     lubeTotals.ros += (d.ros_worked || 0);
                     lubeTotals.hrsTurned += hrsTurned;
                     lubeTotals.clockHrs += clockHrs;
 
-                    lubeHtml += `
-                        <tr data-tech-id="${tech.id}" data-tech-type="lube">
-                            <td style="font-weight:600">${tech.name}${allMode ? ' <span style="color:#888;font-weight:400;font-size:12px">(' + (stores.find(s=>s.id===tech.store_id)?.name||'') + ')</span>' : ''}</td>
-                            <td><select class="tw-training">
+                    const trainingCell = isWeekView
+                        ? `<td><select class="tw-training">
                                 <option value="">-</option>
                                 <option value="Complete" ${d.training === 'Complete' ? 'selected' : ''}>Complete</option>
                                 <option value="In Progress" ${d.training === 'In Progress' ? 'selected' : ''}>In Progress</option>
                                 <option value="Not Compliant" ${d.training === 'Not Compliant' ? 'selected' : ''}>Not Compliant</option>
-                            </select></td>
-                            <td><input type="number" class="tw-ros input-yellow" value="${d.ros_worked || ''}" placeholder="0"></td>
-                            <td><input type="number" step="0.1" class="tw-csi input-yellow" value="${d.csi_score || ''}" placeholder="0"></td>
-                            <td><input type="number" step="0.1" class="tw-hrs-turned input-yellow" value="${d.hours_turned || ''}" placeholder="0"></td>
-                            <td><input type="number" step="0.1" class="tw-clock-hrs input-yellow" value="${d.clock_hours || ''}" placeholder="0"></td>
+                            </select></td>`
+                        : `<td>${d.training || '—'}</td>`;
+                    const rosCell = isWeekView
+                        ? `<td><input type="number" class="tw-ros input-yellow" value="${d.ros_worked || ''}" placeholder="0"></td>`
+                        : `<td>${d.ros_worked || 0}</td>`;
+                    const csiCell = isWeekView
+                        ? `<td><input type="number" step="0.1" class="tw-csi input-yellow" value="${d.csi_score || ''}" placeholder="0"></td>`
+                        : `<td>${d.csi_score > 0 ? d.csi_score.toFixed(1) : '—'}</td>`;
+                    const hrsTurnedCell = isWeekView
+                        ? `<td><input type="number" step="0.1" class="tw-hrs-turned input-yellow" value="${d.hours_turned || ''}" placeholder="0"></td>`
+                        : `<td>${hrsTurned.toFixed(1)}</td>`;
+                    const clockHrsCell = isWeekView
+                        ? `<td><input type="number" step="0.1" class="tw-clock-hrs input-yellow" value="${d.clock_hours || ''}" placeholder="0"></td>`
+                        : `<td>${clockHrs.toFixed(1)}</td>`;
+
+                    lubeHtml += `
+                        <tr data-tech-id="${tech.id}" data-tech-type="lube">
+                            <td style="font-weight:600">${tech.name}${allMode ? ' <span style="color:#888;font-weight:400;font-size:12px">(' + (stores.find(s=>s.id===tech.store_id)?.name||'') + ')</span>' : ''}</td>
+                            ${trainingCell}
+                            ${rosCell}
+                            ${csiCell}
+                            ${hrsTurnedCell}
+                            ${clockHrsCell}
                             <td class="tw-eff" style="font-weight:700;color:${eff >= 100 ? '#10b981' : eff >= 75 ? '#f59e0b' : '#ef4444'}">${eff > 0 ? eff.toFixed(1) + '%' : '—'}</td>
                             <td class="tw-prod" style="font-weight:700;color:${prod >= 85 ? '#10b981' : prod >= 70 ? '#f59e0b' : '#ef4444'}">${prod > 0 ? prod.toFixed(1) + '%' : '—'}</td>
                             <td class="tw-prof" style="font-weight:700;color:${prof >= 100 ? '#10b981' : prof >= 75 ? '#f59e0b' : '#ef4444'}">${prof > 0 ? prof.toFixed(1) + '%' : '—'}</td>
@@ -4953,14 +5038,14 @@
                 });
                 document.getElementById('lubeWeeklyBody').innerHTML = lubeHtml;
 
-                // Lube totals footer
-                const totalLubeAvail = storeLubes.length * availHrsPerTech;
+                // Lube totals footer (shop-weighted, period-aware denominator)
+                const totalLubeAvail = storeLubes.length * periodAvailPerTech;
                 const lEff = lubeTotals.clockHrs > 0 ? (lubeTotals.hrsTurned / lubeTotals.clockHrs * 100) : 0;
                 const lProd = totalLubeAvail > 0 ? (lubeTotals.clockHrs / totalLubeAvail * 100) : 0;
                 const lProf = totalLubeAvail > 0 ? (lubeTotals.hrsTurned / totalLubeAvail * 100) : 0;
                 document.getElementById('lubeWeeklyFooter').innerHTML = `
                     <tr style="background:#e0e0e0;font-weight:700;">
-                        <td colspan="2">LUBE TOTALS</td>
+                        <td colspan="2">LUBE TOTALS <span style="font-weight:400;font-size:11px;color:#666;">(${storeLubes.length} lube × ${periodAvailPerTech}h = ${totalLubeAvail}h avail)</span></td>
                         <td>${lubeTotals.ros}</td>
                         <td>—</td>
                         <td>${lubeTotals.hrsTurned.toFixed(1)}</td>
