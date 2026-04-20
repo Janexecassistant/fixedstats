@@ -5081,7 +5081,7 @@
 
                 // Load tech perf MTD/YTD and capacity analysis
                 loadTechPerformance(storeId, fc);
-                loadCapacityAnalysis(storeId, fc, storeTechs, storeLubes, storeAdvisors, techTotals, lubeTotals);
+                loadCapacityAnalysis(storeId, fc, storeTechs, storeLubes, storeAdvisors, techTotals, lubeTotals, periodAvailPerTech, periodLabelTech, advPeriod);
             } catch (error) {
                 console.error('Roster load error:', error);
             }
@@ -5355,20 +5355,34 @@
             document.getElementById('techPerfBody').innerHTML = html || '<tr><td colspan="12" class="empty-state">No data for this period. Enter tech weekly data above — it compiles automatically into monthly and YTD views.</td></tr>';
         }
 
-        function loadCapacityAnalysis(storeId, fc, storeTechs, storeLubes, storeAdvisors, techTotals, lubeTotals) {
+        function loadCapacityAnalysis(storeId, fc, storeTechs, storeLubes, storeAdvisors, techTotals, lubeTotals, periodAvailPerTech, periodLabel, advPeriod) {
             const bays = fc.bays || 0;
             const totalTechs = storeTechs.length + storeLubes.length;
             const totalAdvisors = storeAdvisors.length;
 
-            // Weekly capacity using actual schedule
-            const weekStart = getWeekStart(document.getElementById('rosterWeekPicker').valueAsDate);
-            const weeklyAvailPerTech = getAvailableHoursInWeek(weekStart);
-            const weeklyTechHrs = totalTechs * weeklyAvailPerTech;
-            const weeklyBayHrs = bays * weeklyAvailPerTech;
-            const weeklyClockUsed = (techTotals?.clockHrs || 0) + (lubeTotals?.clockHrs || 0);
-            const weeklyHrsTurned = (techTotals?.hrsTurned || 0) + (lubeTotals?.hrsTurned || 0);
-            const utilizationPct = weeklyTechHrs > 0 ? (weeklyClockUsed / weeklyTechHrs * 100) : 0;
-            const bayUtilPct = weeklyBayHrs > 0 ? (weeklyClockUsed / weeklyBayHrs * 100) : 0;
+            // Fallbacks if caller didn't supply period info (shouldn't happen, but keep function safe)
+            if (periodAvailPerTech == null) {
+                const weekStart = getWeekStart(document.getElementById('rosterWeekPicker').valueAsDate);
+                periodAvailPerTech = getAvailableHoursInWeek(weekStart);
+                periodLabel = 'Weekly';
+                advPeriod = advPeriod || 'week';
+            }
+            const periodIsWeek = advPeriod === 'week';
+
+            // Period-aware capacity: exclude zero-hour techs from denominator so apprentices / vacations
+            // don't deflate utilization. Bay capacity always uses full bay count (a bay is available
+            // regardless of whether a tech stood at it that day).
+            const activeTechs = (techTotals?.activeTechCount || 0) + (lubeTotals?.activeTechCount || 0);
+            const periodTechHrs = activeTechs * periodAvailPerTech;
+            const periodBayHrs = bays * periodAvailPerTech;
+            const periodClockUsed = (techTotals?.clockHrs || 0) + (lubeTotals?.clockHrs || 0);
+            const periodHrsTurned = (techTotals?.hrsTurned || 0) + (lubeTotals?.hrsTurned || 0);
+            const utilizationPct = periodTechHrs > 0 ? (periodClockUsed / periodTechHrs * 100) : 0;
+            const bayUtilPct = periodBayHrs > 0 ? (periodClockUsed / periodBayHrs * 100) : 0;
+            const activeHeadcountLabel = activeTechs === totalTechs
+                ? `${totalTechs} techs`
+                : `${activeTechs}/${totalTechs} w/ hours`;
+            const periodScopeLabel = periodIsWeek ? 'this week' : (periodLabel || 'this period');
 
             // Ideal ratios (industry standard)
             const idealTechsPerAdvisor = 3;
@@ -5382,14 +5396,14 @@
 
             document.getElementById('capacityAnalysisCards').innerHTML = `
                 <div class="capacity-kpi-card">
-                    <div class="kpi-label">Tech Utilization</div>
+                    <div class="kpi-label">Tech Utilization <span style="font-weight:400;font-size:10px;color:#666;">(${periodIsWeek ? 'weekly' : periodLabel})</span></div>
                     <div class="kpi-value" style="color:${utilizationPct >= 80 ? '#4ade80' : utilizationPct >= 60 ? '#facc15' : '#f97316'}">${utilizationPct > 0 ? utilizationPct.toFixed(0) + '%' : '—'}</div>
-                    <div class="kpi-subtext">${weeklyClockUsed > 0 ? weeklyClockUsed.toFixed(0) + 'h clocked / ' + weeklyTechHrs.toFixed(0) + 'h available' : 'No data this week'}</div>
+                    <div class="kpi-subtext">${periodClockUsed > 0 ? periodClockUsed.toFixed(0) + 'h clocked / ' + periodTechHrs.toFixed(0) + 'h available · ' + activeHeadcountLabel : 'No data ' + periodScopeLabel}</div>
                 </div>
                 <div class="capacity-kpi-card">
-                    <div class="kpi-label">Bay Utilization</div>
-                    <div class="kpi-value" style="color:${bayUtilPct >= 75 ? '#4ade80' : bayUtilPct >= 50 ? '#facc15' : '#f97316'}">${bays > 0 && weeklyClockUsed > 0 ? bayUtilPct.toFixed(0) + '%' : '—'}</div>
-                    <div class="kpi-subtext">${bays} bays · ${weeklyBayHrs}h weekly capacity</div>
+                    <div class="kpi-label">Bay Utilization <span style="font-weight:400;font-size:10px;color:#666;">(${periodIsWeek ? 'weekly' : periodLabel})</span></div>
+                    <div class="kpi-value" style="color:${bayUtilPct >= 75 ? '#4ade80' : bayUtilPct >= 50 ? '#facc15' : '#f97316'}">${bays > 0 && periodClockUsed > 0 ? bayUtilPct.toFixed(0) + '%' : '—'}</div>
+                    <div class="kpi-subtext">${bays} bays · ${periodBayHrs.toFixed(0)}h capacity ${periodIsWeek ? 'this week' : periodLabel}</div>
                 </div>
                 <div class="capacity-kpi-card">
                     <div class="kpi-label">Tech:Advisor Ratio</div>
@@ -5421,13 +5435,13 @@
                 recs.push(`<div style="padding:10px;background:#fee2e2;border-radius:6px;margin-bottom:8px;border-left:4px solid #ef4444;">
                     <strong>At capacity (${utilizationPct.toFixed(0)}%):</strong> Shop is running near max. Any increase in volume will create backlog. Consider adding techs or extending hours before demand grows.</div>`);
             }
-            if (weeklyClockUsed === 0) {
+            if (periodClockUsed === 0) {
                 recs.push(`<div style="padding:10px;background:#f0f0f0;border-radius:6px;margin-bottom:8px;border-left:4px solid #999;">
-                    <strong>No weekly data yet.</strong> Enter technician hours in the weekly entry tables above to see capacity utilization and staffing recommendations.</div>`);
+                    <strong>No data ${periodScopeLabel}.</strong> Enter technician hours in the weekly entry tables above to see capacity utilization and staffing recommendations.</div>`);
             }
-            if (techShortage <= 0 && utilizationPct >= 65 && utilizationPct <= 95 && weeklyClockUsed > 0) {
+            if (techShortage <= 0 && utilizationPct >= 65 && utilizationPct <= 95 && periodClockUsed > 0) {
                 recs.push(`<div style="padding:10px;background:#d1fae5;border-radius:6px;margin-bottom:8px;border-left:4px solid #10b981;">
-                    <strong>Healthy capacity.</strong> Staffing levels and utilization are in a good range. Continue monitoring weekly to catch shifts early.</div>`);
+                    <strong>Healthy capacity.</strong> Staffing levels and utilization are in a good range for ${periodScopeLabel}. Continue monitoring to catch shifts early.</div>`);
             }
             document.getElementById('capacityRecommendations').innerHTML = recs.join('');
         }
