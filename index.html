@@ -4852,18 +4852,52 @@
                     ? regionNpsEntries.reduce((s, d) => s + parseFloat(d.region_nps), 0) / regionNpsEntries.length
                     : null;
 
-                // Prior-equal-length advisor data for trend calculation
+                // Prior-period advisor data for trend calculation.
+                // Primary: equal-length window immediately preceding current period (April MTD → March 12–31).
+                // Fallback: full prior calendar period (MTD → prior month, YTD → prior year, week → prior week).
+                // This keeps trend arrows useful even when there's no data in the narrow equal-length slice.
                 const advPeriodDays = Math.round((aggEnd - aggStart) / (1000 * 60 * 60 * 24)) + 1;
                 const priorAdvEnd = new Date(aggStart); priorAdvEnd.setDate(priorAdvEnd.getDate() - 1);
                 const priorAdvStart = new Date(priorAdvEnd); priorAdvStart.setDate(priorAdvStart.getDate() - (advPeriodDays - 1));
-                const priorAdvStartKey = dateToString(priorAdvStart);
-                const priorAdvEndKey = dateToString(priorAdvEnd);
-                let priorAdvData = (await LS.getAdvisorEntries()).filter(d =>
-                    d.entry_date >= priorAdvStartKey && d.entry_date <= priorAdvEndKey
-                );
+                let priorAdvStartKey = dateToString(priorAdvStart);
+                let priorAdvEndKey = dateToString(priorAdvEnd);
+                let priorAdvLabel = 'prior equal-length period';
+
+                let priorAdvRaw = (await LS.getAdvisorEntries());
                 if (storeId && storeId !== 'all') {
-                    priorAdvData = priorAdvData.filter(d => d.store_id === storeId);
+                    priorAdvRaw = priorAdvRaw.filter(d => d.store_id === storeId);
                 }
+                let priorAdvData = priorAdvRaw.filter(d => d.entry_date >= priorAdvStartKey && d.entry_date <= priorAdvEndKey);
+
+                // Fallback to full prior calendar period if equal-length slice is empty
+                if (priorAdvData.length === 0) {
+                    let fbStart, fbEnd, fbLabel;
+                    if (advPeriod === 'mtd') {
+                        fbStart = new Date(currentYear, currentMonth - 2, 1);
+                        fbEnd = new Date(currentYear, currentMonth - 1, 0); // last day of prior month
+                        fbLabel = `${fbStart.toLocaleString('default',{month:'long'})} ${fbStart.getFullYear()}`;
+                    } else if (advPeriod === 'ytd') {
+                        fbStart = new Date(currentYear - 1, 0, 1);
+                        fbEnd = new Date(currentYear - 1, 11, 31);
+                        fbLabel = `${currentYear - 1}`;
+                    } else if (advPeriod === 'week') {
+                        fbEnd = new Date(aggStart); fbEnd.setDate(fbEnd.getDate() - 1);
+                        fbStart = new Date(fbEnd); fbStart.setDate(fbStart.getDate() - 6);
+                        fbLabel = `prior week`;
+                    } else {
+                        // custom range — stick with equal-length, no fallback
+                        fbStart = null;
+                    }
+                    if (fbStart) {
+                        const fbStartKey = dateToString(fbStart);
+                        const fbEndKey = dateToString(fbEnd);
+                        priorAdvData = priorAdvRaw.filter(d => d.entry_date >= fbStartKey && d.entry_date <= fbEndKey);
+                        priorAdvStartKey = fbStartKey;
+                        priorAdvEndKey = fbEndKey;
+                        priorAdvLabel = fbLabel;
+                    }
+                }
+
                 const priorAdvAgg = {};
                 priorAdvData.forEach(d => {
                     if (!priorAdvAgg[d.advisor_id]) {
@@ -4921,9 +4955,11 @@
                     const rankColor = rank === 1 ? '#10b981' : rank === ranked.length && rank !== '—' ? '#ef4444' : '#1a1a1a';
                     const autoTag = hasDaily ? ' <span style="color:#10b981;font-size:10px;" title="Auto-populated from daily entries">●</span>' : '';
 
-                    // Trend vs prior equal-length period — based on $/RO, which normalizes away volume changes
+                    // Trend vs prior period — based on $/RO, which normalizes away volume changes.
+                    // Always render a trend marker so the column doesn't look dead; show a neutral "—" with an
+                    // explanatory tooltip when there's no prior data to compare against.
                     const prior = priorAdvAgg[advisor.id];
-                    let grossPerRoTrend = '', grossPerRoTrendTitle = '';
+                    let grossPerRoTrend;
                     if (prior && prior.ros > 0 && grossPerRo > 0) {
                         const priorGrossPerRo = prior.gross / prior.ros;
                         const delta = grossPerRo - priorGrossPerRo;
@@ -4932,8 +4968,11 @@
                         let arrow = '→', color = '#888';
                         if (delta >= threshold) { arrow = '▲'; color = '#10b981'; }
                         else if (delta <= -threshold) { arrow = '▼'; color = '#ef4444'; }
-                        grossPerRoTrend = ` <span style="color:${color};font-weight:700;cursor:help;" title="Prior period $/RO: ${formatCurrency(priorGrossPerRo)} · Δ ${delta >= 0 ? '+' : ''}${formatCurrency(delta)}">${arrow}</span>`;
-                        grossPerRoTrendTitle = `vs prior period`;
+                        grossPerRoTrend = ` <span style="color:${color};font-weight:700;cursor:help;" title="vs ${priorAdvLabel} · prior $/RO: ${formatCurrency(priorGrossPerRo)} · Δ ${delta >= 0 ? '+' : ''}${formatCurrency(delta)}">${arrow}</span>`;
+                    } else if (grossPerRo > 0) {
+                        grossPerRoTrend = ` <span style="color:#bbb;font-weight:700;cursor:help;" title="No prior $/RO data for ${priorAdvLabel} to compare">—</span>`;
+                    } else {
+                        grossPerRoTrend = '';
                     }
 
                     advHtml += `
@@ -5348,28 +5387,64 @@
                 perfMap[key].training = d.training || perfMap[key].training;
             });
 
-            // Real trend: compare each tech's productivity to the immediately-preceding equal-length
-            // period. Example: MTD April compared to equal-length slice of March ending at same day-of-month.
-            // Uses tech_weekly_entries scanned into priorPerfMap with the same aggregation logic.
+            // Real trend: compare each tech's productivity to the immediately-preceding equal-length period.
+            // Primary: MTD April → equal-length slice of March ending same day-of-month.
+            // Fallback: if the equal-length slice has no data, compare against the full prior calendar period
+            //   (MTD → prior month, YTD → prior year, week → prior week). This keeps the column useful even
+            //   when tech_weekly entries were only started recently.
             const periodDays = Math.round((rangeEnd - rangeStart) / (1000 * 60 * 60 * 24)) + 1;
-            const priorEnd = new Date(rangeStart); priorEnd.setDate(priorEnd.getDate() - 1);
-            const priorStart = new Date(priorEnd); priorStart.setDate(priorStart.getDate() - (periodDays - 1));
-            const priorStartStr = dateToString(priorStart);
-            const priorEndStr = dateToString(priorEnd);
-            const priorInfo = getAvailableHoursInRange(priorStart, priorEnd);
-            const priorAvailPerTech = priorInfo.hours;
-            const priorPerfMap = {};
-            Object.values(techWeeklyData).forEach(d => {
-                if (!allMode && d.store_id !== storeId) return;
-                if (!d.week_start) return;
-                if (d.week_start < priorStartStr || d.week_start > priorEndStr) return;
-                const key = `${d.tech_type}_${d.tech_id}`;
-                if (!priorPerfMap[key]) {
-                    priorPerfMap[key] = { hrsTurned: 0, clockHrs: 0 };
+            let priorStart = new Date(rangeStart); priorStart.setDate(priorStart.getDate() - periodDays);
+            let priorEnd = new Date(rangeStart); priorEnd.setDate(priorEnd.getDate() - 1);
+            let priorStartStr = dateToString(priorStart);
+            let priorEndStr = dateToString(priorEnd);
+            let priorLabel = 'prior equal-length period';
+
+            const scanPrior = (startStr, endStr) => {
+                const map = {};
+                Object.values(techWeeklyData).forEach(d => {
+                    if (!allMode && d.store_id !== storeId) return;
+                    if (!d.week_start) return;
+                    if (d.week_start < startStr || d.week_start > endStr) return;
+                    const key = `${d.tech_type}_${d.tech_id}`;
+                    if (!map[key]) map[key] = { hrsTurned: 0, clockHrs: 0 };
+                    map[key].hrsTurned += d.hours_turned || 0;
+                    map[key].clockHrs += d.clock_hours || 0;
+                });
+                return map;
+            };
+
+            let priorPerfMap = scanPrior(priorStartStr, priorEndStr);
+            let priorAvailPerTech = getAvailableHoursInRange(priorStart, priorEnd).hours;
+
+            // Fallback to broader prior calendar period if nothing in the equal-length slice
+            if (Object.keys(priorPerfMap).length === 0) {
+                let fbStart, fbEnd, fbLabel;
+                if (period === 'mtd') {
+                    fbStart = new Date(currentYear, currentMonth - 2, 1);
+                    fbEnd = new Date(currentYear, currentMonth - 1, 0);
+                    fbLabel = `${fbStart.toLocaleString('default',{month:'long'})} ${fbStart.getFullYear()}`;
+                } else if (period === 'ytd') {
+                    fbStart = new Date(currentYear - 1, 0, 1);
+                    fbEnd = new Date(currentYear - 1, 11, 31);
+                    fbLabel = `${currentYear - 1}`;
+                } else if (period === 'week') {
+                    fbEnd = new Date(rangeStart); fbEnd.setDate(fbEnd.getDate() - 1);
+                    fbStart = new Date(fbEnd); fbStart.setDate(fbStart.getDate() - 6);
+                    fbLabel = `prior week`;
                 }
-                priorPerfMap[key].hrsTurned += d.hours_turned || 0;
-                priorPerfMap[key].clockHrs += d.clock_hours || 0;
-            });
+                if (fbStart) {
+                    const fbStartStr = dateToString(fbStart);
+                    const fbEndStr = dateToString(fbEnd);
+                    const fbMap = scanPrior(fbStartStr, fbEndStr);
+                    if (Object.keys(fbMap).length > 0) {
+                        priorPerfMap = fbMap;
+                        priorStart = fbStart;
+                        priorEnd = fbEnd;
+                        priorAvailPerTech = getAvailableHoursInRange(fbStart, fbEnd).hours;
+                        priorLabel = fbLabel;
+                    }
+                }
+            }
             const TREND_THRESHOLD = 3; // percentage-point delta to flip direction
 
             // Build two groups — Technicians and Lube Techs (rendered separately)
@@ -5399,17 +5474,17 @@
                     const prof = periodAvailPerTech > 0 ? ((p.clockHrs || 0) / periodAvailPerTech * 100) : 0;
                     const avgCsi = (p.csiCount || 0) > 0 ? (p.csiSum / p.csiCount) : 0;
 
-                    // Real trend: compare current-period productivity to prior-equal-length-period productivity.
+                    // Real trend: compare current-period productivity to prior-period productivity.
                     // Arrow flips only when delta exceeds threshold so tiny fluctuations don't look like swings.
                     const pp = priorPerfMap[key];
-                    let trend = '—', trendColor = '#777', trendTitle = 'No prior-period data';
+                    let trend = '—', trendColor = '#bbb', trendTitle = `No prior data for this tech in ${priorLabel} to compare`;
                     if (pp && priorAvailPerTech > 0 && (pp.hrsTurned > 0 || pp.clockHrs > 0) && prod > 0) {
                         const priorProd = (pp.hrsTurned / priorAvailPerTech) * 100;
                         const delta = prod - priorProd;
                         if (delta >= TREND_THRESHOLD) { trend = '▲'; trendColor = '#10b981'; }
                         else if (delta <= -TREND_THRESHOLD) { trend = '▼'; trendColor = '#ef4444'; }
                         else { trend = '→'; trendColor = '#888'; }
-                        trendTitle = `Prior period prod: ${priorProd.toFixed(1)}% · Δ ${delta >= 0 ? '+' : ''}${delta.toFixed(1)} pts`;
+                        trendTitle = `vs ${priorLabel} · prior prod: ${priorProd.toFixed(1)}% · Δ ${delta >= 0 ? '+' : ''}${delta.toFixed(1)} pts`;
                     }
 
                     roSum += (p.ros || 0);
@@ -5514,19 +5589,47 @@
             if (!card || !body) return;
 
             try {
-                const allGoals = (await LS.getGoals()).filter(g => g.month === currentMonth && g.year === currentYear);
-                const relevantGoals = allMode ? allGoals : allGoals.filter(g => g.store_id === storeId);
+                const allGoalsUnfiltered = await LS.getGoals();
+                const scopedGoals = allMode ? allGoalsUnfiltered : allGoalsUnfiltered.filter(g => g.store_id === storeId);
+                const allGoals = scopedGoals.filter(g => g.month === currentMonth && g.year === currentYear);
+                const relevantGoals = allGoals;
 
-                // If no goals set for any relevant store, show a helpful placeholder rather than hiding entirely
+                // If no goals set for the current month, surface whatever month DOES have goals so Jay
+                // can see this store's most-recent targets and one-click over to the Goals tab to set April.
                 const hasAnyGoal = relevantGoals.some(g =>
                     (g.labor_goal || 0) + (g.parts_goal || 0) + (g.total_gross_goal || 0) > 0
                 );
                 if (!hasAnyGoal) {
                     card.style.display = '';
                     titleEl.textContent = `Goal Attainment & Month-End Forecast — ${now.toLocaleString('default',{month:'long'})} ${currentYear}`;
-                    body.innerHTML = `<div style="padding:14px;background:#f9fafb;border:1px dashed #d1d5db;border-radius:8px;color:#555;font-size:13px;">
-                        No goals set for ${now.toLocaleString('default',{month:'long'})} ${currentYear} ${allMode ? 'at any store' : 'at this store'}. Set goals in the <strong>Goals & Settings</strong> tab to track attainment and projections here.
+
+                    // Find the most recent month with at least one non-zero goal in scope
+                    const monthsWithGoals = {};
+                    scopedGoals.forEach(g => {
+                        const total = (g.labor_goal || 0) + (g.parts_goal || 0) + (g.total_gross_goal || 0);
+                        if (total > 0) {
+                            const key = `${g.year}-${String(g.month).padStart(2, '0')}`;
+                            monthsWithGoals[key] = (monthsWithGoals[key] || 0) + 1;
+                        }
+                    });
+                    const sortedMonths = Object.keys(monthsWithGoals).sort().reverse();
+                    const recentNote = sortedMonths.length > 0
+                        ? `<div style="margin-top:8px;font-size:12px;color:#6b7280;">Most recent month with goals in scope: <strong>${sortedMonths[0]}</strong> (${monthsWithGoals[sortedMonths[0]]} store${monthsWithGoals[sortedMonths[0]] === 1 ? '' : 's'}).</div>`
+                        : `<div style="margin-top:8px;font-size:12px;color:#6b7280;">No goals have been set in any month for this scope yet.</div>`;
+
+                    body.innerHTML = `<div style="padding:14px;background:#f9fafb;border:1px dashed #d1d5db;border-radius:8px;color:#374151;font-size:13px;">
+                        <strong>No goals set for ${now.toLocaleString('default',{month:'long'})} ${currentYear} ${allMode ? 'at any store' : 'at this store'}.</strong>
+                        Set monthly targets on the <a href="#" id="gfcGoalsLink" style="color:#2563eb;text-decoration:underline;font-weight:600;">Goals &amp; Settings</a> tab and this card will show MTD attainment, month-end projection, and the daily run-rate needed to hit goal.
+                        ${recentNote}
                     </div>`;
+                    const link = document.getElementById('gfcGoalsLink');
+                    if (link) {
+                        link.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const goalsTab = document.querySelector('[data-tab="goals"]');
+                            if (goalsTab) goalsTab.click();
+                        });
+                    }
                     return;
                 }
 
