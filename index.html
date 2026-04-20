@@ -4921,18 +4921,22 @@
                 //   Efficiency   = turned / clock       (how hard tech works when on the clock)
                 //   Productivity = turned / available   (what % of capacity the tech produced)
                 //   Proficiency  = clock  / available   (what % of capacity the tech was on the clock)
+                // Shop denominator only counts techs with any hours logged — a new hire / apprentice
+                // / vacation-all-period tech with all zeros shouldn't drag the shop's productivity down.
                 let techHtml = '';
-                let techTotals = { ros: 0, hrsTurned: 0, clockHrs: 0 };
+                let techTotals = { ros: 0, hrsTurned: 0, clockHrs: 0, activeTechCount: 0 };
                 storeTechs.forEach(tech => {
                     const d = aggregateTechEntries(tech.id, 'tech');
                     const hrsTurned = d.hours_turned || 0;
                     const clockHrs = d.clock_hours || 0;
+                    const hasData = clockHrs > 0 || hrsTurned > 0;
                     const eff = clockHrs > 0 ? (hrsTurned / clockHrs * 100) : 0;
                     const prod = periodAvailPerTech > 0 ? (hrsTurned / periodAvailPerTech * 100) : 0;
                     const prof = periodAvailPerTech > 0 ? (clockHrs / periodAvailPerTech * 100) : 0;
                     techTotals.ros += (d.ros_worked || 0);
                     techTotals.hrsTurned += hrsTurned;
                     techTotals.clockHrs += clockHrs;
+                    if (hasData) techTotals.activeTechCount++;
 
                     const trainingCell = isWeekView
                         ? `<td><select class="tw-training">
@@ -4974,13 +4978,17 @@
 
                 // Shop totals footer (shop-weighted, period-aware denominator)
                 // Productivity = Σ turned / shop avail   Proficiency = Σ clock / shop avail
-                const totalTechAvail = storeTechs.length * periodAvailPerTech;
+                // Denominator uses only techs with hours logged this period.
+                const totalTechAvail = techTotals.activeTechCount * periodAvailPerTech;
                 const tEff = techTotals.clockHrs > 0 ? (techTotals.hrsTurned / techTotals.clockHrs * 100) : 0;
                 const tProd = totalTechAvail > 0 ? (techTotals.hrsTurned / totalTechAvail * 100) : 0;
                 const tProf = totalTechAvail > 0 ? (techTotals.clockHrs / totalTechAvail * 100) : 0;
+                const techHeadcountLabel = techTotals.activeTechCount === storeTechs.length
+                    ? `${storeTechs.length} techs`
+                    : `${techTotals.activeTechCount}/${storeTechs.length} w/ hours`;
                 document.getElementById('techWeeklyFooter').innerHTML = `
                     <tr style="background:#e0e0e0;font-weight:700;">
-                        <td colspan="3">SHOP TOTALS <span style="font-weight:400;font-size:11px;color:#666;">(${storeTechs.length} techs × ${periodAvailPerTech}h = ${totalTechAvail}h avail)</span></td>
+                        <td colspan="3">SHOP TOTALS <span style="font-weight:400;font-size:11px;color:#666;">(${techHeadcountLabel} × ${periodAvailPerTech}h = ${totalTechAvail}h avail)</span></td>
                         <td>${techTotals.ros}</td>
                         <td>—</td>
                         <td>${techTotals.hrsTurned.toFixed(1)}</td>
@@ -4993,17 +5001,19 @@
 
                 // Build Lube Tech section (same period-awareness + standard formulas as technicians)
                 let lubeHtml = '';
-                let lubeTotals = { ros: 0, hrsTurned: 0, clockHrs: 0 };
+                let lubeTotals = { ros: 0, hrsTurned: 0, clockHrs: 0, activeTechCount: 0 };
                 storeLubes.forEach(tech => {
                     const d = aggregateTechEntries(tech.id, 'lube');
                     const hrsTurned = d.hours_turned || 0;
                     const clockHrs = d.clock_hours || 0;
+                    const hasData = clockHrs > 0 || hrsTurned > 0;
                     const eff = clockHrs > 0 ? (hrsTurned / clockHrs * 100) : 0;
                     const prod = periodAvailPerTech > 0 ? (hrsTurned / periodAvailPerTech * 100) : 0;
                     const prof = periodAvailPerTech > 0 ? (clockHrs / periodAvailPerTech * 100) : 0;
                     lubeTotals.ros += (d.ros_worked || 0);
                     lubeTotals.hrsTurned += hrsTurned;
                     lubeTotals.clockHrs += clockHrs;
+                    if (hasData) lubeTotals.activeTechCount++;
 
                     const trainingCell = isWeekView
                         ? `<td><select class="tw-training">
@@ -5043,13 +5053,17 @@
                 document.getElementById('lubeWeeklyBody').innerHTML = lubeHtml;
 
                 // Lube totals footer (shop-weighted, period-aware denominator, standard formulas)
-                const totalLubeAvail = storeLubes.length * periodAvailPerTech;
+                // Denominator uses only lube techs with hours logged this period.
+                const totalLubeAvail = lubeTotals.activeTechCount * periodAvailPerTech;
                 const lEff = lubeTotals.clockHrs > 0 ? (lubeTotals.hrsTurned / lubeTotals.clockHrs * 100) : 0;
                 const lProd = totalLubeAvail > 0 ? (lubeTotals.hrsTurned / totalLubeAvail * 100) : 0;
                 const lProf = totalLubeAvail > 0 ? (lubeTotals.clockHrs / totalLubeAvail * 100) : 0;
+                const lubeHeadcountLabel = lubeTotals.activeTechCount === storeLubes.length
+                    ? `${storeLubes.length} lube`
+                    : `${lubeTotals.activeTechCount}/${storeLubes.length} w/ hours`;
                 document.getElementById('lubeWeeklyFooter').innerHTML = `
                     <tr style="background:#e0e0e0;font-weight:700;">
-                        <td colspan="2">LUBE TOTALS <span style="font-weight:400;font-size:11px;color:#666;">(${storeLubes.length} lube × ${periodAvailPerTech}h = ${totalLubeAvail}h avail)</span></td>
+                        <td colspan="2">LUBE TOTALS <span style="font-weight:400;font-size:11px;color:#666;">(${lubeHeadcountLabel} × ${periodAvailPerTech}h = ${totalLubeAvail}h avail)</span></td>
                         <td>${lubeTotals.ros}</td>
                         <td>—</td>
                         <td>${lubeTotals.hrsTurned.toFixed(1)}</td>
@@ -5243,26 +5257,15 @@
 
             function renderGroup(staff, groupLabel) {
                 if (!staff.length) return '';
-                // Shop-level available capacity for this group:
-                //   active headcount × per-tech available hours for the selected period
-                const groupShopAvail = staff.length * periodAvailPerTech;
-                // Group header row — shows headcount and available capacity so the math is inspectable
-                let block = `
-                    <tr style="background:#1a1a1a;color:#fff;">
-                        <td colspan="12" style="font-weight:700;letter-spacing:0.5px;padding:10px 12px;">
-                            ${groupLabel}
-                            <span style="font-weight:400;font-size:12px;color:#aaa;margin-left:10px;letter-spacing:0;">
-                                ${staff.length} active · ${periodAvailPerTech}h/tech · ${groupShopAvail}h shop available
-                            </span>
-                        </td>
-                    </tr>
-                `;
-                // Per-tech rows + running shop totals
+                // Per-tech rows + running shop totals. We count "active with data" here too so
+                // the shop denominator excludes techs with no hours logged.
                 let roSum = 0, hrsTurnedSum = 0, clockHrsSum = 0;
-                let csiSum = 0, csiCount = 0;
+                let csiSum = 0, csiCount = 0, techsWithData = 0;
+                const rows = [];
                 staff.forEach(s => {
                     const key = `${s.staffType}_${s.id}`;
                     const p = perfMap[key] || {};
+                    const hasData = (p.clockHrs || 0) > 0 || (p.hrsTurned || 0) > 0;
                     // Fixed-ops standard: Prod = turned/avail, Prof = clock/avail
                     const eff = (p.clockHrs || 0) > 0 ? ((p.hrsTurned || 0) / p.clockHrs * 100) : 0;
                     const prod = periodAvailPerTech > 0 ? ((p.hrsTurned || 0) / periodAvailPerTech * 100) : 0;
@@ -5275,6 +5278,29 @@
                     hrsTurnedSum += (p.hrsTurned || 0);
                     clockHrsSum += (p.clockHrs || 0);
                     if (avgCsi > 0) { csiSum += avgCsi; csiCount++; }
+                    if (hasData) techsWithData++;
+
+                    rows.push({ s, p, hasData, eff, prod, prof, avgCsi, trend, trendColor });
+                });
+
+                // Shop-level available capacity uses only techs with hours logged
+                const groupShopAvail = techsWithData * periodAvailPerTech;
+                const groupHeadcountLabel = techsWithData === staff.length
+                    ? `${staff.length} active`
+                    : `${techsWithData}/${staff.length} w/ hours`;
+                // Group header row — shows headcount and available capacity so the math is inspectable
+                let block = `
+                    <tr style="background:#1a1a1a;color:#fff;">
+                        <td colspan="12" style="font-weight:700;letter-spacing:0.5px;padding:10px 12px;">
+                            ${groupLabel}
+                            <span style="font-weight:400;font-size:12px;color:#aaa;margin-left:10px;letter-spacing:0;">
+                                ${groupHeadcountLabel} · ${periodAvailPerTech}h/tech · ${groupShopAvail}h shop available
+                            </span>
+                        </td>
+                    </tr>
+                `;
+
+                rows.forEach(({ s, p, eff, prod, prof, avgCsi, trend, trendColor }) => {
 
                     block += `
                         <tr>
@@ -5307,7 +5333,7 @@
                     <tr style="background:#f3f4f6;font-weight:700;border-top:2px solid #1a1a1a;">
                         <td colspan="4" style="text-align:right;text-transform:uppercase;letter-spacing:0.5px;">
                             ${groupLabel} Shop Total
-                            <span style="font-weight:400;text-transform:none;color:#666;font-size:11px;letter-spacing:0;"> (${staff.length} techs × ${periodAvailPerTech}h = ${groupShopAvail}h avail)</span>
+                            <span style="font-weight:400;text-transform:none;color:#666;font-size:11px;letter-spacing:0;"> (${groupHeadcountLabel} × ${periodAvailPerTech}h = ${groupShopAvail}h avail)</span>
                         </td>
                         <td>${roSum}</td>
                         <td>${avgCsiGroup > 0 ? avgCsiGroup.toFixed(1) : '—'}</td>
