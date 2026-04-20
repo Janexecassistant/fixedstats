@@ -4870,10 +4870,9 @@
                 if (advPeriod === 'week') {
                     periodAvailPerTech = weeklyAvailPerTech;
                     periodLabelTech = `Week of ${wsKey}`;
-                } else if (advPeriod === 'mtd') {
-                    periodAvailPerTech = monthHrs;
-                    periodLabelTech = advPeriodLabel;
                 } else {
+                    // MTD / YTD / Custom — use the elapsed range (month-to-DATE, not full month).
+                    // aggStart..aggEnd is already set above to match the selected period.
                     const rangeInfo = getAvailableHoursInRange(aggStart, aggEnd);
                     periodAvailPerTech = rangeInfo.hours;
                     periodLabelTech = advPeriodLabel;
@@ -4918,6 +4917,10 @@
                 }
 
                 // Build Technician section
+                // Fixed-ops standard definitions:
+                //   Efficiency   = turned / clock       (how hard tech works when on the clock)
+                //   Productivity = turned / available   (what % of capacity the tech produced)
+                //   Proficiency  = clock  / available   (what % of capacity the tech was on the clock)
                 let techHtml = '';
                 let techTotals = { ros: 0, hrsTurned: 0, clockHrs: 0 };
                 storeTechs.forEach(tech => {
@@ -4925,8 +4928,8 @@
                     const hrsTurned = d.hours_turned || 0;
                     const clockHrs = d.clock_hours || 0;
                     const eff = clockHrs > 0 ? (hrsTurned / clockHrs * 100) : 0;
-                    const prod = periodAvailPerTech > 0 ? (clockHrs / periodAvailPerTech * 100) : 0;
-                    const prof = periodAvailPerTech > 0 ? (hrsTurned / periodAvailPerTech * 100) : 0;
+                    const prod = periodAvailPerTech > 0 ? (hrsTurned / periodAvailPerTech * 100) : 0;
+                    const prof = periodAvailPerTech > 0 ? (clockHrs / periodAvailPerTech * 100) : 0;
                     techTotals.ros += (d.ros_worked || 0);
                     techTotals.hrsTurned += hrsTurned;
                     techTotals.clockHrs += clockHrs;
@@ -4970,10 +4973,11 @@
                 document.getElementById('techWeeklyBody').innerHTML = techHtml;
 
                 // Shop totals footer (shop-weighted, period-aware denominator)
+                // Productivity = Σ turned / shop avail   Proficiency = Σ clock / shop avail
                 const totalTechAvail = storeTechs.length * periodAvailPerTech;
                 const tEff = techTotals.clockHrs > 0 ? (techTotals.hrsTurned / techTotals.clockHrs * 100) : 0;
-                const tProd = totalTechAvail > 0 ? (techTotals.clockHrs / totalTechAvail * 100) : 0;
-                const tProf = totalTechAvail > 0 ? (techTotals.hrsTurned / totalTechAvail * 100) : 0;
+                const tProd = totalTechAvail > 0 ? (techTotals.hrsTurned / totalTechAvail * 100) : 0;
+                const tProf = totalTechAvail > 0 ? (techTotals.clockHrs / totalTechAvail * 100) : 0;
                 document.getElementById('techWeeklyFooter').innerHTML = `
                     <tr style="background:#e0e0e0;font-weight:700;">
                         <td colspan="3">SHOP TOTALS <span style="font-weight:400;font-size:11px;color:#666;">(${storeTechs.length} techs × ${periodAvailPerTech}h = ${totalTechAvail}h avail)</span></td>
@@ -4987,7 +4991,7 @@
                     </tr>
                 `;
 
-                // Build Lube Tech section (same period-awareness as technicians)
+                // Build Lube Tech section (same period-awareness + standard formulas as technicians)
                 let lubeHtml = '';
                 let lubeTotals = { ros: 0, hrsTurned: 0, clockHrs: 0 };
                 storeLubes.forEach(tech => {
@@ -4995,8 +4999,8 @@
                     const hrsTurned = d.hours_turned || 0;
                     const clockHrs = d.clock_hours || 0;
                     const eff = clockHrs > 0 ? (hrsTurned / clockHrs * 100) : 0;
-                    const prod = periodAvailPerTech > 0 ? (clockHrs / periodAvailPerTech * 100) : 0;
-                    const prof = periodAvailPerTech > 0 ? (hrsTurned / periodAvailPerTech * 100) : 0;
+                    const prod = periodAvailPerTech > 0 ? (hrsTurned / periodAvailPerTech * 100) : 0;
+                    const prof = periodAvailPerTech > 0 ? (clockHrs / periodAvailPerTech * 100) : 0;
                     lubeTotals.ros += (d.ros_worked || 0);
                     lubeTotals.hrsTurned += hrsTurned;
                     lubeTotals.clockHrs += clockHrs;
@@ -5038,11 +5042,11 @@
                 });
                 document.getElementById('lubeWeeklyBody').innerHTML = lubeHtml;
 
-                // Lube totals footer (shop-weighted, period-aware denominator)
+                // Lube totals footer (shop-weighted, period-aware denominator, standard formulas)
                 const totalLubeAvail = storeLubes.length * periodAvailPerTech;
                 const lEff = lubeTotals.clockHrs > 0 ? (lubeTotals.hrsTurned / lubeTotals.clockHrs * 100) : 0;
-                const lProd = totalLubeAvail > 0 ? (lubeTotals.clockHrs / totalLubeAvail * 100) : 0;
-                const lProf = totalLubeAvail > 0 ? (lubeTotals.hrsTurned / totalLubeAvail * 100) : 0;
+                const lProd = totalLubeAvail > 0 ? (lubeTotals.hrsTurned / totalLubeAvail * 100) : 0;
+                const lProf = totalLubeAvail > 0 ? (lubeTotals.clockHrs / totalLubeAvail * 100) : 0;
                 document.getElementById('lubeWeeklyFooter').innerHTML = `
                     <tr style="background:#e0e0e0;font-weight:700;">
                         <td colspan="2">LUBE TOTALS <span style="font-weight:400;font-size:11px;color:#666;">(${storeLubes.length} lube × ${periodAvailPerTech}h = ${totalLubeAvail}h avail)</span></td>
@@ -5076,9 +5080,10 @@
             const weekStart = getWeekStart(document.getElementById('rosterWeekPicker').valueAsDate);
             const availHrs = getAvailableHoursInWeek(weekStart);
 
+            // Fixed-ops standard: Prod = turned/avail, Prof = clock/avail
             const eff = clockHrs > 0 ? (hrsTurned / clockHrs * 100) : 0;
-            const prod = availHrs > 0 ? (clockHrs / availHrs * 100) : 0;
-            const prof = availHrs > 0 ? (hrsTurned / availHrs * 100) : 0;
+            const prod = availHrs > 0 ? (hrsTurned / availHrs * 100) : 0;
+            const prof = availHrs > 0 ? (clockHrs / availHrs * 100) : 0;
 
             row.querySelector('.tw-eff').textContent = eff > 0 ? eff.toFixed(1) + '%' : '—';
             row.querySelector('.tw-eff').style.color = eff >= 100 ? '#10b981' : eff >= 75 ? '#f59e0b' : '#ef4444';
@@ -5258,9 +5263,10 @@
                 staff.forEach(s => {
                     const key = `${s.staffType}_${s.id}`;
                     const p = perfMap[key] || {};
+                    // Fixed-ops standard: Prod = turned/avail, Prof = clock/avail
                     const eff = (p.clockHrs || 0) > 0 ? ((p.hrsTurned || 0) / p.clockHrs * 100) : 0;
-                    const prod = periodAvailPerTech > 0 ? ((p.clockHrs || 0) / periodAvailPerTech * 100) : 0;
-                    const prof = periodAvailPerTech > 0 ? ((p.hrsTurned || 0) / periodAvailPerTech * 100) : 0;
+                    const prod = periodAvailPerTech > 0 ? ((p.hrsTurned || 0) / periodAvailPerTech * 100) : 0;
+                    const prof = periodAvailPerTech > 0 ? ((p.clockHrs || 0) / periodAvailPerTech * 100) : 0;
                     const avgCsi = (p.csiCount || 0) > 0 ? (p.csiSum / p.csiCount) : 0;
                     const trend = (p.weeks || 0) >= 2 ? (eff >= 100 ? '▲' : '▼') : '—';
                     const trendColor = trend === '▲' ? '#10b981' : trend === '▼' ? '#ef4444' : '#777';
@@ -5289,12 +5295,13 @@
                 });
 
                 // Shop-weighted totals row — NOT an arithmetic mean of individual percentages.
+                // Fixed-ops standard definitions:
                 //   Efficiency   = Σ hrs turned / Σ clock hrs
-                //   Productivity = Σ clock hrs  / (active headcount × per-tech available hrs)
-                //   Proficiency  = Σ hrs turned / (active headcount × per-tech available hrs)
+                //   Productivity = Σ hrs turned / (active headcount × per-tech available hrs)
+                //   Proficiency  = Σ clock hrs  / (active headcount × per-tech available hrs)
                 const shopEff = clockHrsSum > 0 ? (hrsTurnedSum / clockHrsSum * 100) : 0;
-                const shopProd = groupShopAvail > 0 ? (clockHrsSum / groupShopAvail * 100) : 0;
-                const shopProf = groupShopAvail > 0 ? (hrsTurnedSum / groupShopAvail * 100) : 0;
+                const shopProd = groupShopAvail > 0 ? (hrsTurnedSum / groupShopAvail * 100) : 0;
+                const shopProf = groupShopAvail > 0 ? (clockHrsSum / groupShopAvail * 100) : 0;
                 const avgCsiGroup = csiCount > 0 ? csiSum / csiCount : 0;
                 block += `
                     <tr style="background:#f3f4f6;font-weight:700;border-top:2px solid #1a1a1a;">
