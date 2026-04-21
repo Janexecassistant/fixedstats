@@ -2200,6 +2200,14 @@
         function dateToString(date) {
             return date.toISOString().split('T')[0];
         }
+        // Add N days to a YYYY-MM-DD string, return YYYY-MM-DD string.
+        // Used for range-based tech entries (week_start + 6 → period_end, etc.)
+        function addDaysStr(dateStr, days) {
+            if (!dateStr) return dateStr;
+            const d = new Date(dateStr + 'T00:00:00');
+            d.setDate(d.getDate() + days);
+            return dateToString(d);
+        }
         // Normalize a date picker value (UTC midnight) to local date to avoid timezone offset
         function pickerDate(date) {
             if (!date) return new Date();
@@ -2566,6 +2574,8 @@
             },
 
             // --- Tech weekly entries ---
+            // Entries now support arbitrary ranges [week_start, period_end]. Legacy rows that
+            // predate period_end are treated as 7-day weekly entries (period_end = week_start+6).
             async getTechWeeklyEntries() {
                 if (useSupabase) {
                     try {
@@ -2574,7 +2584,8 @@
                             // Convert to keyed object for fast lookup
                             const mapped = {};
                             data.forEach(d => {
-                                const key = `${d.store_id}_${d.week_start}_${d.tech_type}_${d.tech_id}`;
+                                const periodEnd = d.period_end || addDaysStr(d.week_start, 6);
+                                const key = `${d.store_id}_${d.week_start}_${periodEnd}_${d.tech_type}_${d.tech_id}`;
                                 mapped[key] = {
                                     training: d.training,
                                     ros_worked: d.ros_worked || 0,
@@ -2583,6 +2594,7 @@
                                     clock_hours: d.clock_hours || 0,
                                     store_id: d.store_id,
                                     week_start: d.week_start,
+                                    period_end: periodEnd,
                                     month: d.month,
                                     year: d.year,
                                     tech_type: d.tech_type,
@@ -2594,11 +2606,21 @@
                         }
                     } catch(e) { console.warn('Supabase getTechWeeklyEntries failed, using cache', e); }
                 }
-                try { const raw = localStorage.getItem('dyer_tech_weekly'); return raw ? JSON.parse(raw) : {}; } catch(e) { return {}; }
+                try {
+                    const raw = localStorage.getItem('dyer_tech_weekly');
+                    const parsed = raw ? JSON.parse(raw) : {};
+                    // Back-compat: any cached entry without period_end gets treated as a 7-day week
+                    Object.values(parsed).forEach(e => {
+                        if (!e.period_end && e.week_start) e.period_end = addDaysStr(e.week_start, 6);
+                    });
+                    return parsed;
+                } catch(e) { return {}; }
             },
             async saveTechWeeklyEntry(entry) {
-                // Save to localStorage
-                const key = `${entry.store_id}_${entry.week_start}_${entry.tech_type}_${entry.tech_id}`;
+                // Back-compat: default period_end to week_start + 6 if missing
+                if (!entry.period_end && entry.week_start) entry.period_end = addDaysStr(entry.week_start, 6);
+                // Save to localStorage (key now includes period_end so multiple non-overlapping ranges coexist)
+                const key = `${entry.store_id}_${entry.week_start}_${entry.period_end}_${entry.tech_type}_${entry.tech_id}`;
                 let all = {};
                 try { const raw = localStorage.getItem('dyer_tech_weekly'); if (raw) all = JSON.parse(raw); } catch(e) {}
                 all[key] = entry;
@@ -2611,6 +2633,7 @@
                             tech_id: entry.tech_id,
                             tech_type: entry.tech_type,
                             week_start: entry.week_start,
+                            period_end: entry.period_end,
                             month: entry.month,
                             year: entry.year,
                             training: entry.training,
@@ -2620,8 +2643,24 @@
                             clock_hours: entry.clock_hours || 0,
                             updated_at: new Date().toISOString()
                         };
-                        await db.from('tech_weekly_entries').upsert(row, { onConflict: 'store_id,tech_id,tech_type,week_start' });
+                        await db.from('tech_weekly_entries').upsert(row, { onConflict: 'store_id,tech_id,tech_type,week_start,period_end' });
                     } catch(e) { console.warn('Supabase saveTechWeeklyEntry failed', e); }
+                }
+            },
+            // Delete a tech entry for a specific range — used to clean up overlapping
+            // ranges before writing a new one (prevents double-counting in MTD/YTD rollups).
+            async deleteTechWeeklyEntry(storeId, techId, techType, weekStart, periodEnd) {
+                const key = `${storeId}_${weekStart}_${periodEnd}_${techType}_${techId}`;
+                let all = {};
+                try { const raw = localStorage.getItem('dyer_tech_weekly'); if (raw) all = JSON.parse(raw); } catch(e) {}
+                delete all[key];
+                this._set('dyer_tech_weekly', all);
+                if (useSupabase) {
+                    try {
+                        await db.from('tech_weekly_entries')
+                            .delete()
+                            .match({ store_id: storeId, tech_id: techId, tech_type: techType, week_start: weekStart, period_end: periodEnd });
+                    } catch(e) { console.warn('Supabase deleteTechWeeklyEntry failed', e); }
                 }
             }
         };
@@ -5048,10 +5087,11 @@
                 document.getElementById('rosterBody').innerHTML = advHtml;
 
                 // ----- Tech/Lube entry period-awareness -----
-                // Week view: one week's data, editable, denominator = weekly hours.
-                // MTD/YTD/Custom: aggregate tech_weekly_entries across the period, read-only,
-                //   denominator = period's available hours × headcount. Prevents the
-                //   "206% productivity" bug (MTD-scale numerator / weekly-scale denominator).
+                // Week view: exactly one 7-day bucket, editable.
+                // Custom range: any user-selected range (e.g. 1st-14th), editable.
+                //   The saved entry represents the FULL range; productivity uses range hours.
+                //   On save, any overlapping prior entries are replaced to prevent double-counting.
+                // MTD/YTD: read-only aggregate of all contained ranges (weeks + custom) in the window.
                 let periodAvailPerTech, periodLabelTech;
                 if (advPeriod === 'week') {
                     periodAvailPerTech = weeklyAvailPerTech;
@@ -5064,28 +5104,41 @@
                     periodLabelTech = advPeriodLabel;
                 }
                 const isWeekView = advPeriod === 'week';
+                const isCustomView = advPeriod === 'custom';
+                // Editing is now allowed in ANY fixed-length range (week or user-picked custom).
+                // MTD/YTD remain read-only because their "end date" drifts (today), which would
+                // overwrite itself every time you opened the tab.
+                const isEditable = isWeekView || isCustomView;
 
                 const techWeeklyTitleEl = document.getElementById('techWeeklyTitle');
-                if (techWeeklyTitleEl) techWeeklyTitleEl.textContent = isWeekView
-                    ? `Technician Weekly Entry — ${periodLabelTech}`
+                if (techWeeklyTitleEl) techWeeklyTitleEl.textContent = isEditable
+                    ? `Technician Entry — ${periodLabelTech} (${periodAvailPerTech}h/tech available)`
                     : `Technician Performance — ${periodLabelTech} (${periodAvailPerTech}h/tech available)`;
                 const lubeWeeklyTitleEl = document.getElementById('lubeWeeklyTitle');
-                if (lubeWeeklyTitleEl) lubeWeeklyTitleEl.textContent = isWeekView
-                    ? `Lube Tech Weekly Entry — ${periodLabelTech}`
+                if (lubeWeeklyTitleEl) lubeWeeklyTitleEl.textContent = isEditable
+                    ? `Lube Tech Entry — ${periodLabelTech} (${periodAvailPerTech}h/tech available)`
                     : `Lube Tech Performance — ${periodLabelTech} (${periodAvailPerTech}h/tech available)`;
                 const saveTechBtnEl = document.getElementById('saveTechWeeklyBtn');
-                if (saveTechBtnEl) saveTechBtnEl.style.display = isWeekView ? '' : 'none';
+                if (saveTechBtnEl) {
+                    saveTechBtnEl.style.display = isEditable ? '' : 'none';
+                    saveTechBtnEl.textContent = isWeekView ? 'Save Tech Weekly' : `Save Tech for ${periodLabelTech}`;
+                }
                 const saveLubeBtnEl = document.getElementById('saveLubeWeeklyBtn');
-                if (saveLubeBtnEl) saveLubeBtnEl.style.display = isWeekView ? '' : 'none';
+                if (saveLubeBtnEl) {
+                    saveLubeBtnEl.style.display = isEditable ? '' : 'none';
+                    saveLubeBtnEl.textContent = isWeekView ? 'Save Lube Tech Weekly' : `Save Lube for ${periodLabelTech}`;
+                }
 
-                // Aggregate tech_weekly entries for one tech across the selected period
+                // Aggregate tech_weekly entries for one tech across the selected period.
+                // An entry counts when its [week_start, period_end] is fully contained in [aggStart, aggEnd].
+                // Legacy entries without period_end are treated as 7-day weekly.
                 function aggregateTechEntries(techId, techType) {
                     const matches = Object.values(techWeeklyData).filter(e => {
                         if (e.tech_type !== techType) return false;
                         if (e.tech_id !== techId) return false;
                         if (!allMode && e.store_id !== storeId) return false;
-                        if (isWeekView) return e.week_start === wsKey;
-                        return e.week_start >= aggStartKey && e.week_start <= aggEndKey;
+                        const entryEnd = e.period_end || addDaysStr(e.week_start, 6);
+                        return e.week_start >= aggStartKey && entryEnd <= aggEndKey;
                     });
                     if (!matches.length) return {};
                     let csiSum = 0, csiCount = 0, training = '';
@@ -5124,7 +5177,7 @@
                     techTotals.clockHrs += clockHrs;
                     if (hasData) techTotals.activeTechCount++;
 
-                    const trainingCell = isWeekView
+                    const trainingCell = isEditable
                         ? `<td><select class="tw-training">
                                 <option value="">-</option>
                                 <option value="Complete" ${d.training === 'Complete' ? 'selected' : ''}>Complete</option>
@@ -5132,16 +5185,16 @@
                                 <option value="Not Started" ${d.training === 'Not Started' ? 'selected' : ''}>Not Started</option>
                             </select></td>`
                         : `<td>${d.training || '—'}</td>`;
-                    const rosCell = isWeekView
+                    const rosCell = isEditable
                         ? `<td><input type="number" class="tw-ros input-yellow" value="${d.ros_worked || ''}" placeholder="0"></td>`
                         : `<td>${d.ros_worked || 0}</td>`;
-                    const csiCell = isWeekView
+                    const csiCell = isEditable
                         ? `<td><input type="number" step="0.1" class="tw-csi input-yellow" value="${d.csi_score || ''}" placeholder="0"></td>`
                         : `<td>${d.csi_score > 0 ? d.csi_score.toFixed(1) : '—'}</td>`;
-                    const hrsTurnedCell = isWeekView
+                    const hrsTurnedCell = isEditable
                         ? `<td><input type="number" step="0.1" class="tw-hrs-turned input-yellow" value="${d.hours_turned || ''}" placeholder="0"></td>`
                         : `<td>${hrsTurned.toFixed(1)}</td>`;
-                    const clockHrsCell = isWeekView
+                    const clockHrsCell = isEditable
                         ? `<td><input type="number" step="0.1" class="tw-clock-hrs input-yellow" value="${d.clock_hours || ''}" placeholder="0"></td>`
                         : `<td>${clockHrs.toFixed(1)}</td>`;
 
@@ -5201,7 +5254,7 @@
                     lubeTotals.clockHrs += clockHrs;
                     if (hasData) lubeTotals.activeTechCount++;
 
-                    const trainingCell = isWeekView
+                    const trainingCell = isEditable
                         ? `<td><select class="tw-training">
                                 <option value="">-</option>
                                 <option value="Complete" ${d.training === 'Complete' ? 'selected' : ''}>Complete</option>
@@ -5209,16 +5262,16 @@
                                 <option value="Not Compliant" ${d.training === 'Not Compliant' ? 'selected' : ''}>Not Compliant</option>
                             </select></td>`
                         : `<td>${d.training || '—'}</td>`;
-                    const rosCell = isWeekView
+                    const rosCell = isEditable
                         ? `<td><input type="number" class="tw-ros input-yellow" value="${d.ros_worked || ''}" placeholder="0"></td>`
                         : `<td>${d.ros_worked || 0}</td>`;
-                    const csiCell = isWeekView
+                    const csiCell = isEditable
                         ? `<td><input type="number" step="0.1" class="tw-csi input-yellow" value="${d.csi_score || ''}" placeholder="0"></td>`
                         : `<td>${d.csi_score > 0 ? d.csi_score.toFixed(1) : '—'}</td>`;
-                    const hrsTurnedCell = isWeekView
+                    const hrsTurnedCell = isEditable
                         ? `<td><input type="number" step="0.1" class="tw-hrs-turned input-yellow" value="${d.hours_turned || ''}" placeholder="0"></td>`
                         : `<td>${hrsTurned.toFixed(1)}</td>`;
-                    const clockHrsCell = isWeekView
+                    const clockHrsCell = isEditable
                         ? `<td><input type="number" step="0.1" class="tw-clock-hrs input-yellow" value="${d.clock_hours || ''}" placeholder="0"></td>`
                         : `<td>${clockHrs.toFixed(1)}</td>`;
 
@@ -5278,8 +5331,25 @@
             const row = e.target.closest('tr');
             const hrsTurned = parseFloat(row.querySelector('.tw-hrs-turned').value) || 0;
             const clockHrs = parseFloat(row.querySelector('.tw-clock-hrs').value) || 0;
-            const weekStart = getWeekStart(document.getElementById('rosterWeekPicker').valueAsDate);
-            const availHrs = getAvailableHoursInWeek(weekStart);
+
+            // Denominator (available hours) depends on the current View Period, not a fixed week.
+            // Custom range 1st-14th uses 14 days of available hours; Week uses 7.
+            const advPeriod = document.getElementById('rosterPeriod').value || 'week';
+            let availHrs;
+            if (advPeriod === 'custom') {
+                const fromVal = document.getElementById('rosterFromMonth').value;
+                const toVal = document.getElementById('rosterToMonth').value;
+                if (fromVal && toVal) {
+                    const s = new Date(fromVal + 'T00:00:00');
+                    const ed = new Date(toVal + 'T00:00:00');
+                    availHrs = getAvailableHoursInRange(s, ed).hours;
+                } else {
+                    availHrs = 0;
+                }
+            } else {
+                const weekStart = getWeekStart(document.getElementById('rosterWeekPicker').valueAsDate);
+                availHrs = getAvailableHoursInWeek(weekStart);
+            }
 
             // Fixed-ops standard: Prod = turned/avail, Prof = clock/avail
             const eff = clockHrs > 0 ? (hrsTurned / clockHrs * 100) : 0;
@@ -5323,14 +5393,74 @@
 
         async function saveTechWeekly(tableBodyId, techType) {
             const storeId = getSelectedStore();
-            const weekDate = pickerDate(document.getElementById('rosterWeekPicker').valueAsDate);
-            const wsKey = dateToString(getWeekStart(weekDate));
             if (!storeId || isAllStores()) { showToast('Select a specific store to save', 'error'); return; }
 
-            // Get month/year for monthly compilation
-            const ws = new Date(wsKey);
+            // Determine the save range from the current View Period selector.
+            // Week view: one 7-day bucket starting on the picker's Monday.
+            // Custom range: the user's From/To dates.
+            const advPeriod = document.getElementById('rosterPeriod').value || 'week';
+            let periodStart, periodEnd, periodLabel;
+            if (advPeriod === 'week') {
+                const weekDate = pickerDate(document.getElementById('rosterWeekPicker').valueAsDate);
+                const ws = getWeekStart(weekDate);
+                periodStart = dateToString(ws);
+                periodEnd = addDaysStr(periodStart, 6);
+                periodLabel = `Week of ${periodStart}`;
+            } else if (advPeriod === 'custom') {
+                const fromVal = document.getElementById('rosterFromMonth').value;
+                const toVal = document.getElementById('rosterToMonth').value;
+                if (!fromVal || !toVal) {
+                    showToast('Pick both From and To dates for a custom range', 'error');
+                    return;
+                }
+                if (fromVal > toVal) {
+                    showToast('Custom range: "From" must be on or before "To"', 'error');
+                    return;
+                }
+                periodStart = fromVal;
+                periodEnd = toVal;
+                periodLabel = `${periodStart} to ${periodEnd}`;
+            } else {
+                // Defensive: MTD/YTD shouldn't expose a save button. Bail if somehow triggered.
+                showToast('Switch to Week or Custom Range to save tech data', 'error');
+                return;
+            }
+
+            const ws = new Date(periodStart + 'T00:00:00');
             const entryMonth = ws.getMonth() + 1;
             const entryYear = ws.getFullYear();
+
+            // Overlap check: find existing entries for this store/techType whose [week_start, period_end]
+            // overlaps [periodStart, periodEnd] but doesn't exactly match. We'll ask the user to confirm
+            // before replacing them, so MTD totals stay single-counted.
+            const overlapping = Object.values(techWeeklyData).filter(e => {
+                if (e.store_id !== storeId) return false;
+                if (e.tech_type !== techType) return false;
+                const eEnd = e.period_end || addDaysStr(e.week_start, 6);
+                const intersects = e.week_start <= periodEnd && eEnd >= periodStart;
+                const exactMatch = e.week_start === periodStart && eEnd === periodEnd;
+                return intersects && !exactMatch;
+            });
+            if (overlapping.length > 0) {
+                // Summarize which techs & ranges will be replaced, so the user knows what's being deleted.
+                const rangeSummary = [...new Set(overlapping.map(e => {
+                    const eEnd = e.period_end || addDaysStr(e.week_start, 6);
+                    return `${e.week_start} → ${eEnd}`;
+                }))].join(', ');
+                const ok = confirm(
+                    `Saving ${periodLabel} will replace ${overlapping.length} overlapping ${techType === 'tech' ? 'technician' : 'lube tech'} entr${overlapping.length === 1 ? 'y' : 'ies'}:\n\n` +
+                    `  ${rangeSummary}\n\n` +
+                    `Overlapping ranges are removed so monthly totals don't double-count. Continue?`
+                );
+                if (!ok) return;
+                // Delete each overlapping entry first
+                for (const e of overlapping) {
+                    const eEnd = e.period_end || addDaysStr(e.week_start, 6);
+                    const delKey = `${e.store_id}_${e.week_start}_${eEnd}_${e.tech_type}_${e.tech_id}`;
+                    delete techWeeklyData[delKey];
+                    await LS.deleteTechWeeklyEntry(e.store_id, e.tech_id, e.tech_type, e.week_start, eEnd);
+                }
+            }
 
             try {
                 const rows = document.querySelectorAll(`#${tableBodyId} tr`);
@@ -5343,18 +5473,19 @@
                         hours_turned: parseFloat(row.querySelector('.tw-hrs-turned').value) || 0,
                         clock_hours: parseFloat(row.querySelector('.tw-clock-hrs').value) || 0,
                         store_id: storeId,
-                        week_start: wsKey,
+                        week_start: periodStart,
+                        period_end: periodEnd,
                         month: entryMonth,
                         year: entryYear,
                         tech_type: techType,
                         tech_id: parseInt(techId)
                     };
-                    const key = `${storeId}_${wsKey}_${techType}_${techId}`;
+                    const key = `${storeId}_${periodStart}_${periodEnd}_${techType}_${techId}`;
                     techWeeklyData[key] = entry;
                     await LS.saveTechWeeklyEntry(entry);
                 }
                 clearRosterDirty();
-                showToast(`${techType === 'tech' ? 'Technician' : 'Lube tech'} weekly data saved for week of ${wsKey}`);
+                showToast(`${techType === 'tech' ? 'Technician' : 'Lube tech'} data saved for ${periodLabel}`);
             } catch (error) {
                 console.error('Save tech weekly error:', error);
                 showToast('Failed to save tech data', 'error');
@@ -5417,7 +5548,10 @@
             Object.values(techWeeklyData).forEach(d => {
                 if (!allMode && d.store_id !== storeId) return;
                 if (!d.week_start) return;
-                if (d.week_start < rangeStartStr || d.week_start > rangeEndStr) return;
+                // Entry must be fully contained in [rangeStart, rangeEnd] so that a 14-day
+                // custom range doesn't get counted in a week view that's inside it.
+                const dEnd = d.period_end || addDaysStr(d.week_start, 6);
+                if (d.week_start < rangeStartStr || dEnd > rangeEndStr) return;
 
                 const key = `${d.tech_type}_${d.tech_id}`;
                 if (!perfMap[key]) {
@@ -5449,7 +5583,9 @@
                 Object.values(techWeeklyData).forEach(d => {
                     if (!allMode && d.store_id !== storeId) return;
                     if (!d.week_start) return;
-                    if (d.week_start < startStr || d.week_start > endStr) return;
+                    // Full-range containment (match the primary scan above).
+                    const dEnd = d.period_end || addDaysStr(d.week_start, 6);
+                    if (d.week_start < startStr || dEnd > endStr) return;
                     const key = `${d.tech_type}_${d.tech_id}`;
                     if (!map[key]) map[key] = { hrsTurned: 0, clockHrs: 0 };
                     map[key].hrsTurned += d.hours_turned || 0;
