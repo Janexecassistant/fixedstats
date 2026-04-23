@@ -1002,6 +1002,49 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            <!-- Technician Daily Entry -->
+            <div class="card" id="dailyTechCard">
+                <h3 class="card-title">Technician Performance</h3>
+                <div style="overflow-x: auto;">
+                    <table id="dailyTechTable">
+                        <thead>
+                            <tr>
+                                <th>Technician</th>
+                                <th>Specialty</th>
+                                <th>ROs</th>
+                                <th>CSI</th>
+                                <th>Hrs Turned</th>
+                                <th>Clock Hrs</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">Efficiency %</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dailyTechBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Lube Tech Daily Entry -->
+            <div class="card" id="dailyLubeCard">
+                <h3 class="card-title">Lube Tech Performance</h3>
+                <div style="overflow-x: auto;">
+                    <table id="dailyLubeTable">
+                        <thead>
+                            <tr>
+                                <th>Lube Tech</th>
+                                <th>ROs</th>
+                                <th>CSI</th>
+                                <th>Hrs Turned</th>
+                                <th>Clock Hrs</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">Efficiency %</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dailyLubeBody">
+                        </tbody>
+                    </table>
+                </div>
                 <div class="btn-group" style="display:flex;align-items:center;gap:12px;">
                     <button class="btn" id="saveDailyBtn">Save Daily Entry</button>
                     <span class="unsaved-badge" data-section="daily" style="display:none;">● Unsaved changes</span>
@@ -1326,85 +1369,6 @@
                 </div>
                 <div class="btn-group" style="align-items:center;gap:12px;">
                     <button class="btn" id="saveRosterBtn">Save Roster</button>
-                    <span class="unsaved-badge" data-section="roster" style="display:none;">● Unsaved changes</span>
-                </div>
-            </div>
-
-            <!-- TECHNICIAN ENTRY — CUMULATIVE MTD -->
-            <div class="card">
-                <h3 class="card-title" id="techWeeklyTitle">Technician Entry — Cumulative MTD</h3>
-                <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-bottom:12px;padding:12px;background:#f5f5f5;border-radius:8px;">
-                    <div class="control-group" style="margin:0;">
-                        <label style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#555;">Entry Date (as of)</label>
-                        <input type="date" id="techEntryDate" class="tech-entry-date">
-                    </div>
-                    <div style="flex:1;min-width:260px;font-size:13px;color:#555;line-height:1.45;">
-                        Enter the <strong>month-to-date cumulative totals</strong> for each tech as of the entry date.
-                        If you enter on the 14th, the numbers should represent days 1&ndash;14. Saving a new date will
-                        update the current month's snapshot — previous snapshots are kept for history.
-                        <span id="techEntryLastSaved" style="display:block;margin-top:4px;color:#666;font-style:italic;"></span>
-                    </div>
-                </div>
-                <div style="overflow-x: auto;">
-                    <table id="techWeeklyTable">
-                        <thead>
-                            <tr>
-                                <th>Technician</th>
-                                <th>Specialty</th>
-                                <th>Training</th>
-                                <th>ROs (MTD)</th>
-                                <th>CSI Score</th>
-                                <th>Hrs Turned (MTD)</th>
-                                <th>Clock Hrs (MTD)</th>
-                                <th style="background:#1a1a1a;color:#cc0000;">Efficiency %</th>
-                                <th style="background:#1a1a1a;color:#cc0000;">Productivity %</th>
-                                <th style="background:#1a1a1a;color:#cc0000;">Proficiency %</th>
-                            </tr>
-                        </thead>
-                        <tbody id="techWeeklyBody">
-                        </tbody>
-                        <tfoot id="techWeeklyFooter">
-                        </tfoot>
-                    </table>
-                </div>
-                <div class="btn-group" style="align-items:center;gap:12px;">
-                    <button class="btn" id="saveTechWeeklyBtn">Save Tech MTD</button>
-                    <span class="unsaved-badge" data-section="roster" style="display:none;">● Unsaved changes</span>
-                </div>
-            </div>
-
-            <!-- LUBE TECH ENTRY — CUMULATIVE MTD -->
-            <div class="card">
-                <h3 class="card-title" id="lubeWeeklyTitle">Lube Tech Entry — Cumulative MTD</h3>
-                <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-bottom:12px;padding:12px;background:#f5f5f5;border-radius:8px;">
-                    <div style="font-size:13px;color:#555;line-height:1.45;">
-                        Uses the same <strong>Entry Date</strong> picked above. Enter month-to-date cumulative
-                        totals for each lube tech as of that date.
-                    </div>
-                </div>
-                <div style="overflow-x: auto;">
-                    <table id="lubeWeeklyTable">
-                        <thead>
-                            <tr>
-                                <th>Lube Tech</th>
-                                <th>Training</th>
-                                <th>ROs (MTD)</th>
-                                <th>CSI Score</th>
-                                <th>Hrs Turned (MTD)</th>
-                                <th>Clock Hrs (MTD)</th>
-                                <th style="background:#1a1a1a;color:#cc0000;">Efficiency %</th>
-                                <th style="background:#1a1a1a;color:#cc0000;">Productivity %</th>
-                                <th style="background:#1a1a1a;color:#cc0000;">Proficiency %</th>
-                            </tr>
-                        </thead>
-                        <tbody id="lubeWeeklyBody">
-                        </tbody>
-                        <tfoot id="lubeWeeklyFooter">
-                        </tfoot>
-                    </table>
-                </div>
-                <div class="btn-group" style="align-items:center;gap:12px;">
-                    <button class="btn" id="saveLubeWeeklyBtn">Save Lube Tech MTD</button>
                     <span class="unsaved-badge" data-section="roster" style="display:none;">● Unsaved changes</span>
                 </div>
             </div>
@@ -2735,11 +2699,6 @@
                 // date picker expects a UTC-based Date for valueAsDate
                 document.getElementById('dailyDatePicker').valueAsDate = new Date(Date.UTC(pickerInitDate.getFullYear(), pickerInitDate.getMonth(), pickerInitDate.getDate()));
                 document.getElementById('rosterWeekPicker').valueAsDate = today;
-                // Default the Entry Date for cumulative-MTD tech entries to today as well.
-                const techEntryDateEl = document.getElementById('techEntryDate');
-                if (techEntryDateEl && !techEntryDateEl.value) {
-                    techEntryDateEl.value = dateToString(today);
-                }
 
                 // Set working day # and working days in month (auto-calculated from picker date)
                 document.getElementById('dailyDayNumber').value = getWorkingDayOfMonth(pickerInitDate);
@@ -2922,8 +2881,8 @@
                 else if (activeTab === 'admin') loadStaffManagement();
             });
 
-            // Roster dirty-tracking via event delegation on the three editable tbodies
-            ['rosterBody', 'techWeeklyBody', 'lubeWeeklyBody'].forEach(id => {
+            // Roster dirty-tracking via event delegation on the editable tbody
+            ['rosterBody'].forEach(id => {
                 const el = document.getElementById(id);
                 if (!el) return;
                 el.addEventListener('input', markRosterDirty);
@@ -2992,23 +2951,6 @@
                 loadRoster();
             });
 
-            // Tech Entry Date picker — cumulative MTD entry form. When the user changes this,
-            // we reload the roster so the form prefills with the latest snapshot for that month
-            // and so the displayed percentages use the matching as-of-date denominator.
-            const techEntryDatePicker = document.getElementById('techEntryDate');
-            if (techEntryDatePicker) {
-                let lastTechEntryDate = techEntryDatePicker.value;
-                techEntryDatePicker.addEventListener('change', () => {
-                    if (!confirmLeaveRoster()) {
-                        techEntryDatePicker.value = lastTechEntryDate;
-                        return;
-                    }
-                    lastTechEntryDate = techEntryDatePicker.value;
-                    clearRosterDirty();
-                    loadRoster();
-                });
-            }
-
             // Advisor
             document.getElementById('advisorPeriod').addEventListener('change', () => {
                 document.getElementById('advisorCustomRange').style.display =
@@ -3022,11 +2964,9 @@
                 loadAdvisorDrillDown(startDate, endDate);
             });
 
-            // Save roster & tech weekly
+            // Save roster & facility
             document.getElementById('saveRosterBtn').addEventListener('click', saveRoster);
             document.getElementById('saveFacilityBtn').addEventListener('click', saveFacilityConfig);
-            document.getElementById('saveTechWeeklyBtn').addEventListener('click', () => saveTechWeekly('techWeeklyBody', 'tech'));
-            document.getElementById('saveLubeWeeklyBtn').addEventListener('click', () => saveTechWeekly('lubeWeeklyBody', 'lube'));
             const rosterPeriodSel = document.getElementById('rosterPeriod');
             let lastPeriod = rosterPeriodSel.value;
             rosterPeriodSel.addEventListener('change', () => {
@@ -3169,6 +3109,15 @@
                 });
                 document.getElementById('dailyAdvisorBody').innerHTML = html;
 
+                // Load tech/lube daily entries for this date (stored in dyer_tech_weekly
+                // keyed on week_start which we now treat as entry_date, one row per day).
+                const allTechDaily = Object.values(await LS.getTechWeeklyEntries());
+                const techDailyEntries = allTechDaily.filter(d =>
+                    d.store_id === storeId && d.week_start === ds
+                );
+                buildDailyTechRows('dailyTechBody', storeId, ds, 'tech', techDailyEntries);
+                buildDailyTechRows('dailyLubeBody', storeId, ds, 'lube', techDailyEntries);
+
                 // Add event listeners for calculations
                 document.querySelectorAll('.input-yellow').forEach(input => {
                     input.addEventListener('input', updateDailyCalculations);
@@ -3178,6 +3127,59 @@
             } catch (error) {
                 console.error('Load daily error:', error);
             }
+        }
+
+        // Build daily tech/lube rows inline — one row per active tech for the selected
+        // store & date. Prefills values if an entry already exists for that tech on that
+        // date. Efficiency is calculated inline (turned / clock). Productivity/Proficiency
+        // aren't shown here — they belong on the Roster tab where we have a period context.
+        function buildDailyTechRows(tbodyId, storeId, ds, techType, existingEntries) {
+            const staffList = (techType === 'tech' ? technicians : lubeTechs)
+                .filter(t => t.store_id === storeId && t.is_active !== false);
+            let html = '';
+            staffList.forEach(t => {
+                const entry = existingEntries.find(e => e.tech_type === techType && e.tech_id === t.id);
+                const ros = entry?.ros_worked ?? '';
+                const csi = entry?.csi_score ?? '';
+                const hrs = entry?.hours_turned ?? '';
+                const clk = entry?.clock_hours ?? '';
+                const specialtyCell = techType === 'tech' ? `<td>${t.specialty || '—'}</td>` : '';
+                html += `
+                    <tr data-tech-id="${t.id}" data-tech-type="${techType}">
+                        <td style="font-weight:600">${t.name}</td>
+                        ${specialtyCell}
+                        <td><input type="number" class="input-yellow daily-tech-ros" value="${ros}" placeholder="0"></td>
+                        <td><input type="number" step="0.1" class="input-yellow daily-tech-csi" value="${csi}" placeholder="0"></td>
+                        <td><input type="number" step="0.1" class="input-yellow daily-tech-hrs-turned" value="${hrs}" placeholder="0"></td>
+                        <td><input type="number" step="0.1" class="input-yellow daily-tech-clock-hrs" value="${clk}" placeholder="0"></td>
+                        <td class="input-gray daily-tech-eff" style="font-weight:700">—</td>
+                    </tr>
+                `;
+            });
+            const tbody = document.getElementById(tbodyId);
+            if (tbody) tbody.innerHTML = html || `<tr><td colspan="${techType === 'tech' ? 7 : 6}" class="empty-state">No ${techType === 'tech' ? 'technicians' : 'lube techs'} assigned to this store.</td></tr>`;
+
+            // Wire inline efficiency calc (turned / clock * 100)
+            document.querySelectorAll(`#${tbodyId} .input-yellow`).forEach(input => {
+                input.addEventListener('input', () => {
+                    const row = input.closest('tr');
+                    if (!row) return;
+                    const turned = parseFloat(row.querySelector('.daily-tech-hrs-turned')?.value) || 0;
+                    const clock = parseFloat(row.querySelector('.daily-tech-clock-hrs')?.value) || 0;
+                    const effCell = row.querySelector('.daily-tech-eff');
+                    if (!effCell) return;
+                    if (clock > 0) {
+                        const eff = turned / clock * 100;
+                        effCell.textContent = eff.toFixed(1) + '%';
+                        effCell.style.color = eff >= 100 ? '#10b981' : eff >= 75 ? '#f59e0b' : '#ef4444';
+                    } else {
+                        effCell.textContent = '—';
+                        effCell.style.color = '';
+                    }
+                });
+                // Trigger once to paint existing values
+                input.dispatchEvent(new Event('input'));
+            });
         }
 
         async function loadDailyEntryAllStores(date) {
@@ -3592,6 +3594,41 @@
                         const advName = row.querySelector('td')?.textContent || `advisor ${advisorId}`;
                         failedSaves.push(advName);
                     }
+                }
+
+                // Save tech and lube tech daily entries — one record per tech per day,
+                // storing today's ROs / Hrs Turned / Clock Hrs (NOT cumulative MTD).
+                // These feed the Roster tab's Technician Performance rollups by summing
+                // the daily entries over the chosen period.
+                const techRows = document.querySelectorAll('#dailyTechBody tr, #dailyLubeBody tr');
+                for (const row of techRows) {
+                    const techId = row.dataset.techId;
+                    const techType = row.dataset.techType;
+                    if (!techId || !techType) continue;
+                    const rosRaw = row.querySelector('.daily-tech-ros')?.value ?? '';
+                    const csiRaw = row.querySelector('.daily-tech-csi')?.value ?? '';
+                    const hrsRaw = row.querySelector('.daily-tech-hrs-turned')?.value ?? '';
+                    const clkRaw = row.querySelector('.daily-tech-clock-hrs')?.value ?? '';
+                    // Skip rows where every value is empty — no point saving a zero row
+                    if (rosRaw === '' && csiRaw === '' && hrsRaw === '' && clkRaw === '') continue;
+                    const rosWorked = rosRaw === '' ? 0 : (parseFloat(rosRaw) || 0);
+                    const csiScore = csiRaw === '' ? null : (parseFloat(csiRaw) || 0);
+                    const hoursTurned = hrsRaw === '' ? 0 : (parseFloat(hrsRaw) || 0);
+                    const clockHours = clkRaw === '' ? 0 : (parseFloat(clkRaw) || 0);
+                    const d = new Date(ds + 'T12:00:00');
+                    await LS.saveTechWeeklyEntry({
+                        store_id: storeId,
+                        tech_id: parseInt(techId),
+                        tech_type: techType,
+                        week_start: ds,                 // now functions as entry_date (one row per day)
+                        month: d.getMonth() + 1,
+                        year: d.getFullYear(),
+                        training: null,
+                        ros_worked: rosWorked,
+                        csi_score: csiScore,
+                        hours_turned: hoursTurned,
+                        clock_hours: clockHours
+                    });
                 }
 
                 if (failedSaves.length > 0) {
@@ -4848,10 +4885,6 @@
             if (!storeId) {
                 document.getElementById('rosterBody').innerHTML = '';
                 document.getElementById('rosterStaffingCards').innerHTML = '';
-                document.getElementById('techWeeklyBody').innerHTML = '';
-                document.getElementById('techWeeklyFooter').innerHTML = '';
-                document.getElementById('lubeWeeklyBody').innerHTML = '';
-                document.getElementById('lubeWeeklyFooter').innerHTML = '';
                 document.getElementById('techPerfBody').innerHTML = '';
                 document.getElementById('capacityAnalysisCards').innerHTML = '';
                 document.getElementById('capacityRecommendations').innerHTML = '';
@@ -5156,285 +5189,37 @@
                 });
                 document.getElementById('rosterBody').innerHTML = advHtml;
 
-                // ----- Tech/Lube entry period-awareness (cumulative-MTD model) -----
-                // Week view: edit form. We pull the latest snapshot in the Entry Date's month so the
-                //   manager sees their last cumulative numbers and just edits them up to "as of today".
-                //   Denominator = avail hours from month-start of Entry Date through Entry Date.
-                // MTD/YTD/Custom: read-only. Pick the latest snapshot per tech in the range (each
-                //   entry is already a running MTD total). Denominator aligns with each snapshot's
-                //   own as-of date — handled in the per-row loop.
-                const techEntryDateEl = document.getElementById('techEntryDate');
-                const entryDateStr = techEntryDateEl && techEntryDateEl.value
-                    ? techEntryDateEl.value
-                    : dateToString(new Date());
-                const entryDateObj = new Date(entryDateStr + 'T12:00:00');
-                const entryMonthStart = new Date(entryDateObj.getFullYear(), entryDateObj.getMonth(), 1);
-                const entryMonthStartKey = dateToString(entryMonthStart);
-
-                let periodAvailPerTech, periodLabelTech;
-                if (advPeriod === 'week') {
-                    // In entry mode, the "period" is month-start-of-entry-date through entry-date.
-                    periodAvailPerTech = getAvailableHoursInRange(entryMonthStart, entryDateObj).hours;
-                    const monName = entryDateObj.toLocaleString('default', { month: 'long' });
-                    periodLabelTech = `${monName} MTD as of ${entryDateStr}`;
-                } else {
-                    // MTD / YTD / Custom — use the elapsed range.
-                    const rangeInfo = getAvailableHoursInRange(aggStart, aggEnd);
-                    periodAvailPerTech = rangeInfo.hours;
-                    periodLabelTech = advPeriodLabel;
-                }
-                const isWeekView = advPeriod === 'week';
-
-                const techWeeklyTitleEl = document.getElementById('techWeeklyTitle');
-                if (techWeeklyTitleEl) techWeeklyTitleEl.textContent = isWeekView
-                    ? `Technician Entry — ${periodLabelTech} (${periodAvailPerTech}h/tech available)`
-                    : `Technician Performance — ${periodLabelTech}`;
-                const lubeWeeklyTitleEl = document.getElementById('lubeWeeklyTitle');
-                if (lubeWeeklyTitleEl) lubeWeeklyTitleEl.textContent = isWeekView
-                    ? `Lube Tech Entry — ${periodLabelTech} (${periodAvailPerTech}h/tech available)`
-                    : `Lube Tech Performance — ${periodLabelTech}`;
-                const saveTechBtnEl = document.getElementById('saveTechWeeklyBtn');
-                if (saveTechBtnEl) saveTechBtnEl.style.display = isWeekView ? '' : 'none';
-                const saveLubeBtnEl = document.getElementById('saveLubeWeeklyBtn');
-                if (saveLubeBtnEl) saveLubeBtnEl.style.display = isWeekView ? '' : 'none';
-
-                // Cumulative-MTD model: each entry is a running MTD snapshot for the tech
-                // as of `week_start` (repurposed as "as-of date"). To display any period we
-                // pick the LATEST snapshot whose as-of date falls in the period. We also
-                // return that date so downstream code can size the denominator correctly
-                // (avail hours from snapshot's month-start through as_of_date).
-                // Update the "last saved" indicator with the most recent snapshot date across
-                // any tech or lube for the current store + entry month. Helps managers see
-                // "when was the last time I updated this month?".
-                (function updateLastSavedNote() {
-                    const note = document.getElementById('techEntryLastSaved');
-                    if (!note) return;
-                    const monthMatches = Object.values(techWeeklyData).filter(e => {
-                        if (!allMode && e.store_id !== storeId) return false;
-                        if (!e.week_start) return false;
-                        return e.week_start >= entryMonthStartKey && e.week_start <= entryDateStr;
+                // ----- Tech/Lube roll-up for Capacity Analysis -----
+                // Tech entry lives on the Daily Entry tab (one row per tech per day). To feed
+                // the capacity card with the current period's totals, we sum daily entries in
+                // the selected range. Numerator = Σ turned/clock hours. Denominator for shop
+                // utilization = active headcount × range-avail-per-tech (calculated inside
+                // loadCapacityAnalysis).
+                const periodAvailPerTech = getAvailableHoursInRange(aggStart, aggEnd).hours;
+                const periodLabelTech = advPeriodLabel;
+                const rollupRange = (techType, staffList) => {
+                    const totals = { ros: 0, hrsTurned: 0, clockHrs: 0, activeTechCount: 0 };
+                    staffList.forEach(tech => {
+                        let ros = 0, hrsTurned = 0, clockHrs = 0;
+                        Object.values(techWeeklyData).forEach(e => {
+                            if (e.tech_type !== techType) return;
+                            if (e.tech_id !== tech.id) return;
+                            if (!allMode && e.store_id !== storeId) return;
+                            if (!e.week_start) return;
+                            if (e.week_start < aggStartKey || e.week_start > aggEndKey) return;
+                            ros += (e.ros_worked || 0);
+                            hrsTurned += (e.hours_turned || 0);
+                            clockHrs += (e.clock_hours || 0);
+                        });
+                        totals.ros += ros;
+                        totals.hrsTurned += hrsTurned;
+                        totals.clockHrs += clockHrs;
+                        if (hrsTurned > 0 || clockHrs > 0) totals.activeTechCount++;
                     });
-                    if (!monthMatches.length) {
-                        note.textContent = 'No snapshots yet for this month — enter the cumulative MTD numbers below and click Save.';
-                        return;
-                    }
-                    monthMatches.sort((a, b) => a.week_start < b.week_start ? 1 : -1);
-                    const latestDate = monthMatches[0].week_start;
-                    const distinctDates = new Set(monthMatches.map(m => m.week_start)).size;
-                    note.textContent = `Most recent snapshot: ${latestDate} · ${distinctDates} snapshot${distinctDates === 1 ? '' : 's'} this month.`;
-                })();
-
-                function aggregateTechEntries(techId, techType) {
-                    const matches = Object.values(techWeeklyData).filter(e => {
-                        if (e.tech_type !== techType) return false;
-                        if (e.tech_id !== techId) return false;
-                        if (!allMode && e.store_id !== storeId) return false;
-                        if (!e.week_start) return false;
-                        if (isWeekView) {
-                            // Edit mode: show the latest snapshot in the Entry Date's month
-                            // whose as-of date is ≤ the Entry Date. That way picking April 14
-                            // prefills with the April 7 snapshot (if any) so the manager can
-                            // just bump the numbers up — the "add to what was entered previously"
-                            // behavior requested.
-                            return e.week_start >= entryMonthStartKey && e.week_start <= entryDateStr;
-                        }
-                        return e.week_start >= aggStartKey && e.week_start <= aggEndKey;
-                    });
-                    if (!matches.length) return {};
-                    // Latest snapshot wins — numbers are already cumulative MTD.
-                    matches.sort((a, b) => a.week_start < b.week_start ? 1 : -1);
-                    const latest = matches[0];
-                    return {
-                        ros_worked: latest.ros_worked || 0,
-                        hours_turned: latest.hours_turned || 0,
-                        clock_hours: latest.clock_hours || 0,
-                        csi_score: latest.csi_score || 0,
-                        training: latest.training || '',
-                        as_of_date: latest.week_start
-                    };
-                }
-
-                // Build Technician section
-                // Fixed-ops standard definitions:
-                //   Efficiency   = turned / clock       (how hard tech works when on the clock)
-                //   Productivity = turned / available   (what % of capacity the tech produced)
-                //   Proficiency  = clock  / available   (what % of capacity the tech was on the clock)
-                // Shop denominator only counts techs with any hours logged — a new hire / apprentice
-                // / vacation-all-period tech with all zeros shouldn't drag the shop's productivity down.
-                // Helper: for a cumulative-MTD snapshot, the matching denominator is
-                // available hours from the snapshot's month-start through its as-of date.
-                // Aligning numerator and denominator prevents the "MTD numerator / full-month
-                // denominator" trap where productivity looks artificially low mid-month.
-                function availHoursThroughAsOf(asOfStr) {
-                    if (!asOfStr) return periodAvailPerTech;
-                    const d = new Date(asOfStr + 'T12:00:00');
-                    const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
-                    return getAvailableHoursInRange(monthStart, d).hours;
-                }
-
-                let techHtml = '';
-                let techTotals = { ros: 0, hrsTurned: 0, clockHrs: 0, availSum: 0, activeTechCount: 0 };
-                storeTechs.forEach(tech => {
-                    const d = aggregateTechEntries(tech.id, 'tech');
-                    const hrsTurned = d.hours_turned || 0;
-                    const clockHrs = d.clock_hours || 0;
-                    const hasData = clockHrs > 0 || hrsTurned > 0;
-                    const availForThisTech = hasData ? availHoursThroughAsOf(d.as_of_date) : periodAvailPerTech;
-                    const eff = clockHrs > 0 ? (hrsTurned / clockHrs * 100) : 0;
-                    const prod = availForThisTech > 0 ? (hrsTurned / availForThisTech * 100) : 0;
-                    const prof = availForThisTech > 0 ? (clockHrs / availForThisTech * 100) : 0;
-                    techTotals.ros += (d.ros_worked || 0);
-                    techTotals.hrsTurned += hrsTurned;
-                    techTotals.clockHrs += clockHrs;
-                    if (hasData) { techTotals.activeTechCount++; techTotals.availSum += availForThisTech; }
-
-                    const trainingCell = isWeekView
-                        ? `<td><select class="tw-training">
-                                <option value="">-</option>
-                                <option value="Complete" ${d.training === 'Complete' ? 'selected' : ''}>Complete</option>
-                                <option value="In Progress" ${d.training === 'In Progress' ? 'selected' : ''}>In Progress</option>
-                                <option value="Not Started" ${d.training === 'Not Started' ? 'selected' : ''}>Not Started</option>
-                            </select></td>`
-                        : `<td>${d.training || '—'}</td>`;
-                    const rosCell = isWeekView
-                        ? `<td><input type="number" class="tw-ros input-yellow" value="${d.ros_worked || ''}" placeholder="0"></td>`
-                        : `<td>${d.ros_worked || 0}</td>`;
-                    const csiCell = isWeekView
-                        ? `<td><input type="number" step="0.1" class="tw-csi input-yellow" value="${d.csi_score || ''}" placeholder="0"></td>`
-                        : `<td>${d.csi_score > 0 ? d.csi_score.toFixed(1) : '—'}</td>`;
-                    const hrsTurnedCell = isWeekView
-                        ? `<td><input type="number" step="0.1" class="tw-hrs-turned input-yellow" value="${d.hours_turned || ''}" placeholder="0"></td>`
-                        : `<td>${hrsTurned.toFixed(1)}</td>`;
-                    const clockHrsCell = isWeekView
-                        ? `<td><input type="number" step="0.1" class="tw-clock-hrs input-yellow" value="${d.clock_hours || ''}" placeholder="0"></td>`
-                        : `<td>${clockHrs.toFixed(1)}</td>`;
-
-                    techHtml += `
-                        <tr data-tech-id="${tech.id}" data-tech-type="tech">
-                            <td style="font-weight:600">${tech.name}${allMode ? ' <span style="color:#888;font-weight:400;font-size:12px">(' + (stores.find(s=>s.id===tech.store_id)?.name||'') + ')</span>' : ''}</td>
-                            <td>${tech.specialty || '—'}</td>
-                            ${trainingCell}
-                            ${rosCell}
-                            ${csiCell}
-                            ${hrsTurnedCell}
-                            ${clockHrsCell}
-                            <td class="tw-eff" style="font-weight:700;color:${eff >= 100 ? '#10b981' : eff >= 75 ? '#f59e0b' : '#ef4444'}">${eff > 0 ? eff.toFixed(1) + '%' : '—'}</td>
-                            <td class="tw-prod" style="font-weight:700;color:${prod >= 85 ? '#10b981' : prod >= 70 ? '#f59e0b' : '#ef4444'}">${prod > 0 ? prod.toFixed(1) + '%' : '—'}</td>
-                            <td class="tw-prof" style="font-weight:700;color:${prof >= 100 ? '#10b981' : prof >= 75 ? '#f59e0b' : '#ef4444'}">${prof > 0 ? prof.toFixed(1) + '%' : '—'}</td>
-                        </tr>
-                    `;
-                });
-                document.getElementById('techWeeklyBody').innerHTML = techHtml;
-
-                // Shop totals footer (shop-weighted, cumulative-MTD denominator)
-                // Productivity = Σ turned / Σ avail-through-as-of   Proficiency = Σ clock / Σ avail-through-as-of
-                // Each tech's avail matches its own snapshot as-of date, so the shop roll-up stays
-                // consistent with the per-tech rows.
-                const totalTechAvail = techTotals.availSum || (techTotals.activeTechCount * periodAvailPerTech);
-                const tEff = techTotals.clockHrs > 0 ? (techTotals.hrsTurned / techTotals.clockHrs * 100) : 0;
-                const tProd = totalTechAvail > 0 ? (techTotals.hrsTurned / totalTechAvail * 100) : 0;
-                const tProf = totalTechAvail > 0 ? (techTotals.clockHrs / totalTechAvail * 100) : 0;
-                const techHeadcountLabel = techTotals.activeTechCount === storeTechs.length
-                    ? `${storeTechs.length} techs`
-                    : `${techTotals.activeTechCount}/${storeTechs.length} w/ hours`;
-                const techAvgAvailLabel = techTotals.activeTechCount > 0
-                    ? `~${Math.round(totalTechAvail / techTotals.activeTechCount)}h avg/tech through as-of`
-                    : `${periodAvailPerTech}h/tech`;
-                document.getElementById('techWeeklyFooter').innerHTML = `
-                    <tr style="background:#e0e0e0;font-weight:700;">
-                        <td colspan="3">SHOP TOTALS <span style="font-weight:400;font-size:11px;color:#666;">(${techHeadcountLabel} · ${techAvgAvailLabel} · ${totalTechAvail}h avail total)</span></td>
-                        <td>${techTotals.ros}</td>
-                        <td>—</td>
-                        <td>${techTotals.hrsTurned.toFixed(1)}</td>
-                        <td>${techTotals.clockHrs.toFixed(1)}</td>
-                        <td style="color:${tEff >= 100 ? '#10b981' : '#ef4444'}">${tEff > 0 ? tEff.toFixed(1) + '%' : '—'}</td>
-                        <td style="color:${tProd >= 85 ? '#10b981' : '#ef4444'}">${tProd > 0 ? tProd.toFixed(1) + '%' : '—'}</td>
-                        <td style="color:${tProf >= 100 ? '#10b981' : '#ef4444'}">${tProf > 0 ? tProf.toFixed(1) + '%' : '—'}</td>
-                    </tr>
-                `;
-
-                // Build Lube Tech section (cumulative-MTD, same denominator-alignment rules)
-                let lubeHtml = '';
-                let lubeTotals = { ros: 0, hrsTurned: 0, clockHrs: 0, availSum: 0, activeTechCount: 0 };
-                storeLubes.forEach(tech => {
-                    const d = aggregateTechEntries(tech.id, 'lube');
-                    const hrsTurned = d.hours_turned || 0;
-                    const clockHrs = d.clock_hours || 0;
-                    const hasData = clockHrs > 0 || hrsTurned > 0;
-                    const availForThisTech = hasData ? availHoursThroughAsOf(d.as_of_date) : periodAvailPerTech;
-                    const eff = clockHrs > 0 ? (hrsTurned / clockHrs * 100) : 0;
-                    const prod = availForThisTech > 0 ? (hrsTurned / availForThisTech * 100) : 0;
-                    const prof = availForThisTech > 0 ? (clockHrs / availForThisTech * 100) : 0;
-                    lubeTotals.ros += (d.ros_worked || 0);
-                    lubeTotals.hrsTurned += hrsTurned;
-                    lubeTotals.clockHrs += clockHrs;
-                    if (hasData) { lubeTotals.activeTechCount++; lubeTotals.availSum += availForThisTech; }
-
-                    const trainingCell = isWeekView
-                        ? `<td><select class="tw-training">
-                                <option value="">-</option>
-                                <option value="Complete" ${d.training === 'Complete' ? 'selected' : ''}>Complete</option>
-                                <option value="In Progress" ${d.training === 'In Progress' ? 'selected' : ''}>In Progress</option>
-                                <option value="Not Compliant" ${d.training === 'Not Compliant' ? 'selected' : ''}>Not Compliant</option>
-                            </select></td>`
-                        : `<td>${d.training || '—'}</td>`;
-                    const rosCell = isWeekView
-                        ? `<td><input type="number" class="tw-ros input-yellow" value="${d.ros_worked || ''}" placeholder="0"></td>`
-                        : `<td>${d.ros_worked || 0}</td>`;
-                    const csiCell = isWeekView
-                        ? `<td><input type="number" step="0.1" class="tw-csi input-yellow" value="${d.csi_score || ''}" placeholder="0"></td>`
-                        : `<td>${d.csi_score > 0 ? d.csi_score.toFixed(1) : '—'}</td>`;
-                    const hrsTurnedCell = isWeekView
-                        ? `<td><input type="number" step="0.1" class="tw-hrs-turned input-yellow" value="${d.hours_turned || ''}" placeholder="0"></td>`
-                        : `<td>${hrsTurned.toFixed(1)}</td>`;
-                    const clockHrsCell = isWeekView
-                        ? `<td><input type="number" step="0.1" class="tw-clock-hrs input-yellow" value="${d.clock_hours || ''}" placeholder="0"></td>`
-                        : `<td>${clockHrs.toFixed(1)}</td>`;
-
-                    lubeHtml += `
-                        <tr data-tech-id="${tech.id}" data-tech-type="lube">
-                            <td style="font-weight:600">${tech.name}${allMode ? ' <span style="color:#888;font-weight:400;font-size:12px">(' + (stores.find(s=>s.id===tech.store_id)?.name||'') + ')</span>' : ''}</td>
-                            ${trainingCell}
-                            ${rosCell}
-                            ${csiCell}
-                            ${hrsTurnedCell}
-                            ${clockHrsCell}
-                            <td class="tw-eff" style="font-weight:700;color:${eff >= 100 ? '#10b981' : eff >= 75 ? '#f59e0b' : '#ef4444'}">${eff > 0 ? eff.toFixed(1) + '%' : '—'}</td>
-                            <td class="tw-prod" style="font-weight:700;color:${prod >= 85 ? '#10b981' : prod >= 70 ? '#f59e0b' : '#ef4444'}">${prod > 0 ? prod.toFixed(1) + '%' : '—'}</td>
-                            <td class="tw-prof" style="font-weight:700;color:${prof >= 100 ? '#10b981' : prof >= 75 ? '#f59e0b' : '#ef4444'}">${prof > 0 ? prof.toFixed(1) + '%' : '—'}</td>
-                        </tr>
-                    `;
-                });
-                document.getElementById('lubeWeeklyBody').innerHTML = lubeHtml;
-
-                // Lube totals footer (cumulative-MTD denominator aligned with each snapshot's as-of date)
-                const totalLubeAvail = lubeTotals.availSum || (lubeTotals.activeTechCount * periodAvailPerTech);
-                const lEff = lubeTotals.clockHrs > 0 ? (lubeTotals.hrsTurned / lubeTotals.clockHrs * 100) : 0;
-                const lProd = totalLubeAvail > 0 ? (lubeTotals.hrsTurned / totalLubeAvail * 100) : 0;
-                const lProf = totalLubeAvail > 0 ? (lubeTotals.clockHrs / totalLubeAvail * 100) : 0;
-                const lubeHeadcountLabel = lubeTotals.activeTechCount === storeLubes.length
-                    ? `${storeLubes.length} lube`
-                    : `${lubeTotals.activeTechCount}/${storeLubes.length} w/ hours`;
-                const lubeAvgAvailLabel = lubeTotals.activeTechCount > 0
-                    ? `~${Math.round(totalLubeAvail / lubeTotals.activeTechCount)}h avg/tech through as-of`
-                    : `${periodAvailPerTech}h/tech`;
-                document.getElementById('lubeWeeklyFooter').innerHTML = `
-                    <tr style="background:#e0e0e0;font-weight:700;">
-                        <td colspan="2">LUBE TOTALS <span style="font-weight:400;font-size:11px;color:#666;">(${lubeHeadcountLabel} · ${lubeAvgAvailLabel} · ${totalLubeAvail}h avail total)</span></td>
-                        <td>${lubeTotals.ros}</td>
-                        <td>—</td>
-                        <td>${lubeTotals.hrsTurned.toFixed(1)}</td>
-                        <td>${lubeTotals.clockHrs.toFixed(1)}</td>
-                        <td style="color:${lEff >= 100 ? '#10b981' : '#ef4444'}">${lEff > 0 ? lEff.toFixed(1) + '%' : '—'}</td>
-                        <td style="color:${lProd >= 85 ? '#10b981' : '#ef4444'}">${lProd > 0 ? lProd.toFixed(1) + '%' : '—'}</td>
-                        <td style="color:${lProf >= 100 ? '#10b981' : '#ef4444'}">${lProf > 0 ? lProf.toFixed(1) + '%' : '—'}</td>
-                    </tr>
-                `;
-
-                // Add live-calc listeners
-                document.querySelectorAll('.tw-hrs-turned, .tw-clock-hrs').forEach(input => {
-                    input.addEventListener('input', recalcTechRow);
-                });
+                    return totals;
+                };
+                const techTotals = rollupRange('tech', storeTechs);
+                const lubeTotals = rollupRange('lube', storeLubes);
 
                 // Load tech perf MTD/YTD and capacity analysis
                 loadTechPerformance(storeId, fc);
@@ -5443,26 +5228,6 @@
             } catch (error) {
                 console.error('Roster load error:', error);
             }
-        }
-
-        function recalcTechRow(e) {
-            const row = e.target.closest('tr');
-            const hrsTurned = parseFloat(row.querySelector('.tw-hrs-turned').value) || 0;
-            const clockHrs = parseFloat(row.querySelector('.tw-clock-hrs').value) || 0;
-            const weekStart = getWeekStart(document.getElementById('rosterWeekPicker').valueAsDate);
-            const availHrs = getAvailableHoursInWeek(weekStart);
-
-            // Fixed-ops standard: Prod = turned/avail, Prof = clock/avail
-            const eff = clockHrs > 0 ? (hrsTurned / clockHrs * 100) : 0;
-            const prod = availHrs > 0 ? (hrsTurned / availHrs * 100) : 0;
-            const prof = availHrs > 0 ? (clockHrs / availHrs * 100) : 0;
-
-            row.querySelector('.tw-eff').textContent = eff > 0 ? eff.toFixed(1) + '%' : '—';
-            row.querySelector('.tw-eff').style.color = eff >= 100 ? '#10b981' : eff >= 75 ? '#f59e0b' : '#ef4444';
-            row.querySelector('.tw-prod').textContent = prod > 0 ? prod.toFixed(1) + '%' : '—';
-            row.querySelector('.tw-prod').style.color = prod >= 85 ? '#10b981' : prod >= 70 ? '#f59e0b' : '#ef4444';
-            row.querySelector('.tw-prof').textContent = prof > 0 ? prof.toFixed(1) + '%' : '—';
-            row.querySelector('.tw-prof').style.color = prof >= 100 ? '#10b981' : prof >= 75 ? '#f59e0b' : '#ef4444';
         }
 
         function recalcAdvisorRoster() {
@@ -5490,58 +5255,6 @@
                 rankCell.textContent = rank;
                 rankCell.style.color = rank === 1 ? '#10b981' : rank === sorted.length && rank !== '—' ? '#ef4444' : '#1a1a1a';
             });
-        }
-
-        async function saveTechWeekly(tableBodyId, techType) {
-            const storeId = getSelectedStore();
-            // Cumulative-MTD model: the "as-of" date is the Entry Date picker.
-            // We keep the DB column name `week_start` but now treat it as the as-of date.
-            const entryDateEl = document.getElementById('techEntryDate');
-            const pickedDate = entryDateEl && entryDateEl.value
-                ? new Date(entryDateEl.value + 'T12:00:00')
-                : new Date();
-            const wsKey = dateToString(pickedDate);
-            if (!storeId || isAllStores()) { showToast('Select a specific store to save', 'error'); return; }
-
-            // Month/year are taken from the entry date (so an April 14 snapshot belongs to April).
-            const entryMonth = pickedDate.getMonth() + 1;
-            const entryYear = pickedDate.getFullYear();
-
-            try {
-                const rows = document.querySelectorAll(`#${tableBodyId} tr`);
-                for (const row of rows) {
-                    const techId = row.dataset.techId;
-                    const entry = {
-                        training: row.querySelector('.tw-training').value || null,
-                        ros_worked: parseFloat(row.querySelector('.tw-ros').value) || 0,
-                        csi_score: parseFloat(row.querySelector('.tw-csi').value) || null,
-                        hours_turned: parseFloat(row.querySelector('.tw-hrs-turned').value) || 0,
-                        clock_hours: parseFloat(row.querySelector('.tw-clock-hrs').value) || 0,
-                        store_id: storeId,
-                        week_start: wsKey, // as-of date (DB column kept for backwards compat)
-                        month: entryMonth,
-                        year: entryYear,
-                        tech_type: techType,
-                        tech_id: parseInt(techId)
-                    };
-                    const key = `${storeId}_${wsKey}_${techType}_${techId}`;
-                    techWeeklyData[key] = entry;
-                    await LS.saveTechWeeklyEntry(entry);
-                }
-                clearRosterDirty();
-                showToast(`${techType === 'tech' ? 'Technician' : 'Lube tech'} MTD snapshot saved as of ${wsKey}`);
-            } catch (error) {
-                console.error('Save tech weekly error:', error);
-                showToast('Failed to save tech data', 'error');
-                return;
-            }
-
-            // Refresh the performance and capacity views
-            const fc = facilityConfig[storeId] || { bays: 0 };
-            const storeTechs = technicians.filter(t => t.store_id === storeId && t.is_active !== false);
-            const storeLubes = lubeTechs.filter(t => t.store_id === storeId && t.is_active !== false);
-            const storeAdvs = advisors.filter(a => a.store_id === storeId && a.is_active !== false);
-            loadTechPerformance(storeId, fc);
         }
 
         function loadTechPerformance(storeId, fc) {
@@ -5580,8 +5293,10 @@
             const rangeInfo = getAvailableHoursInRange(rangeStart, rangeEnd);
             const periodAvailPerTech = rangeInfo.hours;
 
-            // Cumulative-MTD model: each entry is a running snapshot. For any period we want
-            // the LATEST snapshot per tech (not a sum) because the numbers are already inclusive.
+            // Daily-entry model: each entry is ONE day's work for ONE tech. For any period
+            // we SUM the daily entries in range (and average CSI across the days it was scored).
+            // (Previously this was cumulative-MTD snapshots — latest wins. Now Tech entry lives
+            // on the Daily Entry tab and is per-day, mirroring advisor entries.)
             const allMode = isAllStores();
             const perfMap = {};
             // Use ISO-string comparison to avoid timezone shifts —
@@ -5595,21 +5310,30 @@
                 if (d.week_start < rangeStartStr || d.week_start > rangeEndStr) return;
 
                 const key = `${d.tech_type}_${d.tech_id}`;
-                // Keep only the most-recent snapshot per tech — later dates overwrite earlier ones.
-                if (!perfMap[key] || d.week_start > perfMap[key].as_of) {
+                if (!perfMap[key]) {
                     perfMap[key] = {
-                        ros: d.ros_worked || 0,
-                        csiSum: d.csi_score ? d.csi_score : 0,
-                        csiCount: d.csi_score ? 1 : 0,
-                        hrsTurned: d.hours_turned || 0,
-                        clockHrs: d.clock_hours || 0,
-                        weeks: 1, // kept for field-compat with older render code
+                        ros: 0,
+                        csiSum: 0,
+                        csiCount: 0,
+                        hrsTurned: 0,
+                        clockHrs: 0,
+                        weeks: 0, // kept for field-compat with older render code
                         type: d.tech_type,
                         id: d.tech_id,
-                        training: d.training,
+                        training: d.training || '',
                         as_of: d.week_start
                     };
                 }
+                const p = perfMap[key];
+                p.ros += (d.ros_worked || 0);
+                p.hrsTurned += (d.hours_turned || 0);
+                p.clockHrs += (d.clock_hours || 0);
+                if (d.csi_score) { p.csiSum += d.csi_score; p.csiCount++; }
+                p.weeks++;
+                // Track the latest entry date in the range so the denominator helpers can
+                // still use it if needed — but for summing, denominator = range avail, not per-snapshot.
+                if (d.week_start > p.as_of) p.as_of = d.week_start;
+                if (d.training) p.training = d.training;
             });
 
             // Real trend: compare each tech's productivity to the immediately-preceding equal-length period.
@@ -5631,14 +5355,11 @@
                     if (!d.week_start) return;
                     if (d.week_start < startStr || d.week_start > endStr) return;
                     const key = `${d.tech_type}_${d.tech_id}`;
-                    // Cumulative-MTD: take the latest snapshot in the prior range, not the sum.
-                    if (!map[key] || d.week_start > map[key].as_of) {
-                        map[key] = {
-                            hrsTurned: d.hours_turned || 0,
-                            clockHrs: d.clock_hours || 0,
-                            as_of: d.week_start
-                        };
-                    }
+                    // Daily entries — SUM across the prior range so trend delta compares like-for-like totals.
+                    if (!map[key]) map[key] = { hrsTurned: 0, clockHrs: 0, as_of: d.week_start };
+                    map[key].hrsTurned += (d.hours_turned || 0);
+                    map[key].clockHrs += (d.clock_hours || 0);
+                    if (d.week_start > map[key].as_of) map[key].as_of = d.week_start;
                 });
                 return map;
             };
@@ -5687,14 +5408,11 @@
             const prodColor = v => v >= 85 ? '#10b981' : v >= 70 ? '#f59e0b' : '#ef4444';
             const profColor = v => v >= 100 ? '#10b981' : v >= 75 ? '#f59e0b' : '#ef4444';
 
-            // Cumulative-MTD denominator helper: avail hours from the snapshot's month-start
-            // through its as-of date. Keeps numerator and denominator aligned when snapshots
-            // land mid-month.
-            function availHoursThroughAsOf_perf(asOfStr) {
-                if (!asOfStr) return periodAvailPerTech;
-                const d = new Date(asOfStr + 'T12:00:00');
-                const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
-                return getAvailableHoursInRange(monthStart, d).hours;
+            // Daily-entry denominator: each tech's denominator is the full-range available
+            // hours for the selected period. Numerator (summed daily turned/clock hours) and
+            // denominator (total avail hours in the range) are both "whole period" totals.
+            function availHoursThroughAsOf_perf(_asOfStr) {
+                return periodAvailPerTech;
             }
 
             function renderGroup(staff, groupLabel) {
@@ -5708,8 +5426,8 @@
                     const key = `${s.staffType}_${s.id}`;
                     const p = perfMap[key] || {};
                     const hasData = (p.clockHrs || 0) > 0 || (p.hrsTurned || 0) > 0;
-                    // Cumulative-MTD: each tech's denominator is avail hours through their own as-of date.
-                    const availForThisTech = hasData ? availHoursThroughAsOf_perf(p.as_of) : periodAvailPerTech;
+                    // Daily-entry model: denominator is the full-range available hours.
+                    const availForThisTech = periodAvailPerTech;
                     // Fixed-ops standard: Prod = turned/avail, Prof = clock/avail
                     const eff = (p.clockHrs || 0) > 0 ? ((p.hrsTurned || 0) / p.clockHrs * 100) : 0;
                     const prod = availForThisTech > 0 ? ((p.hrsTurned || 0) / availForThisTech * 100) : 0;
