@@ -1446,10 +1446,11 @@
                             <label>Role *</label>
                             <select id="formRole" onchange="updateStoreCheckboxesForRole()" required>
                                 <option value="">Select role...</option>
-                                <option value="admin">Admin</option>
-                                <option value="manager">Manager</option>
-                                <option value="executive">Executive</option>
+                                <option value="admin" data-admin-only>Admin</option>
+                                <option value="manager" data-admin-only>Manager</option>
+                                <option value="executive" data-admin-only>Executive</option>
                                 <option value="advisor">Advisor (Advisor tab only)</option>
+                                <option value="technician">Technician (Roster tab only)</option>
                             </select>
                         </div>
                         <div class="control-group">
@@ -1754,11 +1755,15 @@
                 if (saveFacilityBtn) saveFacilityBtn.style.display = '';
                 if (baysKpiCard) baysKpiCard.style.display = '';
             } else if (currentUser.role === 'manager') {
-                // Managers can see Admin Console but NOT user accounts or executive staff
+                // Managers can see Admin Console. They can manage user accounts for their
+                // store staff (advisors + technicians only) but cannot create admin/manager/executive users.
                 adminTab.style.display = 'block';
-                if (userAccountsCard) userAccountsCard.style.display = 'none';
-                if (addUserFormCard) addUserFormCard.style.display = 'none';
+                if (userAccountsCard) userAccountsCard.style.display = 'block';
                 if (executiveStaffCard) executiveStaffCard.style.display = 'none';
+                // Hide admin-only role options in the Add User form
+                document.querySelectorAll('#formRole option[data-admin-only]').forEach(opt => {
+                    opt.style.display = 'none';
+                });
                 // Hide bays config and card for non-admins
                 if (facilityBaysGroup) facilityBaysGroup.style.display = 'none';
                 if (saveFacilityBtn) saveFacilityBtn.style.display = 'none';
@@ -1803,6 +1808,38 @@
                 if (advisorPanel) advisorPanel.classList.add('active');
 
                 // Advisors are read-only — they view their own performance but don't edit
+                document.querySelectorAll('input:not([readonly]), select, textarea').forEach(el => {
+                    if (!el.closest('#loginScreen') && !el.closest('.navbar')) {
+                        el.disabled = true;
+                    }
+                });
+            } else if (currentUser.role === 'technician') {
+                // Technicians: only see the Roster tab, read-only
+                adminTab.style.display = 'none';
+                if (goalsTab) goalsTab.style.display = 'none';
+                if (facilityBaysGroup) facilityBaysGroup.style.display = 'none';
+                if (saveFacilityBtn) saveFacilityBtn.style.display = 'none';
+                if (baysKpiCard) baysKpiCard.style.display = 'none';
+
+                // Hide every nav tab except the Roster tab
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    const tabId = btn.dataset.tab;
+                    if (tabId !== 'roster') {
+                        const li = btn.closest('.nav-tab');
+                        if (li) li.style.display = 'none';
+                        else btn.style.display = 'none';
+                    }
+                });
+
+                // Activate Roster tab
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                const rosterBtn = document.querySelector('.nav-btn[data-tab="roster"]');
+                const rosterPanel = document.getElementById('roster');
+                if (rosterBtn) rosterBtn.classList.add('active');
+                if (rosterPanel) rosterPanel.classList.add('active');
+
+                // Technicians are read-only
                 document.querySelectorAll('input:not([readonly]), select, textarea').forEach(el => {
                     if (!el.closest('#loginScreen') && !el.closest('.navbar')) {
                         el.disabled = true;
@@ -1967,8 +2004,17 @@
                 .map(cb => cb.value);
             const defaultStore = document.getElementById('formDefaultStore').value || null;
 
-            if (storeAccess.length === 0 && (role === 'manager' || role === 'advisor')) {
-                showToast(role === 'advisor' ? 'Advisors must have at least one store assigned' : 'Managers must have at least one store assigned', 'error');
+            if (storeAccess.length === 0 && (role === 'manager' || role === 'advisor' || role === 'technician')) {
+                const msg = role === 'advisor' ? 'Advisors must have at least one store assigned'
+                          : role === 'technician' ? 'Technicians must have at least one store assigned'
+                          : 'Managers must have at least one store assigned';
+                showToast(msg, 'error');
+                return;
+            }
+
+            // Managers can only create/edit advisor and technician accounts
+            if (currentUser && currentUser.role === 'manager' && role !== 'advisor' && role !== 'technician') {
+                showToast('Managers can only create Advisor or Technician accounts', 'error');
                 return;
             }
 
@@ -2071,7 +2117,18 @@
                 const tbody = document.getElementById('userManagementBody');
                 tbody.innerHTML = '';
 
-                allUsers.forEach(user => {
+                // Managers only see advisor/technician users within their own store access
+                let visibleUsers = allUsers;
+                if (currentUser && currentUser.role === 'manager') {
+                    const myStores = new Set((currentUser.store_access || []).map(String));
+                    visibleUsers = allUsers.filter(u => {
+                        if (u.role !== 'advisor' && u.role !== 'technician') return false;
+                        const theirStores = (u.user_store_access || []).map(a => String(a.store_id));
+                        return theirStores.some(s => myStores.has(s));
+                    });
+                }
+
+                visibleUsers.forEach(user => {
                     const storeIds = (user.user_store_access || []).map(a => a.store_id);
                     const storeLabels = storeIds.map(sid => {
                         const s = FALLBACK_STORES.find(fs => fs.id === sid);
@@ -2248,6 +2305,11 @@
                     showToast('Advisors only have access to the Advisor tab', 'error');
                     return;
                 }
+                // Technicians are restricted to the Roster tab
+                if (currentUser && currentUser.role === 'technician' && tabId !== 'roster') {
+                    showToast('Technicians only have access to the Roster tab', 'error');
+                    return;
+                }
                 // Warn if leaving a section with unsaved changes
                 if (currentTab && currentTab !== tabId && dirtyState[currentTab]) {
                     if (!confirmLeaveSection(currentTab)) return;
@@ -2412,6 +2474,7 @@
                             labor_day: entry.labor_day ?? entry.total_labor ?? 0,
                             parts_day: entry.parts_day ?? entry.total_parts ?? 0,
                             total_ros: entry.total_ros ?? 0,
+                            total_hours: entry.total_hours ?? 0,
                             store_nps: (entry.store_nps === undefined || entry.store_nps === '' ? null : entry.store_nps),
                             region_nps: (entry.region_nps === undefined || entry.region_nps === '' ? null : entry.region_nps),
                             day_number: entry.day_number || entry.day_of_month || 0,
@@ -2723,9 +2786,11 @@
                 // Apply store filtering and default store AFTER options are populated
                 applyStoreDefaults();
 
-                // Load daily entry (skip for advisors — they only see the Advisor tab)
+                // Load daily entry (skip for advisors/technicians — they have restricted tab access)
                 if (currentUser && currentUser.role === 'advisor') {
                     await loadAdvisor();
+                } else if (currentUser && currentUser.role === 'technician') {
+                    await loadRoster();
                 } else {
                     await loadDailyEntry();
                 }
