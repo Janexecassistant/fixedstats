@@ -2599,10 +2599,13 @@
                     try {
                         const { data, error } = await db.from('tech_weekly_entries').select('*');
                         if (!error && data) {
-                            // Convert to keyed object for fast lookup
+                            // Convert to keyed object for fast lookup.
+                            // Key includes period_end so legacy weekly rows and new daily rows
+                            // (which share week_start) don't overwrite each other.
                             const mapped = {};
                             data.forEach(d => {
-                                const key = `${d.store_id}_${d.week_start}_${d.tech_type}_${d.tech_id}`;
+                                const pe = d.period_end || d.week_start;
+                                const key = `${d.store_id}_${d.week_start}_${pe}_${d.tech_type}_${d.tech_id}`;
                                 mapped[key] = {
                                     training: d.training,
                                     ros_worked: d.ros_worked || 0,
@@ -2611,6 +2614,7 @@
                                     clock_hours: d.clock_hours || 0,
                                     store_id: d.store_id,
                                     week_start: d.week_start,
+                                    period_end: pe,
                                     month: d.month,
                                     year: d.year,
                                     tech_type: d.tech_type,
@@ -2625,11 +2629,16 @@
                 try { const raw = localStorage.getItem('dyer_tech_weekly'); return raw ? JSON.parse(raw) : {}; } catch(e) { return {}; }
             },
             async saveTechWeeklyEntry(entry) {
-                // Save to localStorage
-                const key = `${entry.store_id}_${entry.week_start}_${entry.tech_type}_${entry.tech_id}`;
+                // period_end is NOT NULL in the DB and part of the unique constraint.
+                // For the new per-day entry model, period_end == week_start (1-day range).
+                // Legacy weekly rows may have a different period_end — preserve if given.
+                const periodEnd = entry.period_end || entry.week_start;
+                // Save to localStorage — include period_end in key so daily rows don't
+                // collide with any legacy weekly row sharing the same week_start.
+                const key = `${entry.store_id}_${entry.week_start}_${periodEnd}_${entry.tech_type}_${entry.tech_id}`;
                 let all = {};
                 try { const raw = localStorage.getItem('dyer_tech_weekly'); if (raw) all = JSON.parse(raw); } catch(e) {}
-                all[key] = entry;
+                all[key] = { ...entry, period_end: periodEnd };
                 this._set('dyer_tech_weekly', all);
                 // Sync to Supabase
                 if (useSupabase) {
@@ -2639,6 +2648,7 @@
                             tech_id: entry.tech_id,
                             tech_type: entry.tech_type,
                             week_start: entry.week_start,
+                            period_end: periodEnd,
                             month: entry.month,
                             year: entry.year,
                             training: entry.training,
@@ -2648,8 +2658,9 @@
                             clock_hours: entry.clock_hours || 0,
                             updated_at: new Date().toISOString()
                         };
-                        await db.from('tech_weekly_entries').upsert(row, { onConflict: 'store_id,tech_id,tech_type,week_start' });
-                    } catch(e) { console.warn('Supabase saveTechWeeklyEntry failed', e); }
+                        const { error } = await db.from('tech_weekly_entries').upsert(row, { onConflict: 'store_id,tech_id,tech_type,week_start,period_end' });
+                        if (error) { console.error('Supabase saveTechWeeklyEntry error', error); throw error; }
+                    } catch(e) { console.warn('Supabase saveTechWeeklyEntry failed', e); throw e; }
                 }
             }
         };
@@ -3616,19 +3627,25 @@
                     const hoursTurned = hrsRaw === '' ? 0 : (parseFloat(hrsRaw) || 0);
                     const clockHours = clkRaw === '' ? 0 : (parseFloat(clkRaw) || 0);
                     const d = new Date(ds + 'T12:00:00');
-                    await LS.saveTechWeeklyEntry({
-                        store_id: storeId,
-                        tech_id: parseInt(techId),
-                        tech_type: techType,
-                        week_start: ds,                 // now functions as entry_date (one row per day)
-                        month: d.getMonth() + 1,
-                        year: d.getFullYear(),
-                        training: null,
-                        ros_worked: rosWorked,
-                        csi_score: csiScore,
-                        hours_turned: hoursTurned,
-                        clock_hours: clockHours
-                    });
+                    try {
+                        await LS.saveTechWeeklyEntry({
+                            store_id: storeId,
+                            tech_id: parseInt(techId),
+                            tech_type: techType,
+                            week_start: ds,                 // now functions as entry_date (one row per day)
+                            period_end: ds,                 // required NOT NULL in DB; same as week_start for 1-day rows
+                            month: d.getMonth() + 1,
+                            year: d.getFullYear(),
+                            training: null,
+                            ros_worked: rosWorked,
+                            csi_score: csiScore,
+                            hours_turned: hoursTurned,
+                            clock_hours: clockHours
+                        });
+                    } catch(e) {
+                        const techName = row.querySelector('td')?.textContent || `${techType} ${techId}`;
+                        failedSaves.push(techName);
+                    }
                 }
 
                 if (failedSaves.length > 0) {
