@@ -2050,18 +2050,21 @@
                         .eq('id', editingUserId);
 
                     if (updateError) {
-                        showToast('Failed to update user: ' + updateError.message, 'error');
+                        console.error('Update user error:', updateError);
+                        showToast('Failed to update user: ' + formatDbError(updateError), 'error');
                         return;
                     }
 
                     // Replace store access
-                    await db.from('user_store_access').delete().eq('user_id', editingUserId);
+                    const { error: delErr } = await db.from('user_store_access').delete().eq('user_id', editingUserId);
+                    if (delErr) { console.error('Clear store access error:', delErr); showToast('Failed to update store access: ' + formatDbError(delErr), 'error'); return; }
                     if (storeAccess.length > 0) {
                         const accessRecords = storeAccess.map(storeId => ({
                             user_id: editingUserId,
                             store_id: storeId
                         }));
-                        await db.from('user_store_access').insert(accessRecords);
+                        const { error: accErr } = await db.from('user_store_access').insert(accessRecords);
+                        if (accErr) { console.error('Insert store access error:', accErr); showToast('Failed to save store access: ' + formatDbError(accErr), 'error'); return; }
                     }
 
                     showToast('User updated successfully');
@@ -2079,7 +2082,8 @@
                     }).select();
 
                     if (userError) {
-                        showToast('Failed to create user: ' + userError.message, 'error');
+                        console.error('Create user error:', userError);
+                        showToast('Failed to create user: ' + formatDbError(userError), 'error');
                         return;
                     }
 
@@ -2091,7 +2095,13 @@
                             user_id: userId,
                             store_id: storeId
                         }));
-                        await db.from('user_store_access').insert(accessRecords);
+                        const { error: accErr } = await db.from('user_store_access').insert(accessRecords);
+                        if (accErr) {
+                            console.error('Insert store access error:', accErr);
+                            showToast('User created but store access failed: ' + formatDbError(accErr), 'error');
+                            await loadAdminUsers();
+                            return;
+                        }
                     }
 
                     showToast('User created successfully');
@@ -2101,7 +2111,7 @@
                 await loadAdminUsers();
             } catch (error) {
                 console.error('Save user error:', error);
-                showToast('Failed to save user', 'error');
+                showToast('Failed to save user: ' + formatDbError(error), 'error');
             }
         }
 
@@ -2261,12 +2271,26 @@
             return ((value || 0) * 100).toFixed(1) + '%';
         }
 
+        // Surface the most useful fields out of a Supabase/PostgREST error so "Failed"
+        // toasts actually tell you what went wrong.
+        function formatDbError(err) {
+            if (!err) return 'unknown error';
+            if (typeof err === 'string') return err;
+            const parts = [];
+            if (err.message) parts.push(err.message);
+            if (err.details && err.details !== err.message) parts.push(err.details);
+            if (err.hint) parts.push('hint: ' + err.hint);
+            if (err.code) parts.push('[' + err.code + ']');
+            return parts.length ? parts.join(' — ') : (err.toString() || 'unknown error');
+        }
+
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             toast.textContent = message;
             document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
+            // Error toasts linger longer so managers can actually read them.
+            setTimeout(() => toast.remove(), type === 'error' ? 8000 : 3000);
         }
 
         function getMonthYear(date) {
@@ -3831,11 +3855,42 @@
                 // For Gross/RO: actual is current avg, tracking is same (doesn't project differently), goal is target
                 const grossPerRoPace = grossPerRoGoal > 0 ? (avgGrossPerRo / grossPerRoGoal) * 100 : 0;
 
+                // Per-store breakdowns when viewing All Stores
+                let laborBreakdowns = null, partsBreakdowns = null, grossBreakdowns = null, gprBreakdowns = null;
+                if (allMode) {
+                    laborBreakdowns = [];
+                    partsBreakdowns = [];
+                    grossBreakdowns = [];
+                    gprBreakdowns = [];
+                    stores.forEach(store => {
+                        const sDaily = dailyData.filter(d => d.store_id === store.id);
+                        const sAdv = advisorData.filter(d => d.store_id === store.id);
+                        const sGoal = allGoals.find(g => g.store_id === store.id);
+                        const sLabor = sDaily.reduce((s, d) => s + (d.labor_day || 0), 0);
+                        const sParts = sDaily.reduce((s, d) => s + (d.parts_day || 0), 0);
+                        const sGross = sLabor + sParts;
+                        const sLaborTrack = (sLabor / dayOfMonth) * daysInMonth;
+                        const sPartsTrack = (sParts / dayOfMonth) * daysInMonth;
+                        const sGrossTrack = (sGross / dayOfMonth) * daysInMonth;
+                        const sLaborGoal = sGoal?.labor_goal || 0;
+                        const sPartsGoal = sGoal?.parts_goal || 0;
+                        const sGrossGoal = sGoal?.total_gross_goal || 0;
+                        const sGprGoal = sGoal?.gross_per_ro_target || 0;
+                        const sAdvGross = sAdv.reduce((s, d) => s + (d.total_gross || 0), 0);
+                        const sAdvRo = sAdv.reduce((s, d) => s + (d.ro_count || 0), 0);
+                        const sGpr = sAdvRo > 0 ? sAdvGross / sAdvRo : 0;
+                        laborBreakdowns.push({ code: store.code, pct: sLaborGoal > 0 ? (sLaborTrack / sLaborGoal) * 100 : 0 });
+                        partsBreakdowns.push({ code: store.code, pct: sPartsGoal > 0 ? (sPartsTrack / sPartsGoal) * 100 : 0 });
+                        grossBreakdowns.push({ code: store.code, pct: sGrossGoal > 0 ? (sGrossTrack / sGrossGoal) * 100 : 0 });
+                        gprBreakdowns.push({ code: store.code, pct: sGprGoal > 0 ? (sGpr / sGprGoal) * 100 : 0 });
+                    });
+                }
+
                 document.getElementById('dashboardKpis').innerHTML = `
-                    ${createGoalPieCard('Labor', laborMtd, laborTracking, laborGoal, laborPace)}
-                    ${createGoalPieCard('Parts', partsMtd, partsTracking, partsGoal, partsPace)}
-                    ${createGoalPieCard('Total Gross', totalGrossMtd, totalGrossTracking, totalGrossGoal, grossPace)}
-                    ${createGoalPieCard('Gross / RO', avgGrossPerRo, avgGrossPerRo, grossPerRoGoal, grossPerRoPace)}
+                    ${createGoalPieCard('Labor', laborMtd, laborTracking, laborGoal, laborPace, laborBreakdowns)}
+                    ${createGoalPieCard('Parts', partsMtd, partsTracking, partsGoal, partsPace, partsBreakdowns)}
+                    ${createGoalPieCard('Total Gross', totalGrossMtd, totalGrossTracking, totalGrossGoal, grossPace, grossBreakdowns)}
+                    ${createGoalPieCard('Gross / RO', avgGrossPerRo, avgGrossPerRo, grossPerRoGoal, grossPerRoPace, gprBreakdowns)}
                 `;
 
                 // Build daily performance table — every day of the month
@@ -4059,7 +4114,61 @@
             }
         }
 
-        function createGoalPieCard(label, actual, tracking, goal, pct) {
+        function createMiniStoreCircle(code, pct) {
+            const hasGoal = pct > 0;
+            const pctVal = Math.min(Math.max(pct, 0), 100);
+            const color = pct >= 95 ? '#4ade80' : pct >= 80 ? '#facc15' : '#f97316';
+            const colorGlow = pct >= 95 ? '#22c55e' : pct >= 80 ? '#eab308' : '#ea580c';
+            const cx = 36, cy = 36;
+            const progressR = 26;
+            const circumference = 2 * Math.PI * progressR;
+            const filled = (pctVal / 100) * circumference;
+            const empty = circumference - filled;
+
+            // Mini tread blocks
+            const numTreads = 28;
+            let treads = '';
+            for (let i = 0; i < numTreads; i++) {
+                const angle = (i / numTreads) * 360;
+                const rad = (angle * Math.PI) / 180;
+                const x = cx + 33 * Math.cos(rad);
+                const y = cy + 33 * Math.sin(rad);
+                treads += `<rect x="${x - 1.7}" y="${y - 0.9}" width="3.4" height="1.8" rx="0.3" fill="#555" transform="rotate(${angle}, ${x}, ${y})"/>`;
+            }
+
+            return `
+                <div style="text-align:center;">
+                    <div style="position:relative;display:inline-block;">
+                        <svg width="72" height="72" viewBox="0 0 72 72">
+                            <!-- Outer tire body -->
+                            <circle cx="${cx}" cy="${cy}" r="34" fill="#1a1a1a"/>
+                            <circle cx="${cx}" cy="${cy}" r="33" fill="none" stroke="#3a3a3a" stroke-width="1.5"/>
+                            <!-- Tread blocks -->
+                            ${treads}
+                            <!-- Sidewall -->
+                            <circle cx="${cx}" cy="${cy}" r="29" fill="#2a2a2a"/>
+                            <circle cx="${cx}" cy="${cy}" r="28" fill="none" stroke="#3a3a3a" stroke-width="0.4"/>
+                            <!-- Progress track -->
+                            <circle cx="${cx}" cy="${cy}" r="${progressR}" fill="none" stroke="#1a1a1a" stroke-width="5"/>
+                            <!-- Progress fill -->
+                            <circle cx="${cx}" cy="${cy}" r="${progressR}" fill="none" stroke="${hasGoal ? color : '#444'}" stroke-width="4.5"
+                                stroke-dasharray="${filled} ${empty}" stroke-linecap="round"
+                                transform="rotate(-90, ${cx}, ${cy})" opacity="0.95"/>
+                            <!-- Hub -->
+                            <circle cx="${cx}" cy="${cy}" r="18" fill="#111"/>
+                            <circle cx="${cx}" cy="${cy}" r="16" fill="#1a1a1a" stroke="#333" stroke-width="0.5"/>
+                            <circle cx="${cx}" cy="${cy}" r="4" fill="#222" stroke="#444" stroke-width="0.4"/>
+                        </svg>
+                        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:13px;font-weight:900;color:#fff;text-shadow:0 0 6px ${hasGoal ? colorGlow : 'rgba(0,0,0,0.9)'}, 0 1px 2px rgba(0,0,0,0.9);">
+                            ${hasGoal ? pct.toFixed(0) + '%' : '—'}
+                        </div>
+                    </div>
+                    <div style="font-size:10px;color:#555;text-transform:uppercase;letter-spacing:0.4px;font-weight:700;margin-top:3px;">${code}</div>
+                </div>
+            `;
+        }
+
+        function createGoalPieCard(label, actual, tracking, goal, pct, breakdowns) {
             const pctVal = Math.min(pct, 100);
             // Brighter, more visible colors
             const color = pct >= 95 ? '#4ade80' : pct >= 80 ? '#facc15' : '#f97316';
@@ -4165,6 +4274,11 @@
                             <div style="font-size:14px;font-weight:700;color:#ddd;">${goalStr}</div>
                         </div>
                     </div>
+                    ${(breakdowns && breakdowns.length > 0) ? `
+                        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.12);">
+                            ${breakdowns.map(b => createMiniStoreCircle(b.code, b.pct)).join('')}
+                        </div>
+                    ` : ''}
                 </div>
             `;
         }
