@@ -1243,24 +1243,13 @@
                                 <td><input type="number" id="partsWholesaleGrossDay" class="input-yellow parts-channel-gross" data-channel="wholesale" placeholder="0"></td>
                                 <td class="input-gray parts-channel-gp" id="partsWholesaleGp" style="text-align:right;">—</td>
                             </tr>
-                            <tr>
-                                <td style="font-weight:600;" id="partsCounter1Label">Counter 1</td>
-                                <td><input type="number" id="partsCounter1Day" class="input-yellow parts-channel-sales parts-counter-sales" data-channel="counter1" placeholder="0"></td>
-                                <td><input type="number" id="partsCounter1GrossDay" class="input-yellow parts-channel-gross parts-counter-gross" data-channel="counter1" placeholder="0"></td>
-                                <td class="input-gray parts-channel-gp" id="partsCounter1Gp" style="text-align:right;">—</td>
+                            <tr style="background-color:#eef2ff;">
+                                <td colspan="4" style="font-weight:700;color:#475569;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;padding:6px 8px;">Counter People — pulled from Admin Console → Department Staff</td>
                             </tr>
-                            <tr>
-                                <td style="font-weight:600;" id="partsCounter2Label">Counter 2</td>
-                                <td><input type="number" id="partsCounter2Day" class="input-yellow parts-channel-sales parts-counter-sales" data-channel="counter2" placeholder="0"></td>
-                                <td><input type="number" id="partsCounter2GrossDay" class="input-yellow parts-channel-gross parts-counter-gross" data-channel="counter2" placeholder="0"></td>
-                                <td class="input-gray parts-channel-gp" id="partsCounter2Gp" style="text-align:right;">—</td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight:600;" id="partsCounter3Label">Counter 3</td>
-                                <td><input type="number" id="partsCounter3Day" class="input-yellow parts-channel-sales parts-counter-sales" data-channel="counter3" placeholder="0"></td>
-                                <td><input type="number" id="partsCounter3GrossDay" class="input-yellow parts-channel-gross parts-counter-gross" data-channel="counter3" placeholder="0"></td>
-                                <td class="input-gray parts-channel-gp" id="partsCounter3Gp" style="text-align:right;">—</td>
-                            </tr>
+                        </tbody>
+                        <!-- Dynamic counter people rows — one per active parts_counter for the selected store -->
+                        <tbody id="partsCounterRowsBody"></tbody>
+                        <tbody>
                             <tr style="background-color:#f3f4f6;">
                                 <td style="font-weight:700;">Counter Total (auto)</td>
                                 <td class="input-gray" id="partsCounterTotalDay">$0</td>
@@ -1318,7 +1307,7 @@
                 </table>
 
                 <p style="font-size:12px;color:#666;margin-top:14px;">
-                    Configure counter person names in <strong>Admin Console → Manage Parts Counter People</strong> — they'll appear as row labels here.
+                    Counter People are managed in <strong>Admin Console → Department Staff → Parts Counter People</strong>. Adding, editing, or deactivating someone there automatically updates the rows above.
                 </p>
             </div>
 
@@ -1332,16 +1321,174 @@
 
         <!-- TAB: COLLISION DAILY ENTRY (Collision Manager) — DCVB only -->
         <div id="collisionDaily" class="tab-content">
+            <!-- Heading + date / day# / days-in-month picker (always visible) -->
             <div class="card">
                 <h2 class="card-title">Collision Daily Entry <span style="font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-left:8px;">Collision Manager</span></h2>
-                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Collision Center daily numbers for DCVB — body shop receivables, sublet, WIP, parts inventory variance, plus per-estimator keys-to-keys and ROs delivered-not-closed.</p>
-                <div id="collisionDailyContent">
-                    <div style="padding:30px 16px;text-align:center;color:#475569;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;">
-                        <div style="font-size:42px;margin-bottom:10px;">🚧</div>
-                        <div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:6px;">Coming Next</div>
-                        <div style="max-width:560px;margin:0 auto;font-size:13px;line-height:1.55;">
-                            The Collision daily entry form is wired up next. It will only show fields when <strong>DCVB</strong> is the selected store, with Collision Gross trend, ICAR / OEM cert status, Body Shop Receivables (#22002, ≥15 days), Cash Clearing (≥4 days), Body Shop Sublet (≥30 days), Pending Parts Credit Balance, Parts Inventory EOM Variance, Labor WIP Account #24701, plus three named estimator slots tracking Keys-to-Keys, # ROs delivered not closed, and $ ROs delivered not closed.
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Collision Center daily numbers for DCVB — body shop receivables, sublet, WIP, parts inventory variance, plus per-estimator Keys-to-Keys and ROs delivered, plus per body-tech and painter production hours.</p>
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Date</label>
+                        <input type="date" id="collisionDailyDatePicker">
+                    </div>
+                    <div class="control-group">
+                        <label>Working Day #</label>
+                        <input type="number" id="collisionDailyDayNumber" min="1" max="27" readonly style="background:#f0f0f0;">
+                    </div>
+                    <div class="control-group">
+                        <label>Working Days in Month</label>
+                        <input type="number" id="collisionDailyDaysInMonth" min="20" max="27" readonly style="background:#f0f0f0;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- The "DCVB only" banner / form switches in/out via JS into #collisionDailyContent -->
+            <div id="collisionDailyContent">
+
+                <!-- Money panel — collision gross + the 6 health-watch dollars + WIP -->
+                <div class="card">
+                    <h3 class="card-title">Collision Money Panel</h3>
+                    <p style="font-size:12px;color:#666;margin:-6px 0 14px 0;">
+                        Daily Collision Gross plus the cash-flow watch numbers. Aging thresholds are baked in — only enter dollars
+                        <strong>at or beyond</strong> each threshold. Receivables = account #22002 ≥15 days. Cash Clearing ≥4 days.
+                        Sublet ≥30 days. Labor WIP = account #24701.
+                    </p>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">
+                        <div class="control-group">
+                            <label>Collision Gross $ (today)</label>
+                            <input type="number" id="collisionGrossDay" class="input-yellow" placeholder="0">
                         </div>
+                        <div class="control-group">
+                            <label>Body Shop Receivables $ (#22002 ≥ 15d)</label>
+                            <input type="number" id="collisionReceivablesDay" class="input-yellow" placeholder="0">
+                        </div>
+                        <div class="control-group">
+                            <label>Cash Clearing $ (≥ 4d)</label>
+                            <input type="number" id="collisionCashClearingDay" class="input-yellow" placeholder="0">
+                        </div>
+                        <div class="control-group">
+                            <label>Body Shop Sublet $ (≥ 30d)</label>
+                            <input type="number" id="collisionSubletDay" class="input-yellow" placeholder="0">
+                        </div>
+                        <div class="control-group">
+                            <label>Pending Parts Credit $</label>
+                            <input type="number" id="collisionPartsCreditDay" class="input-yellow" placeholder="0">
+                        </div>
+                        <div class="control-group">
+                            <label>Parts Inventory EOM Variance $</label>
+                            <input type="number" id="collisionInventoryVarianceDay" class="input-yellow" placeholder="0">
+                        </div>
+                        <div class="control-group">
+                            <label>Labor WIP $ (#24701)</label>
+                            <input type="number" id="collisionLaborWipDay" class="input-yellow" placeholder="0">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cert status -->
+                <div class="card">
+                    <h3 class="card-title">Cert Status</h3>
+                    <p style="font-size:12px;color:#666;margin:-6px 0 14px 0;">Track ICAR and OEM certifications for the body shop. Optional expiry helps flag renewals.</p>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">
+                        <div class="control-group">
+                            <label><input type="checkbox" id="collisionIcarCert" style="margin-right:6px;">ICAR Certified</label>
+                            <input type="date" id="collisionIcarExpiry" class="input-yellow" placeholder="Expiry (optional)">
+                        </div>
+                        <div class="control-group">
+                            <label><input type="checkbox" id="collisionOemCert" style="margin-right:6px;">OEM Certified</label>
+                            <input type="date" id="collisionOemExpiry" class="input-yellow" placeholder="Expiry (optional)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Per-Estimator productivity -->
+                <div class="card">
+                    <h3 class="card-title">Estimators — Keys-to-Keys &amp; ROs Delivered</h3>
+                    <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">
+                        One row per active estimator from <strong>Admin Console → Department Staff → Estimators</strong>.
+                        Enter <em>Keys-to-Keys days</em>, <em># ROs delivered (not closed)</em>, and <em>$ ROs delivered (not closed)</em> for today.
+                    </p>
+                    <div style="overflow-x:auto;">
+                        <table style="min-width:760px;">
+                            <thead>
+                                <tr style="background-color:#f8fafc;">
+                                    <th style="text-align:left;">Estimator</th>
+                                    <th style="width:140px;">Keys-to-Keys (days)</th>
+                                    <th style="width:140px;"># ROs Delivered</th>
+                                    <th style="width:160px;">$ ROs Delivered</th>
+                                </tr>
+                            </thead>
+                            <tbody id="collisionEstimatorRowsBody"></tbody>
+                            <tbody>
+                                <tr style="background-color:#f3f4f6;">
+                                    <td style="font-weight:700;">Totals (auto)</td>
+                                    <td class="input-gray" id="collisionEstK2kAvg" style="text-align:right;">—</td>
+                                    <td class="input-gray" id="collisionEstRosCount" style="text-align:right;font-weight:700;">0</td>
+                                    <td class="input-gray" id="collisionEstRosDollars" style="text-align:right;font-weight:700;">$0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Per-Body Tech production hours -->
+                <div class="card">
+                    <h3 class="card-title">Body Techs — Production Hours</h3>
+                    <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">One row per active body tech. Enter today's <strong>production hours</strong>. Skill level (A/B/C) is shown for context.</p>
+                    <div style="overflow-x:auto;">
+                        <table style="min-width:560px;">
+                            <thead>
+                                <tr style="background-color:#f8fafc;">
+                                    <th style="text-align:left;">Body Tech</th>
+                                    <th style="width:80px;">Skill</th>
+                                    <th style="width:160px;">Production Hours</th>
+                                </tr>
+                            </thead>
+                            <tbody id="collisionBodyTechRowsBody"></tbody>
+                            <tbody>
+                                <tr style="background-color:#f3f4f6;">
+                                    <td colspan="2" style="font-weight:700;">Total Body-Tech Hours (auto)</td>
+                                    <td class="input-gray" id="collisionBodyTechHoursTotal" style="text-align:right;font-weight:700;">0.0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Per-Painter production hours -->
+                <div class="card">
+                    <h3 class="card-title">Painters — Production Hours</h3>
+                    <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">One row per active painter. Enter today's <strong>production hours</strong>.</p>
+                    <div style="overflow-x:auto;">
+                        <table style="min-width:560px;">
+                            <thead>
+                                <tr style="background-color:#f8fafc;">
+                                    <th style="text-align:left;">Painter</th>
+                                    <th style="width:80px;">Skill</th>
+                                    <th style="width:160px;">Production Hours</th>
+                                </tr>
+                            </thead>
+                            <tbody id="collisionPainterRowsBody"></tbody>
+                            <tbody>
+                                <tr style="background-color:#f3f4f6;">
+                                    <td colspan="2" style="font-weight:700;">Total Painter Hours (auto)</td>
+                                    <td class="input-gray" id="collisionPainterHoursTotal" style="text-align:right;font-weight:700;">0.0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div class="card">
+                    <h3 class="card-title">Notes (optional)</h3>
+                    <textarea id="collisionDailyNotes" class="input-yellow" placeholder="Anything worth flagging for tomorrow's review — supplements pending, parts delays, customer escalations, etc." style="min-height:80px;width:100%;"></textarea>
+                </div>
+
+                <!-- Save -->
+                <div class="card">
+                    <div class="btn-group" style="display:flex;align-items:center;gap:12px;">
+                        <button class="btn" id="saveCollisionDailyBtn">Save Collision Daily Entry</button>
+                        <span class="unsaved-badge" data-section="collisionDaily" style="display:none;">● Unsaved changes</span>
                     </div>
                 </div>
             </div>
@@ -1487,7 +1634,7 @@
             <!-- Per-counterperson leaderboard -->
             <div class="card">
                 <h3 class="card-title">Counter People Leaderboard — MTD</h3>
-                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Each counter person's MTD sales. In All Stores view, names are aggregated per slot across stores. Coach low performers; replicate top performers' approach.</p>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Each counter person's MTD sales. Names come from Admin Console → Department Staff. Coach low performers; replicate top performers' approach.</p>
                 <div style="overflow-x:auto;">
                     <table id="partsCounterLeaderboard">
                         <thead>
@@ -3060,15 +3207,15 @@
             else if (tabId === 'collisionDaily') loadCollisionDailyEntry();
             else if (tabId === 'dashboard') loadDashboard();
             else if (tabId === 'parts') loadPartsDashboard();
-            else if (tabId === 'collisionDashboard') { /* placeholder */ }
+            else if (tabId === 'collisionDashboard') loadCollisionDashboard();
             else if (tabId === 'executive') loadExecutive();
             else if (tabId === 'advisor') loadAdvisor();
             else if (tabId === 'partsAdvisor') { /* placeholder */ }
-            else if (tabId === 'collisionAdvisor') { /* placeholder */ }
+            else if (tabId === 'collisionAdvisor') loadCollisionAdvisor();
             else if (tabId === 'goals') loadGoals();
             else if (tabId === 'roster') loadRoster();
             else if (tabId === 'partsRoster') { if (typeof loadPartsRosterPerf === 'function') loadPartsRosterPerf(); }
-            else if (tabId === 'collisionRoster') { /* placeholder */ }
+            else if (tabId === 'collisionRoster') loadCollisionRoster();
             else if (tabId === 'admin') loadStaffManagement();
             return true;
         }
@@ -3439,18 +3586,14 @@
                         const row = {
                             store_id: entry.store_id,
                             entry_date: entry.entry_date,
-                            // Sales per channel
+                            // Sales per non-counter channel
                             service_parts: entry.service_parts || 0,
                             wholesale: entry.wholesale || 0,
-                            counter1: entry.counter1 || 0,
-                            counter2: entry.counter2 || 0,
-                            counter3: entry.counter3 || 0,
-                            // Gross per channel (new)
+                            // Gross per non-counter channel
                             service_parts_gross: entry.service_parts_gross || 0,
                             wholesale_gross: entry.wholesale_gross || 0,
-                            counter1_gross: entry.counter1_gross || 0,
-                            counter2_gross: entry.counter2_gross || 0,
-                            counter3_gross: entry.counter3_gross || 0,
+                            // Per-counter-person breakdown — keyed by parts_counter staff_id
+                            counter_breakdown: entry.counter_breakdown || {},
                             // Inventory + obso for obso% calc
                             inventory: entry.inventory || 0,
                             obso: entry.obso || 0,
@@ -3464,6 +3607,55 @@
                         };
                         await db.from('parts_entries').upsert(row, { onConflict: 'store_id,entry_date' });
                     } catch(e) { /* offline / table missing or new columns missing — already in LS */ }
+                }
+                return { ok: true };
+            },
+
+            // --- Collision Manager: daily entries (DCVB only — separate stream from service / parts) ---
+            async getCollisionEntries() {
+                if (useSupabase) {
+                    try {
+                        const { data, error } = await db.from('collision_entries').select('*');
+                        if (!error && data) { this._set('dyer_collision_entries', data); return data; }
+                    } catch(e) { /* table may not exist; fall back to LS */ }
+                }
+                return this._get('dyer_collision_entries');
+            },
+            async saveCollisionEntry(entry) {
+                const all = this._get('dyer_collision_entries');
+                const idx = all.findIndex(d => d.store_id === entry.store_id && d.entry_date === entry.entry_date);
+                if (idx >= 0) all[idx] = entry; else all.push(entry);
+                this._set('dyer_collision_entries', all);
+                if (useSupabase) {
+                    try {
+                        const row = {
+                            store_id: entry.store_id,
+                            entry_date: entry.entry_date,
+                            day_number: entry.day_number || 0,
+                            days_in_month: entry.days_in_month || 0,
+                            // Money
+                            collision_gross:          entry.collision_gross          || 0,
+                            body_shop_receivables:    entry.body_shop_receivables    || 0,
+                            cash_clearing:            entry.cash_clearing            || 0,
+                            body_shop_sublet:         entry.body_shop_sublet         || 0,
+                            pending_parts_credit:     entry.pending_parts_credit     || 0,
+                            parts_inventory_variance: entry.parts_inventory_variance || 0,
+                            labor_wip:                entry.labor_wip                || 0,
+                            // Cert
+                            icar_certified: !!entry.icar_certified,
+                            icar_expiry:    entry.icar_expiry || null,
+                            oem_certified:  !!entry.oem_certified,
+                            oem_expiry:     entry.oem_expiry || null,
+                            // Per-staff breakdowns
+                            estimator_breakdown: entry.estimator_breakdown || {},
+                            body_tech_breakdown: entry.body_tech_breakdown || {},
+                            painter_breakdown:   entry.painter_breakdown   || {},
+                            notes: entry.notes || null,
+                            updated_at: new Date().toISOString(),
+                            updated_by: currentUser ? currentUser.id : null
+                        };
+                        await db.from('collision_entries').upsert(row, { onConflict: 'store_id,entry_date' });
+                    } catch(e) { /* offline / table missing — already in LS */ }
                 }
                 return { ok: true };
             },
@@ -3644,13 +3836,21 @@
                     }
                 } catch(e) { /* ignore */ }
                 // date picker expects a UTC-based Date for valueAsDate
-                document.getElementById('dailyDatePicker').valueAsDate = new Date(Date.UTC(pickerInitDate.getFullYear(), pickerInitDate.getMonth(), pickerInitDate.getDate()));
+                const utcInit = new Date(Date.UTC(pickerInitDate.getFullYear(), pickerInitDate.getMonth(), pickerInitDate.getDate()));
+                document.getElementById('dailyDatePicker').valueAsDate = utcInit;
+                const collisionPicker = document.getElementById('collisionDailyDatePicker');
+                if (collisionPicker) collisionPicker.valueAsDate = utcInit;
                 document.getElementById('rosterWeekPicker').valueAsDate = today;
 
                 // Set working day # and working days in month (auto-calculated from picker date)
                 document.getElementById('dailyDayNumber').value = getWorkingDayOfMonth(pickerInitDate);
                 const wd = getWorkingDaysInMonth(pickerInitDate.getFullYear(), pickerInitDate.getMonth() + 1);
                 document.getElementById('dailyDaysInMonth').value = wd.totalDays;
+                // Same for collision picker (same default date)
+                if (document.getElementById('collisionDailyDayNumber')) {
+                    document.getElementById('collisionDailyDayNumber').value = getWorkingDayOfMonth(pickerInitDate);
+                    document.getElementById('collisionDailyDaysInMonth').value = wd.totalDays;
+                }
 
                 // Populate store dropdowns
                 populateStoreSelects();
@@ -3913,14 +4113,11 @@
             if (savePartsDailyBtn) {
                 savePartsDailyBtn.addEventListener('click', savePartsDailyEntry);
             }
-            // Wire auto-sum + dirty tracking on parts inputs (now lives on the partsDaily tab).
-            // New schema: paired Sales + Gross per channel, plus Inventory $ + Obso $.
+            // Wire auto-sum + dirty tracking on the static parts inputs (Service / Wholesale / Inventory / Obso).
+            // Counter person rows are dynamic — their listeners are wired in renderPartsCounterRows().
             const partsInputIds = [
                 'partsServiceDay', 'partsServiceGrossDay',
                 'partsWholesaleDay', 'partsWholesaleGrossDay',
-                'partsCounter1Day', 'partsCounter1GrossDay',
-                'partsCounter2Day', 'partsCounter2GrossDay',
-                'partsCounter3Day', 'partsCounter3GrossDay',
                 'partsInventoryDay', 'partsObsoDay'
             ];
             partsInputIds.forEach(id => {
@@ -3929,6 +4126,52 @@
                 el.addEventListener('input', updatePartsDailyCalculations);
                 el.addEventListener('input', () => markDirty('partsDaily'));
                 el.addEventListener('change', () => markDirty('partsDaily'));
+            });
+
+            // Collision Daily Entry — initialize date picker + day#/days, wire change handler, save, static inputs.
+            const collisionDailyPicker = document.getElementById('collisionDailyDatePicker');
+            if (collisionDailyPicker) {
+                const initFromService = document.getElementById('dailyDatePicker')?.valueAsDate;
+                if (initFromService) {
+                    collisionDailyPicker.valueAsDate = initFromService;
+                    const initDate = pickerDate(initFromService);
+                    document.getElementById('collisionDailyDayNumber').value = getWorkingDayOfMonth(initDate);
+                    const cwd = getWorkingDaysInMonth(initDate.getFullYear(), initDate.getMonth() + 1);
+                    document.getElementById('collisionDailyDaysInMonth').value = cwd.totalDays;
+                }
+                let lastCollisionDateVal = collisionDailyPicker.value;
+                collisionDailyPicker.addEventListener('change', () => {
+                    if (!confirmLeaveSection('collisionDaily')) {
+                        collisionDailyPicker.value = lastCollisionDateVal;
+                        return;
+                    }
+                    clearDirty('collisionDaily');
+                    lastCollisionDateVal = collisionDailyPicker.value;
+                    const date = pickerDate(collisionDailyPicker.valueAsDate);
+                    document.getElementById('collisionDailyDayNumber').value = getWorkingDayOfMonth(date);
+                    const cwd = getWorkingDaysInMonth(date.getFullYear(), date.getMonth() + 1);
+                    document.getElementById('collisionDailyDaysInMonth').value = cwd.totalDays;
+                    loadCollisionDailyEntry();
+                });
+            }
+            const saveCollisionDailyBtn = document.getElementById('saveCollisionDailyBtn');
+            if (saveCollisionDailyBtn) {
+                saveCollisionDailyBtn.addEventListener('click', saveCollisionDailyEntry);
+            }
+            // Static collision inputs — money panel + cert + notes. Per-staff rows are dynamic; their
+            // listeners are wired inside renderCollisionEstimatorRows / BodyTechRows / PainterRows.
+            const collisionStaticIds = [
+                'collisionGrossDay', 'collisionReceivablesDay', 'collisionCashClearingDay',
+                'collisionSubletDay', 'collisionPartsCreditDay', 'collisionInventoryVarianceDay',
+                'collisionLaborWipDay',
+                'collisionIcarCert', 'collisionIcarExpiry', 'collisionOemCert', 'collisionOemExpiry',
+                'collisionDailyNotes'
+            ];
+            collisionStaticIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('input', () => markDirty('collisionDaily'));
+                el.addEventListener('change', () => markDirty('collisionDaily'));
             });
 
             // Dashboard month picker
@@ -4056,20 +4299,101 @@
             return [getSelectedStore()];
         }
 
-        // Pull counter person names from the per-store Parts roster and label the
-        // Counter 1/2/3 inputs on the Daily Entry → Parts Department card. Falls back
-        // to "Counter 1/2/3 $" if no roster row exists yet.
-        function applyPartsCounterLabels(storeId) {
-            const roster = LS.getPartsRoster ? LS.getPartsRoster() : [];
-            const row = (roster || []).find(r => r.store_id === storeId);
-            const lbl = (i, name) => {
-                const el = document.getElementById('partsCounter' + i + 'Label');
-                if (!el) return;
-                el.textContent = name ? `${name} $` : `Counter ${i} $`;
-            };
-            lbl(1, row?.counter1_name);
-            lbl(2, row?.counter2_name);
-            lbl(3, row?.counter3_name);
+        // ============================================================================
+        // Parts Counter People — dynamic rows wired to Admin Console → Department Staff
+        // ============================================================================
+        // The Parts Daily Entry "Counter People" section is rendered dynamically: one
+        // row per active parts_counter from staff_overrides for the selected store.
+        // Add/edit/deactivate someone in Admin Console → Department Staff and they
+        // automatically appear here on the next render.
+        //
+        // Storage shape on parts_entries.counter_breakdown:
+        //   { "<staff_id>": { sales: <num>, gross: <num> }, ... }
+        //
+        // Legacy entries (with counter1/2/3 + counter1_gross/.. + parts_roster names)
+        // are auto-migrated into a synthetic breakdown on read so the dashboard and
+        // leaderboard keep working for historical data without a forced migration.
+
+        // Pull active parts counter people for a store, ordered by name.
+        function getPartsCounterPeopleForStore(storeId) {
+            return (partsCounterStaff || [])
+                .filter(s => s.store_id === storeId && s.is_active !== false)
+                .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        }
+
+        // Convert a legacy parts_entries row (with counter1/counter2/counter3 + _gross
+        // fields) into a synthetic counter_breakdown so the dashboard can use the same
+        // code path. Keys are stable strings ("legacy:<store>:1") so the leaderboard
+        // can group historical data per slot.
+        function counterBreakdownForEntry(entry) {
+            if (entry && entry.counter_breakdown && typeof entry.counter_breakdown === 'object'
+                && !Array.isArray(entry.counter_breakdown)
+                && Object.keys(entry.counter_breakdown).length > 0) {
+                return entry.counter_breakdown;
+            }
+            // Legacy fallback — reconstruct from counter1/2/3 fields with parts_roster names
+            const out = {};
+            const roster = (LS._get && LS._get('dyer_parts_roster')) || [];
+            const rRow = roster.find(r => r.store_id === entry.store_id);
+            for (let i = 1; i <= 3; i++) {
+                const sales = parseFloat(entry['counter' + i])         || 0;
+                const gross = parseFloat(entry['counter' + i + '_gross']) || 0;
+                if (sales > 0 || gross > 0) {
+                    const nm = rRow?.['counter' + i + '_name'] || `Counter ${i}`;
+                    out['legacy:' + entry.store_id + ':' + i] = {
+                        sales, gross, name: nm, _legacy_slot: i
+                    };
+                }
+            }
+            return out;
+        }
+
+        // Resolve the display name for a counter_breakdown key. New keys are staff_ids
+        // — look them up in partsCounterStaff. Legacy "legacy:..." keys carry their
+        // stored name on the breakdown entry itself.
+        function counterDisplayName(key, breakdownEntry) {
+            if (breakdownEntry?.name) return breakdownEntry.name;
+            const staff = (partsCounterStaff || []).find(s => String(s.id) === String(key));
+            if (staff) return staff.name || 'Unnamed counter person';
+            return 'Unknown counter person';
+        }
+
+        // Render the dynamic counter people rows in the Parts Daily Entry table.
+        // Optionally pre-fills sales/gross from a saved counter_breakdown object.
+        function renderPartsCounterRows(storeId, savedBreakdown) {
+            const tbody = document.getElementById('partsCounterRowsBody');
+            if (!tbody) return;
+            const people = getPartsCounterPeopleForStore(storeId);
+            if (people.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="padding:14px;text-align:center;color:#92400e;background:#fffbeb;">
+                            No active counter people for this store yet.
+                            Add them in <strong>Admin Console → Department Staff → Parts Counter People</strong>, then come back here.
+                        </td>
+                    </tr>`;
+                return;
+            }
+            tbody.innerHTML = people.map(s => {
+                const saved = savedBreakdown?.[s.id] || {};
+                const sales = saved.sales != null ? saved.sales : '';
+                const gross = saved.gross != null ? saved.gross : '';
+                return `
+                    <tr data-counter-id="${s.id}">
+                        <td style="font-weight:600;">${s.name || 'Unnamed'}<div style="font-size:11px;color:#94a3b8;font-weight:500;">${s.employee_id ? '#' + s.employee_id : ''}</div></td>
+                        <td><input type="number" class="input-yellow parts-counter-row-sales" data-counter-id="${s.id}" value="${sales}" placeholder="0"></td>
+                        <td><input type="number" class="input-yellow parts-counter-row-gross" data-counter-id="${s.id}" value="${gross}" placeholder="0"></td>
+                        <td class="input-gray parts-counter-row-gp" data-counter-id="${s.id}" style="text-align:right;">—</td>
+                    </tr>
+                `;
+            }).join('');
+            // Wire up live calc on every keystroke (matches the static channel inputs)
+            tbody.querySelectorAll('input.parts-counter-row-sales, input.parts-counter-row-gross').forEach(inp => {
+                inp.addEventListener('input', () => {
+                    markDirty('partsDaily');
+                    updatePartsDailyCalculations();
+                });
+            });
         }
 
         async function loadDailyEntry() {
@@ -4505,24 +4829,32 @@
             await updateDailyGoalDisplay(storeId, date, daysInMonth, laborDay, partsDay, totalGrossDay);
         }
 
-        // Read the live numbers off the Parts Daily Entry form. Each channel has paired
-        // Sales + Gross fields; this returns a normalized snapshot the rest of the
-        // calc/save code can lean on.
+        // Read the live numbers off the Parts Daily Entry form. Service Parts and
+        // Wholesale are static rows; Counter is N dynamic rows (one per active
+        // parts_counter from Admin Console → Department Staff). Returns a normalized
+        // snapshot with a `counterBreakdown` map keyed by staff_id.
         function readPartsDailyForm() {
             const num = (id) => parseFloat(document.getElementById(id)?.value) || 0;
             const channels = {
-                service:   { sales: num('partsServiceDay'),    gross: num('partsServiceGrossDay') },
-                wholesale: { sales: num('partsWholesaleDay'),  gross: num('partsWholesaleGrossDay') },
-                counter1:  { sales: num('partsCounter1Day'),   gross: num('partsCounter1GrossDay') },
-                counter2:  { sales: num('partsCounter2Day'),   gross: num('partsCounter2GrossDay') },
-                counter3:  { sales: num('partsCounter3Day'),   gross: num('partsCounter3GrossDay') }
+                service:   { sales: num('partsServiceDay'),   gross: num('partsServiceGrossDay') },
+                wholesale: { sales: num('partsWholesaleDay'), gross: num('partsWholesaleGrossDay') }
             };
-            const counterSales = channels.counter1.sales + channels.counter2.sales + channels.counter3.sales;
-            const counterGross = channels.counter1.gross + channels.counter2.gross + channels.counter3.gross;
-            const totalSales   = channels.service.sales + channels.wholesale.sales + counterSales;
-            const totalGross   = channels.service.gross + channels.wholesale.gross + counterGross;
+            // Per-counter-person rows
+            const counterBreakdown = {};
+            let counterSales = 0, counterGross = 0;
+            document.querySelectorAll('#partsCounterRowsBody tr[data-counter-id]').forEach(tr => {
+                const id = tr.getAttribute('data-counter-id');
+                const sales = parseFloat(tr.querySelector('input.parts-counter-row-sales')?.value) || 0;
+                const gross = parseFloat(tr.querySelector('input.parts-counter-row-gross')?.value) || 0;
+                if (sales || gross) counterBreakdown[id] = { sales, gross };
+                counterSales += sales;
+                counterGross += gross;
+            });
+            const totalSales = channels.service.sales + channels.wholesale.sales + counterSales;
+            const totalGross = channels.service.gross + channels.wholesale.gross + counterGross;
             return {
                 channels,
+                counterBreakdown,
                 counterSales, counterGross,
                 totalSales, totalGross,
                 inventory: num('partsInventoryDay'),
@@ -4536,12 +4868,28 @@
             const fmtPct = (sales, gross) => sales > 0 ? ((gross / sales) * 100).toFixed(1) + '%' : '—';
             const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
 
-            // Per-channel gross %
+            // Per-channel gross % (Service / Wholesale)
             setText('partsServiceGp',   fmtPct(snap.channels.service.sales,   snap.channels.service.gross));
             setText('partsWholesaleGp', fmtPct(snap.channels.wholesale.sales, snap.channels.wholesale.gross));
-            setText('partsCounter1Gp',  fmtPct(snap.channels.counter1.sales,  snap.channels.counter1.gross));
-            setText('partsCounter2Gp',  fmtPct(snap.channels.counter2.sales,  snap.channels.counter2.gross));
-            setText('partsCounter3Gp',  fmtPct(snap.channels.counter3.sales,  snap.channels.counter3.gross));
+
+            // Per-counter-person gross % cells — also red/green vs the 42% goal
+            document.querySelectorAll('#partsCounterRowsBody tr[data-counter-id]').forEach(tr => {
+                const id = tr.getAttribute('data-counter-id');
+                const sales = parseFloat(tr.querySelector('input.parts-counter-row-sales')?.value) || 0;
+                const gross = parseFloat(tr.querySelector('input.parts-counter-row-gross')?.value) || 0;
+                const cell = tr.querySelector('.parts-counter-row-gp');
+                if (!cell) return;
+                if (sales > 0) {
+                    const pct = (gross / sales) * 100;
+                    cell.textContent = pct.toFixed(1) + '%';
+                    cell.style.color = pct >= 42 ? '#16a34a' : '#dc2626';
+                    cell.style.fontWeight = '700';
+                } else {
+                    cell.textContent = '—';
+                    cell.style.color = '';
+                    cell.style.fontWeight = '';
+                }
+            });
 
             // Counter rollup (Sales / Gross / Gross %). Counter Gross % is the headline
             // metric for the Parts Manager — flagged red when below 42%.
@@ -4642,13 +4990,15 @@
             if (!partsPicker) return;
             const date = pickerDate(partsPicker.valueAsDate);
 
-            // Restore editable state for the parts inputs (10 channel inputs + inventory + obso)
+            // Make sure the counter people roster is loaded — admin section may not have run yet
+            if (!partsCounterStaff || partsCounterStaff.length === 0) {
+                try { await loadDepartmentStaff(); } catch(e) { /* non-fatal */ }
+            }
+
+            // Restore editable state for the static channel inputs (Service / Wholesale / Inventory / Obso)
             const editableIds = [
                 'partsServiceDay', 'partsServiceGrossDay',
                 'partsWholesaleDay', 'partsWholesaleGrossDay',
-                'partsCounter1Day', 'partsCounter1GrossDay',
-                'partsCounter2Day', 'partsCounter2GrossDay',
-                'partsCounter3Day', 'partsCounter3GrossDay',
                 'partsInventoryDay', 'partsObsoDay'
             ];
             editableIds.forEach(id => {
@@ -4669,27 +5019,19 @@
                 return;
             }
 
-            // Apply counter labels from the per-store roster
-            applyPartsCounterLabels(storeId);
-
             try {
                 const ds = dateToString(date);
                 const partsData = (await LS.getPartsEntries()).find(p => p.store_id === storeId && p.entry_date === ds);
-                // Sales fields (canonical names: service_parts / wholesale / counter1..3)
-                document.getElementById('partsServiceDay').value     = partsData?.service_parts ?? '';
-                document.getElementById('partsWholesaleDay').value   = partsData?.wholesale     ?? '';
-                document.getElementById('partsCounter1Day').value    = partsData?.counter1      ?? '';
-                document.getElementById('partsCounter2Day').value    = partsData?.counter2      ?? '';
-                document.getElementById('partsCounter3Day').value    = partsData?.counter3      ?? '';
-                // Gross fields (new — default '' when missing on legacy rows)
+                // Render dynamic counter rows from the per-store counter roster, pre-filled from saved breakdown
+                const savedBreakdown = partsData ? counterBreakdownForEntry(partsData) : null;
+                renderPartsCounterRows(storeId, savedBreakdown);
+                // Static channel + inventory fields
+                document.getElementById('partsServiceDay').value        = partsData?.service_parts       ?? '';
+                document.getElementById('partsWholesaleDay').value      = partsData?.wholesale           ?? '';
                 document.getElementById('partsServiceGrossDay').value   = partsData?.service_parts_gross ?? '';
                 document.getElementById('partsWholesaleGrossDay').value = partsData?.wholesale_gross     ?? '';
-                document.getElementById('partsCounter1GrossDay').value  = partsData?.counter1_gross      ?? '';
-                document.getElementById('partsCounter2GrossDay').value  = partsData?.counter2_gross      ?? '';
-                document.getElementById('partsCounter3GrossDay').value  = partsData?.counter3_gross      ?? '';
-                // Inventory + obso
-                document.getElementById('partsInventoryDay').value = partsData?.inventory ?? '';
-                document.getElementById('partsObsoDay').value      = partsData?.obso      ?? '';
+                document.getElementById('partsInventoryDay').value      = partsData?.inventory ?? '';
+                document.getElementById('partsObsoDay').value           = partsData?.obso      ?? '';
                 updatePartsDailyCalculations();
             } catch (e) {
                 console.error('loadPartsDailyEntry error', e);
@@ -4701,42 +5043,41 @@
                 const ds = dateToString(date);
                 const allParts = await LS.getPartsEntries();
                 const dayParts = allParts.filter(p => p.entry_date === ds);
-                // Aggregate Sales + Gross per channel + Inventory + Obso across all stores
+
+                // Make sure counter staff is loaded so we can resolve names for the aggregated leaderboard rows
+                if (!partsCounterStaff || partsCounterStaff.length === 0) {
+                    try { await loadDepartmentStaff(); } catch(e) { /* non-fatal */ }
+                }
+
+                // Aggregate Service / Wholesale / Inventory / Obso across all stores
                 const agg = {
                     service:   { sales: 0, gross: 0 },
-                    wholesale: { sales: 0, gross: 0 },
-                    counter1:  { sales: 0, gross: 0 },
-                    counter2:  { sales: 0, gross: 0 },
-                    counter3:  { sales: 0, gross: 0 }
+                    wholesale: { sales: 0, gross: 0 }
                 };
+                // Aggregate counter breakdown by counter person id (or legacy slot key) across all stores
+                const counterAgg = {}; // key -> { sales, gross }
                 let invTotal = 0, obsoTotal = 0;
                 dayParts.forEach(p => {
                     agg.service.sales   += parseFloat(p.service_parts)       || 0;
                     agg.service.gross   += parseFloat(p.service_parts_gross) || 0;
                     agg.wholesale.sales += parseFloat(p.wholesale)           || 0;
                     agg.wholesale.gross += parseFloat(p.wholesale_gross)     || 0;
-                    agg.counter1.sales  += parseFloat(p.counter1)            || 0;
-                    agg.counter1.gross  += parseFloat(p.counter1_gross)      || 0;
-                    agg.counter2.sales  += parseFloat(p.counter2)            || 0;
-                    agg.counter2.gross  += parseFloat(p.counter2_gross)      || 0;
-                    agg.counter3.sales  += parseFloat(p.counter3)            || 0;
-                    agg.counter3.gross  += parseFloat(p.counter3_gross)      || 0;
                     invTotal  += parseFloat(p.inventory) || 0;
                     obsoTotal += parseFloat(p.obso)      || 0;
+                    const breakdown = counterBreakdownForEntry(p) || {};
+                    Object.entries(breakdown).forEach(([key, val]) => {
+                        if (!counterAgg[key]) counterAgg[key] = { sales: 0, gross: 0 };
+                        counterAgg[key].sales += parseFloat(val.sales) || 0;
+                        counterAgg[key].gross += parseFloat(val.gross) || 0;
+                    });
                 });
 
-                // Push aggregates into the form fields and lock them read-only
+                // Push static aggregates into the form fields and lock them read-only
                 const fieldMap = {
                     partsServiceDay:        agg.service.sales,
                     partsServiceGrossDay:   agg.service.gross,
                     partsWholesaleDay:      agg.wholesale.sales,
                     partsWholesaleGrossDay: agg.wholesale.gross,
-                    partsCounter1Day:       agg.counter1.sales,
-                    partsCounter1GrossDay:  agg.counter1.gross,
-                    partsCounter2Day:       agg.counter2.sales,
-                    partsCounter2GrossDay:  agg.counter2.gross,
-                    partsCounter3Day:       agg.counter3.sales,
-                    partsCounter3GrossDay:  agg.counter3.gross,
                     partsInventoryDay:      invTotal,
                     partsObsoDay:           obsoTotal
                 };
@@ -4749,10 +5090,36 @@
                     el.classList.add('input-gray');
                     el.style.backgroundColor = '#f0f0f0';
                 });
-                ['1', '2', '3'].forEach(i => {
-                    const el = document.getElementById('partsCounter' + i + 'Label');
-                    if (el) el.textContent = `Counter ${i} (all stores)`;
-                });
+
+                // Render an aggregated, read-only counter table — one row per unique counter person across all stores
+                const tbody = document.getElementById('partsCounterRowsBody');
+                if (tbody) {
+                    tbody.innerHTML = '';
+                    const keys = Object.keys(counterAgg);
+                    if (keys.length === 0) {
+                        tbody.innerHTML = `
+                            <tr><td colspan="4" style="text-align:center;color:#888;padding:12px;">
+                                No counter activity for this date across stores
+                            </td></tr>`;
+                    } else {
+                        keys.sort((a, b) => (counterAgg[b].sales) - (counterAgg[a].sales));
+                        keys.forEach(key => {
+                            const v = counterAgg[key];
+                            const name = counterDisplayName(key, v) + ' <span style="color:#888;font-size:11px;">(all stores)</span>';
+                            const gpPct = v.sales > 0 ? (v.gross / v.sales) * 100 : null;
+                            const tr = document.createElement('tr');
+                            tr.setAttribute('data-counter-id', key);
+                            tr.innerHTML = `
+                                <td style="font-weight:600;">${name}</td>
+                                <td><input type="number" class="parts-counter-row-sales input-gray" value="${v.sales || ''}" readonly style="background-color:#f0f0f0;"></td>
+                                <td><input type="number" class="parts-counter-row-gross input-gray" value="${v.gross || ''}" readonly style="background-color:#f0f0f0;"></td>
+                                <td class="parts-counter-row-gp" style="text-align:right;font-weight:700;color:${gpPct === null ? '' : (gpPct >= 42 ? '#16a34a' : '#dc2626')};">
+                                    ${gpPct === null ? '—' : gpPct.toFixed(1) + '%'}
+                                </td>`;
+                            tbody.appendChild(tr);
+                        });
+                    }
+                }
 
                 // Hide save button — All Stores is read-only aggregation
                 const saveBtn = document.getElementById('savePartsDailyBtn');
@@ -4806,18 +5173,13 @@
                     entry_date: ds,
                     day_number: dayNum,
                     days_in_month: daysInMonth,
-                    // Sales (legacy field names — kept stable for back-compat)
-                    service_parts: snap.channels.service.sales,
-                    wholesale:     snap.channels.wholesale.sales,
-                    counter1:      snap.channels.counter1.sales,
-                    counter2:      snap.channels.counter2.sales,
-                    counter3:      snap.channels.counter3.sales,
-                    // Gross per channel (new)
+                    // Static channels: Service Parts + Wholesale
+                    service_parts:       snap.channels.service.sales,
+                    wholesale:           snap.channels.wholesale.sales,
                     service_parts_gross: snap.channels.service.gross,
                     wholesale_gross:     snap.channels.wholesale.gross,
-                    counter1_gross:      snap.channels.counter1.gross,
-                    counter2_gross:      snap.channels.counter2.gross,
-                    counter3_gross:      snap.channels.counter3.gross,
+                    // Counter people: per-staff-id breakdown {id: {sales, gross}}
+                    counter_breakdown: snap.counterBreakdown,
                     // Inventory + obso for the obso% calc
                     inventory: snap.inventory,
                     obso:      snap.obso,
@@ -4841,16 +5203,353 @@
         }
 
         // ============================================================================
-        // TAB: COLLISION DAILY ENTRY (DCVB only) — Phase 2 placeholder
+        // TAB: COLLISION DAILY ENTRY (DCVB only)
         // ============================================================================
-        // The collision tab is currently a stub. When fully built it will:
-        //   - Show a friendly "DCVB only" message for any other store
-        //   - Render an EOS-style health card for DCVB with all the collision metrics
-        //   - Include a roster admin for naming the three estimators
+        // Collision Center exists at DCVB only. The form has:
+        //   - Money panel: collision gross + 6 cash-flow watch dollars + WIP
+        //   - Cert status: ICAR / OEM (boolean + optional expiry)
+        //   - Per-estimator productivity (Keys-to-Keys, ROs delivered #, ROs delivered $)
+        //   - Per-body-tech production hours
+        //   - Per-painter production hours
+        //   - Notes textarea
+        // Per-staff rows are rendered dynamically from Department Staff (estimatorStaff /
+        // bodyTechStaff / painterStaff) and saved as JSONB breakdowns keyed by staff id.
+
+        // Helper — only DCVB body-shop staff (collision-eligible). Active only.
+        function getCollisionStaffForType(type) {
+            const arr = type === 'estimator' ? estimatorStaff
+                      : type === 'body_tech' ? bodyTechStaff
+                      : type === 'painter'   ? painterStaff
+                      : [];
+            return (arr || []).filter(s => s.is_active !== false && (!s.store_id || s.store_id === 'dcvb'));
+        }
+
+        // Render the dynamic estimator rows + wire input listeners
+        function renderCollisionEstimatorRows(savedBreakdown) {
+            const tbody = document.getElementById('collisionEstimatorRowsBody');
+            if (!tbody) return;
+            const staff = getCollisionStaffForType('estimator');
+            tbody.innerHTML = '';
+            if (staff.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#888;padding:12px;">
+                    No estimators yet. Add them in <strong>Admin Console → Department Staff → Estimators</strong>.
+                </td></tr>`;
+                updateCollisionEstimatorTotals();
+                return;
+            }
+            staff.forEach(s => {
+                const v = (savedBreakdown && savedBreakdown[s.id]) || {};
+                const tr = document.createElement('tr');
+                tr.setAttribute('data-estimator-id', s.id);
+                tr.innerHTML = `
+                    <td style="font-weight:600;">${s.name || 'Estimator'}</td>
+                    <td><input type="number" class="collision-est-k2k input-yellow" step="0.1" value="${v.keys_to_keys ?? ''}"></td>
+                    <td><input type="number" class="collision-est-ros-count input-yellow" value="${v.ros_delivered_count ?? ''}"></td>
+                    <td><input type="number" class="collision-est-ros-dollars input-yellow" value="${v.ros_delivered_dollars ?? ''}"></td>`;
+                tbody.appendChild(tr);
+            });
+            tbody.querySelectorAll('input').forEach(el => {
+                el.addEventListener('input', () => { markDirty('collisionDaily'); updateCollisionEstimatorTotals(); });
+                el.addEventListener('change', () => { markDirty('collisionDaily'); updateCollisionEstimatorTotals(); });
+            });
+            updateCollisionEstimatorTotals();
+        }
+
+        function updateCollisionEstimatorTotals() {
+            const rows = document.querySelectorAll('#collisionEstimatorRowsBody tr[data-estimator-id]');
+            let k2kSum = 0, k2kSamples = 0, rosCount = 0, rosDollars = 0;
+            rows.forEach(tr => {
+                const k2k = parseFloat(tr.querySelector('.collision-est-k2k')?.value);
+                const cnt = parseFloat(tr.querySelector('.collision-est-ros-count')?.value) || 0;
+                const dol = parseFloat(tr.querySelector('.collision-est-ros-dollars')?.value) || 0;
+                if (!isNaN(k2k) && k2k > 0) { k2kSum += k2k; k2kSamples++; }
+                rosCount += cnt;
+                rosDollars += dol;
+            });
+            const k2kAvg = k2kSamples > 0 ? (k2kSum / k2kSamples) : null;
+            const elAvg = document.getElementById('collisionEstK2kAvg');
+            const elCnt = document.getElementById('collisionEstRosCount');
+            const elDol = document.getElementById('collisionEstRosDollars');
+            if (elAvg) elAvg.textContent = k2kAvg === null ? '—' : k2kAvg.toFixed(1) + ' days avg';
+            if (elCnt) elCnt.textContent = rosCount;
+            if (elDol) elDol.textContent = formatCurrency(rosDollars);
+        }
+
+        // Generic renderer for body_tech / painter production-hours rows
+        function renderCollisionHoursRows(type, tbodyId, totalId, savedBreakdown) {
+            const tbody = document.getElementById(tbodyId);
+            if (!tbody) return;
+            const staff = getCollisionStaffForType(type);
+            tbody.innerHTML = '';
+            if (staff.length === 0) {
+                const label = type === 'body_tech' ? 'body techs' : 'painters';
+                const adminLabel = type === 'body_tech' ? 'Body Techs' : 'Painters';
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:#888;padding:12px;">
+                    No ${label} yet. Add them in <strong>Admin Console → Department Staff → ${adminLabel}</strong>.
+                </td></tr>`;
+                updateCollisionHoursTotal(tbodyId, totalId);
+                return;
+            }
+            staff.forEach(s => {
+                const v = (savedBreakdown && savedBreakdown[s.id]) || {};
+                const tr = document.createElement('tr');
+                tr.setAttribute('data-staff-id', s.id);
+                tr.innerHTML = `
+                    <td style="font-weight:600;">${s.name || (type === 'body_tech' ? 'Body Tech' : 'Painter')}</td>
+                    <td>${s.skill_level || '—'}</td>
+                    <td><input type="number" class="collision-hours" step="0.1" value="${v.production_hours ?? ''}"></td>`;
+                tbody.appendChild(tr);
+            });
+            tbody.querySelectorAll('input.collision-hours').forEach(el => {
+                el.addEventListener('input', () => { markDirty('collisionDaily'); updateCollisionHoursTotal(tbodyId, totalId); });
+                el.addEventListener('change', () => { markDirty('collisionDaily'); updateCollisionHoursTotal(tbodyId, totalId); });
+            });
+            updateCollisionHoursTotal(tbodyId, totalId);
+        }
+
+        function updateCollisionHoursTotal(tbodyId, totalId) {
+            let sum = 0;
+            document.querySelectorAll(`#${tbodyId} input.collision-hours`).forEach(el => {
+                sum += parseFloat(el.value) || 0;
+            });
+            const t = document.getElementById(totalId);
+            if (t) t.textContent = sum.toFixed(1);
+        }
+
+        // Read the entire form into a structured snapshot (used by save + derived totals)
+        function readCollisionDailyForm() {
+            const num = (id) => parseFloat(document.getElementById(id)?.value) || 0;
+            const dateVal = (id) => document.getElementById(id)?.value || null;
+            const checked = (id) => !!document.getElementById(id)?.checked;
+            // Per-estimator
+            const estimator_breakdown = {};
+            document.querySelectorAll('#collisionEstimatorRowsBody tr[data-estimator-id]').forEach(tr => {
+                const id = tr.getAttribute('data-estimator-id');
+                const k2k = parseFloat(tr.querySelector('.collision-est-k2k')?.value);
+                const cnt = parseFloat(tr.querySelector('.collision-est-ros-count')?.value) || 0;
+                const dol = parseFloat(tr.querySelector('.collision-est-ros-dollars')?.value) || 0;
+                if (!isNaN(k2k) || cnt || dol) {
+                    estimator_breakdown[id] = {
+                        keys_to_keys: isNaN(k2k) ? null : k2k,
+                        ros_delivered_count: cnt,
+                        ros_delivered_dollars: dol
+                    };
+                }
+            });
+            // Per-body-tech / painter (production hours)
+            const hoursMap = (tbodyId) => {
+                const out = {};
+                document.querySelectorAll(`#${tbodyId} tr[data-staff-id]`).forEach(tr => {
+                    const id = tr.getAttribute('data-staff-id');
+                    const hrs = parseFloat(tr.querySelector('input.collision-hours')?.value) || 0;
+                    if (hrs) out[id] = { production_hours: hrs };
+                });
+                return out;
+            };
+            return {
+                collision_gross:          num('collisionGrossDay'),
+                body_shop_receivables:    num('collisionReceivablesDay'),
+                cash_clearing:            num('collisionCashClearingDay'),
+                body_shop_sublet:         num('collisionSubletDay'),
+                pending_parts_credit:     num('collisionPartsCreditDay'),
+                parts_inventory_variance: num('collisionInventoryVarianceDay'),
+                labor_wip:                num('collisionLaborWipDay'),
+                icar_certified: checked('collisionIcarCert'),
+                icar_expiry:    dateVal('collisionIcarExpiry'),
+                oem_certified:  checked('collisionOemCert'),
+                oem_expiry:     dateVal('collisionOemExpiry'),
+                estimator_breakdown,
+                body_tech_breakdown: hoursMap('collisionBodyTechRowsBody'),
+                painter_breakdown:   hoursMap('collisionPainterRowsBody'),
+                notes: document.getElementById('collisionDailyNotes')?.value || ''
+            };
+        }
+
         async function loadCollisionDailyEntry() {
+            clearDirty('collisionDaily');
             const storeId = getSelectedStore();
-            const target = document.getElementById('collisionDailyContent');
+            const allMode = isAllStores();
+            const isDcvb = storeId === 'dcvb';
+            const formContainer = document.getElementById('collisionDailyContent');
+            if (!formContainer) return;
+
+            // Make sure department staff is loaded so dynamic rows can render
+            if (!estimatorStaff.length || !bodyTechStaff.length || !painterStaff.length) {
+                try { await loadDepartmentStaff(); } catch(e) { /* non-fatal */ }
+            }
+
+            // Show form only for DCVB or All Stores. Other stores get a friendly "DCVB only" banner.
+            if (!isDcvb && !allMode) {
+                // Hide the form, swap in the banner
+                Array.from(formContainer.children).forEach(c => { c.style.display = 'none'; });
+                if (!document.getElementById('collisionDailyDcvbBanner')) {
+                    const banner = document.createElement('div');
+                    banner.id = 'collisionDailyDcvbBanner';
+                    banner.innerHTML = `
+                        <div class="card">
+                            <div style="padding:30px 16px;text-align:center;color:#475569;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;">
+                                <div style="font-size:36px;margin-bottom:8px;">ℹ️</div>
+                                <div style="font-size:16px;font-weight:700;color:#92400e;margin-bottom:6px;">DCVB Only</div>
+                                <div style="max-width:520px;margin:0 auto;font-size:13px;line-height:1.5;">
+                                    The Collision Center exists at DCVB only. Switch the store selector to <strong>DCVB</strong> to enter Collision daily numbers.
+                                </div>
+                            </div>
+                        </div>`;
+                    formContainer.appendChild(banner);
+                }
+                document.getElementById('collisionDailyDcvbBanner').style.display = '';
+                return;
+            } else {
+                // DCVB or All Stores — restore form visibility
+                Array.from(formContainer.children).forEach(c => { c.style.display = ''; });
+                const banner = document.getElementById('collisionDailyDcvbBanner');
+                if (banner) banner.style.display = 'none';
+            }
+
+            const picker = document.getElementById('collisionDailyDatePicker');
+            const date = pickerDate(picker.valueAsDate);
+            const ds = dateToString(date);
+
+            try {
+                const allEntries = await LS.getCollisionEntries();
+                let entry;
+                if (allMode) {
+                    // Aggregate across stores (only DCVB has collision today, but be future-proof)
+                    const dayEntries = allEntries.filter(e => e.entry_date === ds);
+                    if (dayEntries.length === 0) {
+                        entry = null;
+                    } else {
+                        entry = {
+                            collision_gross:          dayEntries.reduce((s, e) => s + (parseFloat(e.collision_gross)||0), 0),
+                            body_shop_receivables:    dayEntries.reduce((s, e) => s + (parseFloat(e.body_shop_receivables)||0), 0),
+                            cash_clearing:            dayEntries.reduce((s, e) => s + (parseFloat(e.cash_clearing)||0), 0),
+                            body_shop_sublet:         dayEntries.reduce((s, e) => s + (parseFloat(e.body_shop_sublet)||0), 0),
+                            pending_parts_credit:     dayEntries.reduce((s, e) => s + (parseFloat(e.pending_parts_credit)||0), 0),
+                            parts_inventory_variance: dayEntries.reduce((s, e) => s + (parseFloat(e.parts_inventory_variance)||0), 0),
+                            labor_wip:                dayEntries.reduce((s, e) => s + (parseFloat(e.labor_wip)||0), 0),
+                            icar_certified: dayEntries.some(e => e.icar_certified),
+                            oem_certified:  dayEntries.some(e => e.oem_certified),
+                            icar_expiry: dayEntries.find(e => e.icar_expiry)?.icar_expiry || null,
+                            oem_expiry:  dayEntries.find(e => e.oem_expiry)?.oem_expiry  || null,
+                            estimator_breakdown: dayEntries.reduce((acc, e) => Object.assign(acc, e.estimator_breakdown || {}), {}),
+                            body_tech_breakdown: dayEntries.reduce((acc, e) => Object.assign(acc, e.body_tech_breakdown || {}), {}),
+                            painter_breakdown:   dayEntries.reduce((acc, e) => Object.assign(acc, e.painter_breakdown   || {}), {}),
+                            notes: dayEntries.map(e => e.notes).filter(Boolean).join(' | ')
+                        };
+                    }
+                } else {
+                    entry = allEntries.find(e => e.store_id === storeId && e.entry_date === ds);
+                }
+
+                // Money panel
+                document.getElementById('collisionGrossDay').value             = entry?.collision_gross          ?? '';
+                document.getElementById('collisionReceivablesDay').value       = entry?.body_shop_receivables    ?? '';
+                document.getElementById('collisionCashClearingDay').value      = entry?.cash_clearing            ?? '';
+                document.getElementById('collisionSubletDay').value            = entry?.body_shop_sublet         ?? '';
+                document.getElementById('collisionPartsCreditDay').value       = entry?.pending_parts_credit     ?? '';
+                document.getElementById('collisionInventoryVarianceDay').value = entry?.parts_inventory_variance ?? '';
+                document.getElementById('collisionLaborWipDay').value          = entry?.labor_wip                ?? '';
+                // Cert
+                document.getElementById('collisionIcarCert').checked  = !!entry?.icar_certified;
+                document.getElementById('collisionIcarExpiry').value  = entry?.icar_expiry || '';
+                document.getElementById('collisionOemCert').checked   = !!entry?.oem_certified;
+                document.getElementById('collisionOemExpiry').value   = entry?.oem_expiry  || '';
+                // Notes
+                document.getElementById('collisionDailyNotes').value  = entry?.notes || '';
+
+                // Dynamic per-staff rows (pre-fill from saved breakdown if present)
+                renderCollisionEstimatorRows(entry?.estimator_breakdown || null);
+                renderCollisionHoursRows('body_tech', 'collisionBodyTechRowsBody', 'collisionBodyTechHoursTotal', entry?.body_tech_breakdown || null);
+                renderCollisionHoursRows('painter',   'collisionPainterRowsBody',   'collisionPainterHoursTotal',   entry?.painter_breakdown   || null);
+
+                // All Stores — lock everything read-only
+                const allStaticIds = ['collisionGrossDay','collisionReceivablesDay','collisionCashClearingDay',
+                    'collisionSubletDay','collisionPartsCreditDay','collisionInventoryVarianceDay','collisionLaborWipDay',
+                    'collisionIcarCert','collisionIcarExpiry','collisionOemCert','collisionOemExpiry','collisionDailyNotes'];
+                allStaticIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    if (allMode) {
+                        if (el.type === 'checkbox') el.disabled = true;
+                        else { el.readOnly = true; el.classList.remove('input-yellow'); el.classList.add('input-gray'); el.style.backgroundColor = '#f0f0f0'; }
+                    } else {
+                        if (el.type === 'checkbox') el.disabled = false;
+                        else { el.readOnly = false; el.classList.remove('input-gray'); el.classList.add('input-yellow'); el.style.backgroundColor = ''; }
+                    }
+                });
+                // Lock dynamic inputs in all-stores too
+                document.querySelectorAll('#collisionEstimatorRowsBody input, #collisionBodyTechRowsBody input, #collisionPainterRowsBody input').forEach(el => {
+                    if (allMode) { el.readOnly = true; el.classList.remove('input-yellow'); el.classList.add('input-gray'); el.style.backgroundColor = '#f0f0f0'; }
+                    else        { el.readOnly = false; el.classList.remove('input-gray'); el.classList.add('input-yellow'); el.style.backgroundColor = ''; }
+                });
+                const saveBtn = document.getElementById('saveCollisionDailyBtn');
+                if (saveBtn) saveBtn.style.display = allMode ? 'none' : '';
+            } catch(e) {
+                console.error('loadCollisionDailyEntry error', e);
+            }
+        }
+
+        async function saveCollisionDailyEntry() {
+            const storeId = getSelectedStore();
+            const picker = document.getElementById('collisionDailyDatePicker');
+            if (!storeId || isAllStores()) {
+                showToast('Select DCVB to save', 'error');
+                return;
+            }
+            if (storeId !== 'dcvb') {
+                showToast('Collision is DCVB-only', 'error');
+                return;
+            }
+            if (!picker || !picker.valueAsDate) {
+                showToast('Pick a date first', 'error');
+                return;
+            }
+            const date = pickerDate(picker.valueAsDate);
+            const ds = dateToString(date);
+            const dayNum = parseInt(document.getElementById('collisionDailyDayNumber').value) || 0;
+            const daysInMonth = parseInt(document.getElementById('collisionDailyDaysInMonth').value) || 0;
+            const snap = readCollisionDailyForm();
+
+            const anyValue = snap.collision_gross || snap.body_shop_receivables || snap.cash_clearing
+                || snap.body_shop_sublet || snap.pending_parts_credit || snap.parts_inventory_variance
+                || snap.labor_wip || Object.keys(snap.estimator_breakdown).length
+                || Object.keys(snap.body_tech_breakdown).length || Object.keys(snap.painter_breakdown).length
+                || snap.icar_certified || snap.oem_certified || snap.notes;
+            if (!anyValue) {
+                showToast('Enter at least one collision number before saving', 'error');
+                return;
+            }
+
+            try {
+                const result = await LS.saveCollisionEntry({
+                    store_id: storeId,
+                    entry_date: ds,
+                    day_number: dayNum,
+                    days_in_month: daysInMonth,
+                    ...snap
+                });
+                if (result && result.ok === false) {
+                    showToast('Save FAILED for collision — please try again', 'error');
+                    return;
+                }
+                clearDirty('collisionDaily');
+                showToast(`Collision saved for ${ds}`);
+            } catch(e) {
+                console.error('saveCollisionDailyEntry error', e);
+                showToast('Failed to save collision entry', 'error');
+            }
+        }
+
+        // ============================================================================
+        // TAB: COLLISION DASHBOARD (DCVB)
+        // ============================================================================
+        // High-level health view for the collision center. Tile per money metric showing
+        // the most recent value (date-aware), MTD trend lines, leaderboards for estimators
+        // and per-staff hours summary.
+        async function loadCollisionDashboard() {
+            const target = document.getElementById('collisionDashboardContent');
             if (!target) return;
+            const storeId = getSelectedStore();
             const allMode = isAllStores();
             const isDcvb = storeId === 'dcvb';
             if (!isDcvb && !allMode) {
@@ -4859,22 +5558,353 @@
                         <div style="font-size:36px;margin-bottom:8px;">ℹ️</div>
                         <div style="font-size:16px;font-weight:700;color:#92400e;margin-bottom:6px;">DCVB Only</div>
                         <div style="max-width:520px;margin:0 auto;font-size:13px;line-height:1.5;">
-                            The Collision Center exists at DCVB only. Switch the store selector to <strong>DCVB</strong> to enter Collision daily numbers.
+                            The Collision Center exists at DCVB only. Switch the store selector to <strong>DCVB</strong> to see Collision health metrics.
+                        </div>
+                    </div>`;
+                return;
+            }
+            try {
+                if (!estimatorStaff.length || !bodyTechStaff.length || !painterStaff.length) {
+                    try { await loadDepartmentStaff(); } catch(e) { /* non-fatal */ }
+                }
+                // Compute current month from today (no separate month picker yet for collision)
+                const today = new Date();
+                const year  = today.getFullYear();
+                const month = today.getMonth() + 1;
+                const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
+                const monthEnd   = dateToString(new Date(year, month, 0));
+                const allEntries = await LS.getCollisionEntries();
+                let entries = allEntries.filter(e => e.entry_date >= monthStart && e.entry_date <= monthEnd);
+                if (!allMode) entries = entries.filter(e => e.store_id === storeId);
+
+                // Latest entry (date-wise) — used for snapshot money panel
+                const sorted = [...entries].sort((a, b) => (a.entry_date < b.entry_date ? 1 : -1));
+                const latest = sorted[0] || null;
+
+                // MTD totals
+                const sum = (key) => entries.reduce((s, e) => s + (parseFloat(e[key]) || 0), 0);
+                const mtdGross = sum('collision_gross');
+
+                // Money snapshot card builder (point-in-time values for the latest day)
+                const moneyCard = (label, val, threshold, dir, sub) => {
+                    const has = !isNaN(val) && val !== null;
+                    const ok = !has ? null : (dir === 'down' ? val <= threshold : val >= threshold);
+                    const color = !has ? '#94a3b8' : (ok ? '#22c55e' : '#dc2626');
+                    const bg    = !has ? '#f1f5f9' : (ok ? '#dcfce7' : '#fee2e2');
+                    return `
+                        <div class="kpi-card" style="background:${bg};border:2px solid ${color};">
+                            <div class="kpi-label" style="color:#475569;">${label}</div>
+                            <div class="kpi-value" style="color:${color};font-size:28px;">${has ? formatCurrency(val) : '—'}</div>
+                            <div class="kpi-subtext" style="color:#475569;font-weight:500;">${sub || ''}</div>
+                        </div>`;
+                };
+                const monthLabel = new Date(year, month - 1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+
+                // Estimator MTD aggregation (by id)
+                const estAgg = {}; // id -> { name, k2k_sum, k2k_samples, ros_count, ros_dollars, days }
+                entries.forEach(e => {
+                    const bd = e.estimator_breakdown || {};
+                    Object.entries(bd).forEach(([id, v]) => {
+                        const staff = estimatorStaff.find(s => String(s.id) === String(id));
+                        if (!estAgg[id]) estAgg[id] = { name: staff?.name || `Estimator ${id}`, k2k_sum: 0, k2k_samples: 0, ros_count: 0, ros_dollars: 0, days: 0 };
+                        if (v.keys_to_keys != null && !isNaN(parseFloat(v.keys_to_keys))) { estAgg[id].k2k_sum += parseFloat(v.keys_to_keys); estAgg[id].k2k_samples++; }
+                        estAgg[id].ros_count   += parseFloat(v.ros_delivered_count)   || 0;
+                        estAgg[id].ros_dollars += parseFloat(v.ros_delivered_dollars) || 0;
+                        estAgg[id].days++;
+                    });
+                });
+                const estRows = Object.entries(estAgg).map(([id, v]) => ({
+                    id, name: v.name,
+                    k2k: v.k2k_samples > 0 ? v.k2k_sum / v.k2k_samples : null,
+                    rosCount: v.ros_count, rosDollars: v.ros_dollars, days: v.days
+                })).sort((a, b) => b.rosDollars - a.rosDollars);
+
+                // Body Tech / Painter hours aggregation
+                const hoursAgg = (key, staffArr) => {
+                    const out = {};
+                    entries.forEach(e => {
+                        const bd = e[key] || {};
+                        Object.entries(bd).forEach(([id, v]) => {
+                            const staff = (staffArr || []).find(s => String(s.id) === String(id));
+                            if (!out[id]) out[id] = { name: staff?.name || 'Tech', skill: staff?.skill_level || '—', hours: 0, days: 0 };
+                            out[id].hours += parseFloat(v.production_hours) || 0;
+                            if (v.production_hours) out[id].days++;
+                        });
+                    });
+                    return Object.entries(out).map(([id, v]) => ({
+                        id, name: v.name, skill: v.skill, hours: v.hours, days: v.days,
+                        avg: v.days > 0 ? v.hours / v.days : 0
+                    })).sort((a, b) => b.hours - a.hours);
+                };
+                const btRows = hoursAgg('body_tech_breakdown', bodyTechStaff);
+                const paRows = hoursAgg('painter_breakdown',   painterStaff);
+
+                target.innerHTML = `
+                    <div class="card">
+                        <h3 class="card-title">Collision Health — ${monthLabel}${allMode ? ' • All Stores' : ''}</h3>
+                        <p style="font-size:12px;color:#666;margin:-6px 0 14px 0;">Money panel uses the most recent reported day. Aging dollars are shown as red when above the threshold and green when at zero.</p>
+                        <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));">
+                            ${moneyCard('MTD Collision Gross', mtdGross, 0, 'up', `${entries.length} day${entries.length===1?'':'s'} reported`)}
+                            ${moneyCard('Receivables ≥15d (#22002)', latest?.body_shop_receivables ?? null, 0, 'down', latest ? `As of ${latest.entry_date}` : 'No data')}
+                            ${moneyCard('Cash Clearing ≥4d',        latest?.cash_clearing            ?? null, 0, 'down', latest ? `As of ${latest.entry_date}` : 'No data')}
+                            ${moneyCard('Body Shop Sublet ≥30d',    latest?.body_shop_sublet         ?? null, 0, 'down', latest ? `As of ${latest.entry_date}` : 'No data')}
+                            ${moneyCard('Pending Parts Credit',     latest?.pending_parts_credit     ?? null, 0, 'down', latest ? `As of ${latest.entry_date}` : 'No data')}
+                            ${moneyCard('Parts Inventory Variance', latest?.parts_inventory_variance ?? null, 0, 'down', latest ? `As of ${latest.entry_date}` : 'No data')}
+                            ${moneyCard('Labor WIP (#24701)',       latest?.labor_wip                ?? null, 0, 'down', latest ? `As of ${latest.entry_date}` : 'No data')}
+                        </div>
+                        <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;">
+                            <div style="font-size:13px;color:#475569;"><strong>ICAR:</strong> ${latest?.icar_certified ? '✅ Certified' : '⚠️ Not certified'}${latest?.icar_expiry ? ` <span style="color:#888;">(exp. ${latest.icar_expiry})</span>` : ''}</div>
+                            <div style="font-size:13px;color:#475569;"><strong>OEM:</strong>  ${latest?.oem_certified  ? '✅ Certified' : '⚠️ Not certified'}${latest?.oem_expiry  ? ` <span style="color:#888;">(exp. ${latest.oem_expiry})</span>`  : ''}</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 class="card-title">Estimator Leaderboard — MTD</h3>
+                        <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Ranked by $ ROs delivered (not closed). Lower Keys-to-Keys is better.</p>
+                        <div style="overflow-x:auto;">
+                            <table>
+                                <thead><tr style="background:#f8fafc;">
+                                    <th>#</th><th>Estimator</th><th>Avg Keys-to-Keys</th><th># ROs Delivered</th><th>$ ROs Delivered</th><th>Days Reported</th>
+                                </tr></thead>
+                                <tbody>
+                                    ${estRows.length === 0
+                                        ? `<tr><td colspan="6" class="empty-state" style="padding:14px;color:#64748b;">No estimator data yet — start logging on Daily Entry → Collision.</td></tr>`
+                                        : estRows.map((r, i) => `
+                                            <tr style="${i===0?'background:#fef3c7;':''}">
+                                                <td style="font-weight:700;text-align:center;">${i+1}</td>
+                                                <td style="font-weight:600;">${r.name}</td>
+                                                <td>${r.k2k === null ? '—' : r.k2k.toFixed(1) + ' days'}</td>
+                                                <td>${r.rosCount}</td>
+                                                <td style="font-weight:700;">${formatCurrency(r.rosDollars)}</td>
+                                                <td>${r.days}</td>
+                                            </tr>`).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 class="card-title">Body Techs — MTD Production Hours</h3>
+                        <div style="overflow-x:auto;">
+                            <table>
+                                <thead><tr style="background:#f8fafc;">
+                                    <th>#</th><th>Body Tech</th><th>Skill</th><th>MTD Hours</th><th>Days Reported</th><th>Avg / Day</th>
+                                </tr></thead>
+                                <tbody>
+                                    ${btRows.length === 0
+                                        ? `<tr><td colspan="6" class="empty-state" style="padding:14px;color:#64748b;">No body-tech hours yet for this month.</td></tr>`
+                                        : btRows.map((r, i) => `
+                                            <tr>
+                                                <td style="font-weight:700;text-align:center;">${i+1}</td>
+                                                <td style="font-weight:600;">${r.name}</td>
+                                                <td>${r.skill}</td>
+                                                <td style="font-weight:700;">${r.hours.toFixed(1)}</td>
+                                                <td>${r.days}</td>
+                                                <td>${r.avg.toFixed(1)}</td>
+                                            </tr>`).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 class="card-title">Painters — MTD Production Hours</h3>
+                        <div style="overflow-x:auto;">
+                            <table>
+                                <thead><tr style="background:#f8fafc;">
+                                    <th>#</th><th>Painter</th><th>Skill</th><th>MTD Hours</th><th>Days Reported</th><th>Avg / Day</th>
+                                </tr></thead>
+                                <tbody>
+                                    ${paRows.length === 0
+                                        ? `<tr><td colspan="6" class="empty-state" style="padding:14px;color:#64748b;">No painter hours yet for this month.</td></tr>`
+                                        : paRows.map((r, i) => `
+                                            <tr>
+                                                <td style="font-weight:700;text-align:center;">${i+1}</td>
+                                                <td style="font-weight:600;">${r.name}</td>
+                                                <td>${r.skill}</td>
+                                                <td style="font-weight:700;">${r.hours.toFixed(1)}</td>
+                                                <td>${r.days}</td>
+                                                <td>${r.avg.toFixed(1)}</td>
+                                            </tr>`).join('')}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 `;
-                return;
+            } catch(e) {
+                console.error('loadCollisionDashboard error', e);
+                target.innerHTML = `<div class="card"><div style="color:#dc2626;">Error loading collision dashboard. Try reloading.</div></div>`;
             }
-            // DCVB or All Stores — show the Phase 2 stub for now
-            target.innerHTML = `
-                <div style="padding:30px 16px;text-align:center;color:#475569;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;">
-                    <div style="font-size:42px;margin-bottom:10px;">🚧</div>
-                    <div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:6px;">Coming Next</div>
-                    <div style="max-width:560px;margin:0 auto;font-size:13px;line-height:1.55;">
-                        The Collision daily entry form is wired up next. It will only show fields when <strong>DCVB</strong> is the selected store, with Collision Gross trend, ICAR / OEM cert status, Body Shop Receivables (#22002, ≥15 days), Cash Clearing (≥4 days), Body Shop Sublet (≥30 days), Pending Parts Credit Balance, Parts Inventory EOM Variance, Labor WIP Account #24701, plus three named estimator slots tracking Keys-to-Keys, # ROs delivered not closed, and $ ROs delivered not closed.
-                    </div>
-                </div>
-            `;
+        }
+
+        // ============================================================================
+        // TAB: COLLISION ROSTER (DCVB)
+        // ============================================================================
+        // Lists every active estimator, body tech, and painter pulled from Department
+        // Staff. Each card shows a quick MTD scorecard. Names + adds/edits live in Admin
+        // Console → Department Staff.
+        async function loadCollisionRoster() {
+            const target = document.getElementById('collisionRosterContent');
+            if (!target) return;
+            try {
+                if (!estimatorStaff.length || !bodyTechStaff.length || !painterStaff.length) {
+                    try { await loadDepartmentStaff(); } catch(e) { /* non-fatal */ }
+                }
+                // Filter to DCVB-active staff
+                const ests = estimatorStaff.filter(s => s.is_active !== false && (!s.store_id || s.store_id === 'dcvb'));
+                const bts  = bodyTechStaff.filter(s => s.is_active !== false && (!s.store_id || s.store_id === 'dcvb'));
+                const pas  = painterStaff.filter(s => s.is_active !== false && (!s.store_id || s.store_id === 'dcvb'));
+
+                // Pull MTD data for scorecards
+                const today = new Date();
+                const year  = today.getFullYear();
+                const month = today.getMonth() + 1;
+                const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
+                const monthEnd   = dateToString(new Date(year, month, 0));
+                const entries = (await LS.getCollisionEntries()).filter(e =>
+                    e.entry_date >= monthStart && e.entry_date <= monthEnd && e.store_id === 'dcvb');
+
+                // Aggregations
+                const aggEst = {}, aggBt = {}, aggPa = {};
+                entries.forEach(e => {
+                    Object.entries(e.estimator_breakdown || {}).forEach(([id, v]) => {
+                        if (!aggEst[id]) aggEst[id] = { k2k_sum: 0, k2k_n: 0, count: 0, dollars: 0, days: 0 };
+                        if (v.keys_to_keys != null && !isNaN(parseFloat(v.keys_to_keys))) { aggEst[id].k2k_sum += parseFloat(v.keys_to_keys); aggEst[id].k2k_n++; }
+                        aggEst[id].count   += parseFloat(v.ros_delivered_count)   || 0;
+                        aggEst[id].dollars += parseFloat(v.ros_delivered_dollars) || 0;
+                        aggEst[id].days++;
+                    });
+                    Object.entries(e.body_tech_breakdown || {}).forEach(([id, v]) => {
+                        if (!aggBt[id]) aggBt[id] = { hours: 0, days: 0 };
+                        aggBt[id].hours += parseFloat(v.production_hours) || 0;
+                        if (v.production_hours) aggBt[id].days++;
+                    });
+                    Object.entries(e.painter_breakdown || {}).forEach(([id, v]) => {
+                        if (!aggPa[id]) aggPa[id] = { hours: 0, days: 0 };
+                        aggPa[id].hours += parseFloat(v.production_hours) || 0;
+                        if (v.production_hours) aggPa[id].days++;
+                    });
+                });
+
+                const scoreCard = (title, lines) => `
+                    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;">
+                        <div style="font-weight:700;color:#1e293b;margin-bottom:6px;">${title}</div>
+                        ${lines.map(l => `<div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:2px 0;"><span>${l[0]}</span><strong style="color:#1e293b;">${l[1]}</strong></div>`).join('')}
+                    </div>`;
+
+                const renderGroup = (label, staffArr, scorecardFn, emptyMsg) => `
+                    <div class="card">
+                        <h3 class="card-title">${label} <span style="font-size:12px;font-weight:500;color:#888;">(${staffArr.length} active)</span></h3>
+                        ${staffArr.length === 0
+                            ? `<div style="padding:18px;text-align:center;color:#64748b;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;">${emptyMsg} Add them in <strong>Admin Console → Department Staff</strong>.</div>`
+                            : `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;">${staffArr.map(scorecardFn).join('')}</div>`}
+                    </div>`;
+
+                target.innerHTML = `
+                    ${renderGroup('Estimators', ests, s => {
+                        const a = aggEst[s.id] || { k2k_sum: 0, k2k_n: 0, count: 0, dollars: 0, days: 0 };
+                        const k2k = a.k2k_n > 0 ? (a.k2k_sum / a.k2k_n).toFixed(1) + ' days' : '—';
+                        return scoreCard(s.name || 'Estimator', [
+                            ['Avg Keys-to-Keys', k2k],
+                            ['# ROs Delivered (MTD)', a.count],
+                            ['$ ROs Delivered (MTD)', formatCurrency(a.dollars)],
+                            ['Days Reported',          a.days]
+                        ]);
+                    }, 'No estimators on the roster yet.')}
+
+                    ${renderGroup('Body Techs', bts, s => {
+                        const a = aggBt[s.id] || { hours: 0, days: 0 };
+                        return scoreCard(`${s.name || 'Body Tech'} <span style="color:#888;font-weight:500;">(${s.skill_level || '—'})</span>`, [
+                            ['MTD Production Hours', a.hours.toFixed(1)],
+                            ['Days Reported',         a.days],
+                            ['Avg Hours / Day',       a.days > 0 ? (a.hours / a.days).toFixed(1) : '—']
+                        ]);
+                    }, 'No body techs on the roster yet.')}
+
+                    ${renderGroup('Painters', pas, s => {
+                        const a = aggPa[s.id] || { hours: 0, days: 0 };
+                        return scoreCard(`${s.name || 'Painter'} <span style="color:#888;font-weight:500;">(${s.skill_level || '—'})</span>`, [
+                            ['MTD Production Hours', a.hours.toFixed(1)],
+                            ['Days Reported',         a.days],
+                            ['Avg Hours / Day',       a.days > 0 ? (a.hours / a.days).toFixed(1) : '—']
+                        ]);
+                    }, 'No painters on the roster yet.')}
+                `;
+            } catch(e) {
+                console.error('loadCollisionRoster error', e);
+                target.innerHTML = `<div class="card"><div style="color:#dc2626;">Error loading collision roster. Try reloading.</div></div>`;
+            }
+        }
+
+        // ============================================================================
+        // TAB: COLLISION ADVISORS (per-estimator scorecard view)
+        // ============================================================================
+        async function loadCollisionAdvisor() {
+            const target = document.getElementById('collisionAdvisorContent');
+            if (!target) return;
+            try {
+                if (!estimatorStaff.length) { try { await loadDepartmentStaff(); } catch(e) {} }
+                const ests = estimatorStaff.filter(s => s.is_active !== false && (!s.store_id || s.store_id === 'dcvb'));
+                const today = new Date();
+                const year  = today.getFullYear();
+                const month = today.getMonth() + 1;
+                const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
+                const monthEnd   = dateToString(new Date(year, month, 0));
+                const entries = (await LS.getCollisionEntries()).filter(e =>
+                    e.entry_date >= monthStart && e.entry_date <= monthEnd && e.store_id === 'dcvb');
+
+                const buildSeries = (estId) => {
+                    // Per-day series for this estimator: { date, k2k, count, dollars }
+                    return entries
+                        .filter(e => e.estimator_breakdown && e.estimator_breakdown[estId])
+                        .sort((a, b) => a.entry_date < b.entry_date ? -1 : 1)
+                        .map(e => ({
+                            date: e.entry_date,
+                            k2k: parseFloat(e.estimator_breakdown[estId].keys_to_keys),
+                            count: parseFloat(e.estimator_breakdown[estId].ros_delivered_count) || 0,
+                            dollars: parseFloat(e.estimator_breakdown[estId].ros_delivered_dollars) || 0
+                        }));
+                };
+
+                if (ests.length === 0) {
+                    target.innerHTML = `<div class="card"><div style="padding:18px;text-align:center;color:#64748b;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;">
+                        No estimators on the roster yet. Add them in <strong>Admin Console → Department Staff → Estimators</strong>.
+                    </div></div>`;
+                    return;
+                }
+                target.innerHTML = ests.map(s => {
+                    const series = buildSeries(s.id);
+                    const k2kVals = series.map(x => x.k2k).filter(v => !isNaN(v) && v > 0);
+                    const k2kAvg  = k2kVals.length > 0 ? (k2kVals.reduce((a,b)=>a+b,0) / k2kVals.length) : null;
+                    const totalCount   = series.reduce((s, x) => s + x.count,   0);
+                    const totalDollars = series.reduce((s, x) => s + x.dollars, 0);
+                    return `
+                        <div class="card">
+                            <h3 class="card-title">${s.name || 'Estimator'}</h3>
+                            <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));">
+                                <div class="kpi-card"><div class="kpi-label">Avg Keys-to-Keys</div><div class="kpi-value" style="font-size:30px;">${k2kAvg === null ? '—' : k2kAvg.toFixed(1) + ' d'}</div></div>
+                                <div class="kpi-card"><div class="kpi-label"># ROs Delivered (MTD)</div><div class="kpi-value" style="font-size:30px;">${totalCount}</div></div>
+                                <div class="kpi-card"><div class="kpi-label">$ ROs Delivered (MTD)</div><div class="kpi-value" style="font-size:24px;">${formatCurrency(totalDollars)}</div></div>
+                                <div class="kpi-card"><div class="kpi-label">Days Reported</div><div class="kpi-value" style="font-size:30px;">${series.length}</div></div>
+                            </div>
+                            ${series.length === 0 ? `<div style="margin-top:8px;color:#64748b;font-size:12px;">No daily entries yet for this month.</div>` : `
+                            <div style="overflow-x:auto;margin-top:14px;">
+                                <table>
+                                    <thead><tr style="background:#f8fafc;"><th>Date</th><th>Keys-to-Keys</th><th># ROs</th><th>$ ROs</th></tr></thead>
+                                    <tbody>${series.map(x => `<tr>
+                                        <td>${x.date}</td>
+                                        <td>${isNaN(x.k2k) ? '—' : x.k2k.toFixed(1) + ' d'}</td>
+                                        <td>${x.count}</td>
+                                        <td>${formatCurrency(x.dollars)}</td>
+                                    </tr>`).join('')}</tbody>
+                                </table>
+                            </div>`}
+                        </div>`;
+                }).join('');
+            } catch(e) {
+                console.error('loadCollisionAdvisor error', e);
+                target.innerHTML = `<div class="card"><div style="color:#dc2626;">Error loading collision advisors. Try reloading.</div></div>`;
+            }
         }
 
         async function updateDailyGoalDisplay(storeId, date, daysInMonth, laborDay, partsDay, totalGrossDay) {
@@ -5728,36 +6758,36 @@
                 if (!allMode) entries = entries.filter(p => p.store_id === storeId);
 
                 // Aggregate MTD across the entries — sales AND gross per channel + obso + inventory
-                let mtdSvc = 0, mtdWhs = 0, mtdObso = 0, mtdC1 = 0, mtdC2 = 0, mtdC3 = 0, mtdTotalSales = 0;
-                let mtdSvcG = 0, mtdWhsG = 0, mtdC1G = 0, mtdC2G = 0, mtdC3G = 0, mtdTotalGross = 0;
+                let mtdSvc = 0, mtdWhs = 0, mtdObso = 0, mtdTotalSales = 0;
+                let mtdSvcG = 0, mtdWhsG = 0, mtdTotalGross = 0;
+                let mtdCounterTotal = 0, mtdCounterTotalGross = 0;
                 let mtdInventory = 0, mtdInventorySamples = 0;
                 entries.forEach(p => {
                     // Sales
                     mtdSvc        += parseFloat(p.service_parts) || 0;
                     mtdWhs        += parseFloat(p.wholesale)     || 0;
                     mtdObso       += parseFloat(p.obso)          || 0;
-                    mtdC1         += parseFloat(p.counter1)      || 0;
-                    mtdC2         += parseFloat(p.counter2)      || 0;
-                    mtdC3         += parseFloat(p.counter3)      || 0;
-                    mtdTotalSales += parseFloat(p.total_parts_sales)
-                                   || parseFloat(p.total_parts_gross)
-                                   || ((parseFloat(p.service_parts)||0)+(parseFloat(p.wholesale)||0)
-                                      +(parseFloat(p.counter1)||0)+(parseFloat(p.counter2)||0)+(parseFloat(p.counter3)||0));
                     // Gross
                     mtdSvcG       += parseFloat(p.service_parts_gross) || 0;
                     mtdWhsG       += parseFloat(p.wholesale_gross)     || 0;
-                    mtdC1G        += parseFloat(p.counter1_gross)      || 0;
-                    mtdC2G        += parseFloat(p.counter2_gross)      || 0;
-                    mtdC3G        += parseFloat(p.counter3_gross)      || 0;
+                    // Counter — sum from breakdown (handles legacy via counterBreakdownForEntry fallback)
+                    const breakdown = counterBreakdownForEntry(p) || {};
+                    let cSales = 0, cGross = 0;
+                    Object.values(breakdown).forEach(v => {
+                        cSales += parseFloat(v.sales) || 0;
+                        cGross += parseFloat(v.gross) || 0;
+                    });
+                    mtdCounterTotal      += cSales;
+                    mtdCounterTotalGross += cGross;
+                    mtdTotalSales += parseFloat(p.total_parts_sales)
+                                   || parseFloat(p.total_parts_gross)
+                                   || ((parseFloat(p.service_parts)||0)+(parseFloat(p.wholesale)||0) + cSales);
                     mtdTotalGross += parseFloat(p.total_parts_gross)
-                                   || ((parseFloat(p.service_parts_gross)||0)+(parseFloat(p.wholesale_gross)||0)
-                                      +(parseFloat(p.counter1_gross)||0)+(parseFloat(p.counter2_gross)||0)+(parseFloat(p.counter3_gross)||0));
+                                   || ((parseFloat(p.service_parts_gross)||0)+(parseFloat(p.wholesale_gross)||0) + cGross);
                     // Inventory — average across days that recorded one
                     const inv = parseFloat(p.inventory) || 0;
                     if (inv > 0) { mtdInventory += inv; mtdInventorySamples++; }
                 });
-                const mtdCounterTotal      = mtdC1  + mtdC2  + mtdC3;
-                const mtdCounterTotalGross = mtdC1G + mtdC2G + mtdC3G;
                 const avgInventory         = mtdInventorySamples > 0 ? mtdInventory / mtdInventorySamples : 0;
                 // Counter Gross %  =  counter gross / counter sales
                 const counterGpPct = mtdCounterTotal > 0 ? (mtdCounterTotalGross / mtdCounterTotal) * 100 : 0;
@@ -5862,22 +6892,24 @@
                     }).join('');
                 }
 
-                // Counter People Leaderboard — per slot, per store. Build rows of {storeCode, name, slot, sales, gross, days}
-                const roster = (await LS.getPartsRoster()) || [];
+                // Counter People Leaderboard — aggregate by counter person (staff id) across all entries.
+                // Make sure department staff is loaded so we can resolve names.
+                if (!partsCounterStaff || partsCounterStaff.length === 0) {
+                    try { await loadDepartmentStaff(); } catch(e) { /* non-fatal */ }
+                }
                 const rows = [];
                 entries.forEach(p => {
-                    const r = roster.find(x => x.store_id === p.store_id);
+                    const breakdown = counterBreakdownForEntry(p) || {};
                     const storeRow = (stores.find(s => s.id === p.store_id) || FALLBACK_STORES.find(s => s.id === p.store_id));
                     const storeCode = storeRow ? storeRow.code : p.store_id;
-                    [1, 2, 3].forEach(i => {
-                        const sales = parseFloat(p['counter' + i])         || 0;
-                        const gross = parseFloat(p['counter' + i + '_gross']) || 0;
+                    Object.entries(breakdown).forEach(([key, val]) => {
+                        const sales = parseFloat(val.sales) || 0;
+                        const gross = parseFloat(val.gross) || 0;
                         if (sales <= 0 && gross <= 0) return;
-                        const nm = r?.['counter' + i + '_name'] || `Counter ${i}`;
-                        const key = `${p.store_id}|${i}|${nm}`;
+                        const nm = counterDisplayName(key, val);
                         let slot = rows.find(x => x.key === key);
                         if (!slot) {
-                            slot = { key, name: nm, storeCode, slot: i, sales: 0, gross: 0, days: 0 };
+                            slot = { key, name: nm, storeCode, sales: 0, gross: 0, days: 0 };
                             rows.push(slot);
                         }
                         slot.sales += sales;
@@ -5930,7 +6962,8 @@
                         const d = byDate[p.entry_date] || (byDate[p.entry_date] = { svc: 0, whs: 0, ctr: 0, obso: 0, total: 0 });
                         d.svc   += parseFloat(p.service_parts)   || 0;
                         d.whs   += parseFloat(p.wholesale)       || 0;
-                        d.ctr   += (parseFloat(p.counter1)||0) + (parseFloat(p.counter2)||0) + (parseFloat(p.counter3)||0);
+                        const bd = counterBreakdownForEntry(p) || {};
+                        Object.values(bd).forEach(v => { d.ctr += parseFloat(v.sales) || 0; });
                         d.obso  += parseFloat(p.obso)            || 0;
                         d.total += parseFloat(p.total_parts_gross)
                                 || (d.svc + d.whs + d.ctr + d.obso) - (d.total || 0); // safe fallback
@@ -6042,9 +7075,12 @@
                 count++;
             }
             showToast(`Parts roster saved (${count} store${count === 1 ? '' : 's'})`);
-            // Refresh counter labels on the Parts Daily Entry tab if a single store is selected
+            // Counter labels now come from Department Staff (Admin Console).
+            // Re-render dynamic rows on the Parts Daily tab if visible.
             const sid = getSelectedStore();
-            if (sid && !isAllStores()) applyPartsCounterLabels(sid);
+            if (sid && !isAllStores()) {
+                try { renderPartsCounterRows(sid); } catch(e) { /* parts daily not visible */ }
+            }
         }
 
         // ============================================================================
