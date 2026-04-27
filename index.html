@@ -1319,12 +1319,12 @@
             </div>
         </div>
 
-        <!-- TAB: COLLISION DAILY ENTRY (Collision Manager) — DCVB only -->
+        <!-- TAB: COLLISION DAILY ENTRY (Collision Manager) — DCVB + DCFP -->
         <div id="collisionDaily" class="tab-content">
             <!-- Heading + date / day# / days-in-month picker (always visible) -->
             <div class="card">
                 <h2 class="card-title">Collision Daily Entry <span style="font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-left:8px;">Collision Manager</span></h2>
-                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Collision Center daily numbers for DCVB — body shop receivables, sublet, WIP, parts inventory variance, plus per-estimator Keys-to-Keys and ROs delivered, plus per body-tech and painter production hours.</p>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Collision Center daily numbers for DCVB and DCFP — body shop receivables, sublet, WIP, parts inventory variance, plus per-estimator Keys-to-Keys and ROs delivered, plus per body-tech and painter production hours. Switch stores using the store dropdown.</p>
                 <div class="controls">
                     <div class="control-group">
                         <label>Date</label>
@@ -1341,7 +1341,7 @@
                 </div>
             </div>
 
-            <!-- The "DCVB only" banner / form switches in/out via JS into #collisionDailyContent -->
+            <!-- The "Collision-eligible store" banner / form switches in/out via JS into #collisionDailyContent -->
             <div id="collisionDailyContent">
 
                 <!-- Money panel — collision gross + the 6 health-watch dollars + WIP -->
@@ -1497,7 +1497,7 @@
         <!-- TAB: COLLISION DASHBOARD (placeholder — DCVB-only) -->
         <div id="collisionDashboard" class="tab-content">
             <div class="card">
-                <h2 class="card-title">Collision Dashboard <span style="font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-left:8px;">DCVB Only</span></h2>
+                <h2 class="card-title">Collision Dashboard <span style="font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-left:8px;">DCVB / DCFP</span></h2>
                 <div id="collisionDashboardContent">
                     <div style="padding:30px 16px;text-align:center;color:#475569;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;">
                         <div style="font-size:42px;margin-bottom:10px;">🚧</div>
@@ -1536,7 +1536,7 @@
         <!-- TAB: COLLISION ADVISORS (estimator scorecards — DCVB-only) -->
         <div id="collisionAdvisor" class="tab-content">
             <div class="card">
-                <h2 class="card-title">Collision Estimators <span style="font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-left:8px;">DCVB Only</span></h2>
+                <h2 class="card-title">Collision Estimators <span style="font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-left:8px;">DCVB / DCFP</span></h2>
                 <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Per-estimator scorecards with Keys-to-Keys, # ROs delivered-not-closed, and $ ROs delivered-not-closed. Estimator names are managed on the <strong>Roster</strong> tab once the collision form is live.</p>
                 <div id="collisionAdvisorContent">
                     <div style="padding:30px 16px;text-align:center;color:#475569;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;">
@@ -2037,11 +2037,11 @@
             </div>
         </div>
 
-        <!-- TAB: COLLISION ROSTER (DCVB only — body techs / painters / estimators) -->
+        <!-- TAB: COLLISION ROSTER (DCVB + DCFP — body techs / painters / estimators) -->
         <div id="collisionRoster" class="tab-content">
             <div class="card">
-                <h2 class="card-title">Collision Roster <span style="font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-left:8px;">DCVB Only</span></h2>
-                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Body Techs, Painters, and Estimators for the DCVB collision center. Names are managed in <strong>Admin Console → Department Staff</strong>. Performance metrics will populate once the Collision daily entry form is live.</p>
+                <h2 class="card-title">Collision Roster <span style="font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-left:8px;">DCVB / DCFP</span></h2>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Body Techs, Painters, and Estimators for the DCVB and DCFP collision centers. Names are managed in <strong>Admin Console → Department Staff</strong>.</p>
                 <div id="collisionRosterContent">
                     <div style="padding:30px 16px;text-align:center;color:#475569;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;">
                         <div style="font-size:38px;margin-bottom:8px;">🚧</div>
@@ -3611,7 +3611,7 @@
                 return { ok: true };
             },
 
-            // --- Collision Manager: daily entries (DCVB only — separate stream from service / parts) ---
+            // --- Collision Manager: daily entries (DCVB + DCFP — separate stream from service / parts) ---
             async getCollisionEntries() {
                 if (useSupabase) {
                     try {
@@ -5203,9 +5203,9 @@
         }
 
         // ============================================================================
-        // TAB: COLLISION DAILY ENTRY (DCVB only)
+        // TAB: COLLISION DAILY ENTRY (DCVB + DCFP)
         // ============================================================================
-        // Collision Center exists at DCVB only. The form has:
+        // Collision Centers exist at DCVB (Vero Beach) and DCFP (Fort Pierce). Form has:
         //   - Money panel: collision gross + 6 cash-flow watch dollars + WIP
         //   - Cert status: ICAR / OEM (boolean + optional expiry)
         //   - Per-estimator productivity (Keys-to-Keys, ROs delivered #, ROs delivered $)
@@ -5215,13 +5215,24 @@
         // Per-staff rows are rendered dynamically from Department Staff (estimatorStaff /
         // bodyTechStaff / painterStaff) and saved as JSONB breakdowns keyed by staff id.
 
-        // Helper — only DCVB body-shop staff (collision-eligible). Active only.
+        // Helper — collision-eligible body-shop staff for the currently selected store
+        // (or all collision stores when on "All Stores"). Active only.
         function getCollisionStaffForType(type) {
             const arr = type === 'estimator' ? estimatorStaff
                       : type === 'body_tech' ? bodyTechStaff
                       : type === 'painter'   ? painterStaff
                       : [];
-            return (arr || []).filter(s => s.is_active !== false && (!s.store_id || s.store_id === 'dcvb'));
+            const sel = (typeof getSelectedStore === 'function') ? getSelectedStore() : null;
+            const allMode = sel === 'all';
+            return (arr || []).filter(s => {
+                if (s.is_active === false) return false;
+                // No store assigned → fall back to "any collision store"
+                const sid = s.store_id;
+                if (!sid) return true;
+                if (!COLLISION_STORE_IDS.includes(sid)) return false;
+                if (allMode) return true;
+                return sid === sel;
+            });
         }
 
         // Render the dynamic estimator rows + wire input listeners
@@ -5369,7 +5380,7 @@
             clearDirty('collisionDaily');
             const storeId = getSelectedStore();
             const allMode = isAllStores();
-            const isDcvb = storeId === 'dcvb';
+            const isCollisionStore = COLLISION_STORE_IDS.includes(storeId);
             const formContainer = document.getElementById('collisionDailyContent');
             if (!formContainer) return;
 
@@ -5378,8 +5389,9 @@
                 try { await loadDepartmentStaff(); } catch(e) { /* non-fatal */ }
             }
 
-            // Show form only for DCVB or All Stores. Other stores get a friendly "DCVB only" banner.
-            if (!isDcvb && !allMode) {
+            // Show form only for collision stores (DCVB / DCFP) or All Stores.
+            // Other stores get a friendly "Collision center only" banner.
+            if (!isCollisionStore && !allMode) {
                 // Hide the form, swap in the banner
                 Array.from(formContainer.children).forEach(c => { c.style.display = 'none'; });
                 if (!document.getElementById('collisionDailyDcvbBanner')) {
@@ -5389,9 +5401,9 @@
                         <div class="card">
                             <div style="padding:30px 16px;text-align:center;color:#475569;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;">
                                 <div style="font-size:36px;margin-bottom:8px;">ℹ️</div>
-                                <div style="font-size:16px;font-weight:700;color:#92400e;margin-bottom:6px;">DCVB Only</div>
+                                <div style="font-size:16px;font-weight:700;color:#92400e;margin-bottom:6px;">Collision Centers Only</div>
                                 <div style="max-width:520px;margin:0 auto;font-size:13px;line-height:1.5;">
-                                    The Collision Center exists at DCVB only. Switch the store selector to <strong>DCVB</strong> to enter Collision daily numbers.
+                                    The Collision Center exists at <strong>DCVB</strong> (Vero Beach) and <strong>DCFP</strong> (Fort Pierce). Switch the store selector to one of those to enter Collision daily numbers.
                                 </div>
                             </div>
                         </div>`;
@@ -5400,7 +5412,7 @@
                 document.getElementById('collisionDailyDcvbBanner').style.display = '';
                 return;
             } else {
-                // DCVB or All Stores — restore form visibility
+                // DCVB / DCFP / All Stores — restore form visibility
                 Array.from(formContainer.children).forEach(c => { c.style.display = ''; });
                 const banner = document.getElementById('collisionDailyDcvbBanner');
                 if (banner) banner.style.display = 'none';
@@ -5493,11 +5505,11 @@
             const storeId = getSelectedStore();
             const picker = document.getElementById('collisionDailyDatePicker');
             if (!storeId || isAllStores()) {
-                showToast('Select DCVB to save', 'error');
+                showToast('Select DCVB or DCFP to save', 'error');
                 return;
             }
-            if (storeId !== 'dcvb') {
-                showToast('Collision is DCVB-only', 'error');
+            if (!COLLISION_STORE_IDS.includes(storeId)) {
+                showToast('Collision is DCVB / DCFP only', 'error');
                 return;
             }
             if (!picker || !picker.valueAsDate) {
@@ -5551,14 +5563,14 @@
             if (!target) return;
             const storeId = getSelectedStore();
             const allMode = isAllStores();
-            const isDcvb = storeId === 'dcvb';
-            if (!isDcvb && !allMode) {
+            const isCollisionStore = COLLISION_STORE_IDS.includes(storeId);
+            if (!isCollisionStore && !allMode) {
                 target.innerHTML = `
                     <div style="padding:30px 16px;text-align:center;color:#475569;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;">
                         <div style="font-size:36px;margin-bottom:8px;">ℹ️</div>
-                        <div style="font-size:16px;font-weight:700;color:#92400e;margin-bottom:6px;">DCVB Only</div>
+                        <div style="font-size:16px;font-weight:700;color:#92400e;margin-bottom:6px;">Collision Centers Only</div>
                         <div style="max-width:520px;margin:0 auto;font-size:13px;line-height:1.5;">
-                            The Collision Center exists at DCVB only. Switch the store selector to <strong>DCVB</strong> to see Collision health metrics.
+                            Collision lives at <strong>DCVB</strong> (Vero Beach) and <strong>DCFP</strong> (Fort Pierce). Switch the store selector to one of those — or All Stores — to see Collision health metrics.
                         </div>
                     </div>`;
                 return;
@@ -5574,7 +5586,9 @@
                 const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
                 const monthEnd   = dateToString(new Date(year, month, 0));
                 const allEntries = await LS.getCollisionEntries();
-                let entries = allEntries.filter(e => e.entry_date >= monthStart && e.entry_date <= monthEnd);
+                let entries = allEntries.filter(e =>
+                    e.entry_date >= monthStart && e.entry_date <= monthEnd
+                    && COLLISION_STORE_IDS.includes(e.store_id));
                 if (!allMode) entries = entries.filter(e => e.store_id === storeId);
 
                 // Latest entry (date-wise) — used for snapshot money panel
@@ -5750,10 +5764,18 @@
                 if (!estimatorStaff.length || !bodyTechStaff.length || !painterStaff.length) {
                     try { await loadDepartmentStaff(); } catch(e) { /* non-fatal */ }
                 }
-                // Filter to DCVB-active staff
-                const ests = estimatorStaff.filter(s => s.is_active !== false && (!s.store_id || s.store_id === 'dcvb'));
-                const bts  = bodyTechStaff.filter(s => s.is_active !== false && (!s.store_id || s.store_id === 'dcvb'));
-                const pas  = painterStaff.filter(s => s.is_active !== false && (!s.store_id || s.store_id === 'dcvb'));
+                // Scope by selected store: a single collision store, or all collision stores.
+                const selStore = getSelectedStore();
+                const allMode  = isAllStores();
+                const inScope  = (sid) => {
+                    if (!sid) return true;                          // legacy/unassigned → show
+                    if (!COLLISION_STORE_IDS.includes(sid)) return false;
+                    if (allMode) return true;
+                    return sid === selStore;
+                };
+                const ests = estimatorStaff.filter(s => s.is_active !== false && inScope(s.store_id));
+                const bts  = bodyTechStaff.filter(s  => s.is_active !== false && inScope(s.store_id));
+                const pas  = painterStaff.filter(s   => s.is_active !== false && inScope(s.store_id));
 
                 // Pull MTD data for scorecards
                 const today = new Date();
@@ -5762,7 +5784,9 @@
                 const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
                 const monthEnd   = dateToString(new Date(year, month, 0));
                 const entries = (await LS.getCollisionEntries()).filter(e =>
-                    e.entry_date >= monthStart && e.entry_date <= monthEnd && e.store_id === 'dcvb');
+                    e.entry_date >= monthStart && e.entry_date <= monthEnd
+                    && COLLISION_STORE_IDS.includes(e.store_id)
+                    && (allMode || e.store_id === selStore));
 
                 // Aggregations
                 const aggEst = {}, aggBt = {}, aggPa = {};
@@ -5844,14 +5868,24 @@
             if (!target) return;
             try {
                 if (!estimatorStaff.length) { try { await loadDepartmentStaff(); } catch(e) {} }
-                const ests = estimatorStaff.filter(s => s.is_active !== false && (!s.store_id || s.store_id === 'dcvb'));
+                const selStore = getSelectedStore();
+                const allMode  = isAllStores();
+                const inScope  = (sid) => {
+                    if (!sid) return true;
+                    if (!COLLISION_STORE_IDS.includes(sid)) return false;
+                    if (allMode) return true;
+                    return sid === selStore;
+                };
+                const ests = estimatorStaff.filter(s => s.is_active !== false && inScope(s.store_id));
                 const today = new Date();
                 const year  = today.getFullYear();
                 const month = today.getMonth() + 1;
                 const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
                 const monthEnd   = dateToString(new Date(year, month, 0));
                 const entries = (await LS.getCollisionEntries()).filter(e =>
-                    e.entry_date >= monthStart && e.entry_date <= monthEnd && e.store_id === 'dcvb');
+                    e.entry_date >= monthStart && e.entry_date <= monthEnd
+                    && COLLISION_STORE_IDS.includes(e.store_id)
+                    && (allMode || e.store_id === selStore));
 
                 const buildSeries = (estId) => {
                     // Per-day series for this estimator: { date, k2k, count, dollars }
@@ -9594,9 +9628,10 @@
         }
 
         // For collision roles we restrict the store dropdown to stores that actually have a body shop.
-        // Right now that's only DCVB; tagged here so it's easy to add more later.
+        // Currently DCVB (Vero Beach) and DCFP (Fort Pierce) — add more here as new collision centers come online.
+        const COLLISION_STORE_IDS = ['dcvb', 'dcfp'];
         function getCollisionStores() {
-            return stores.filter(s => s.id === 'dcvb');
+            return stores.filter(s => COLLISION_STORE_IDS.includes(s.id));
         }
 
         async function loadDepartmentStaff() {
