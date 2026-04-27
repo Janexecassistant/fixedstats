@@ -859,8 +859,11 @@
                 <option value="all">All Stores</option>
             </select>
             <ul class="nav-tabs">
-                <li class="nav-tab"><button class="nav-btn active" data-tab="daily">Daily Entry</button></li>
+                <li class="nav-tab"><button class="nav-btn active" data-tab="daily">Service Daily Entry</button></li>
+                <li class="nav-tab"><button class="nav-btn" data-tab="partsDaily">Parts Daily Entry</button></li>
+                <li class="nav-tab"><button class="nav-btn" data-tab="collisionDaily">Collision Daily Entry</button></li>
                 <li class="nav-tab"><button class="nav-btn" data-tab="dashboard">Dashboard</button></li>
+                <li class="nav-tab"><button class="nav-btn" data-tab="parts">Parts</button></li>
                 <li class="nav-tab"><button class="nav-btn" data-tab="executive">Company</button></li>
                 <li class="nav-tab"><button class="nav-btn" data-tab="advisor">Advisors</button></li>
                 <li class="nav-tab"><button class="nav-btn" id="goalsTab" data-tab="goals" style="display:none;">Goals</button></li>
@@ -878,10 +881,11 @@
     </nav>
 
     <div class="container">
-        <!-- TAB 1: DAILY ENTRY -->
+        <!-- TAB 1: SERVICE DAILY ENTRY (Service Manager) -->
         <div id="daily" class="tab-content active">
             <div class="card">
-                <h2 class="card-title">Daily Entry</h2>
+                <h2 class="card-title">Service Daily Entry <span style="font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-left:8px;">Service Manager</span></h2>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Service Manager's daily numbers — Labor + Parts billed on repair orders, advisor / tech / lube performance. Parts Manager enters their full parts numbers separately on the <strong>Parts Daily Entry</strong> tab.</p>
                 <div class="controls">
                     <div class="control-group">
                         <label>Date</label>
@@ -1045,9 +1049,118 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            <div class="card">
                 <div class="btn-group" style="display:flex;align-items:center;gap:12px;">
-                    <button class="btn" id="saveDailyBtn">Save Daily Entry</button>
+                    <button class="btn" id="saveDailyBtn">Save Service Daily Entry</button>
                     <span class="unsaved-badge" data-section="daily" style="display:none;">● Unsaved changes</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: PARTS DAILY ENTRY (Parts Manager) -->
+        <div id="partsDaily" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">Parts Daily Entry <span style="font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-left:8px;">Parts Manager</span></h2>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Parts Manager's full daily numbers across every channel — Service-RO Parts, Wholesale, Counter (per person), and Obsolescence sales. Independent of the Service Manager's entry. Total Parts Gross auto-sums.</p>
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Date</label>
+                        <input type="date" id="partsDailyDatePicker">
+                    </div>
+                    <div class="control-group">
+                        <label>Working Day #</label>
+                        <input type="number" id="partsDailyDayNumber" min="1" max="27" readonly style="background:#f0f0f0;">
+                    </div>
+                    <div class="control-group">
+                        <label>Working Days in Month</label>
+                        <input type="number" id="partsDailyDaysInMonth" min="20" max="27" readonly style="background:#f0f0f0;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parts Department Daily Entry card -->
+            <div class="card" id="dailyPartsCard">
+                <h3 class="card-title">Parts Department</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 32px;">
+                    <table style="flex:1;">
+                        <tbody>
+                            <tr>
+                                <td style="font-weight:600;">Service Parts $</td>
+                                <td><input type="number" id="partsServiceDay" class="input-yellow" placeholder="0"></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight:600;">Wholesale $</td>
+                                <td><input type="number" id="partsWholesaleDay" class="input-yellow" placeholder="0"></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight:600;">Obsolescence Sales $</td>
+                                <td><input type="number" id="partsObsoDay" class="input-yellow" placeholder="0"></td>
+                            </tr>
+                            <tr style="background-color:#f3f4f6;">
+                                <td style="font-weight:600;">Counter Total $ (auto)</td>
+                                <td class="input-gray" id="partsCounterTotalDay">$0</td>
+                            </tr>
+                            <tr style="background-color:#fff3cd;">
+                                <td style="font-weight:700;">Total Parts Gross $ (auto)</td>
+                                <td class="input-gray" id="partsTotalGrossDay" style="font-weight:700;">$0</td>
+                            </tr>
+                            <tr style="background-color:#f3f4f6;">
+                                <td style="font-weight:600;">Total Parts MTD $</td>
+                                <td class="input-gray" id="partsTotalMtd">$0</td>
+                            </tr>
+                            <tr style="background-color:#f3f4f6;">
+                                <td style="font-weight:600;">Total Parts Pace $</td>
+                                <td class="input-gray" id="partsTotalPace">$0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <table style="flex:1;">
+                        <tbody>
+                            <tr>
+                                <td style="font-weight:600;" id="partsCounter1Label">Counter 1 $</td>
+                                <td><input type="number" id="partsCounter1Day" class="input-yellow" placeholder="0"></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight:600;" id="partsCounter2Label">Counter 2 $</td>
+                                <td><input type="number" id="partsCounter2Day" class="input-yellow" placeholder="0"></td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight:600;" id="partsCounter3Label">Counter 3 $</td>
+                                <td><input type="number" id="partsCounter3Day" class="input-yellow" placeholder="0"></td>
+                            </tr>
+                            <tr style="background-color:#f3f4f6;">
+                                <td colspan="2" style="font-size:12px;color:#666;">
+                                    Configure counter person names on the <strong>Parts</strong> tab roster — they'll appear as labels here.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="btn-group" style="display:flex;align-items:center;gap:12px;">
+                    <button class="btn" id="savePartsDailyBtn">Save Parts Daily Entry</button>
+                    <span class="unsaved-badge" data-section="partsDaily" style="display:none;">● Unsaved changes</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: COLLISION DAILY ENTRY (Collision Manager) — DCVB only -->
+        <div id="collisionDaily" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">Collision Daily Entry <span style="font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-left:8px;">Collision Manager</span></h2>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Collision Center daily numbers for DCVB — body shop receivables, sublet, WIP, parts inventory variance, plus per-estimator keys-to-keys and ROs delivered-not-closed.</p>
+                <div id="collisionDailyContent">
+                    <div style="padding:30px 16px;text-align:center;color:#475569;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;">
+                        <div style="font-size:42px;margin-bottom:10px;">🚧</div>
+                        <div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:6px;">Coming Next</div>
+                        <div style="max-width:560px;margin:0 auto;font-size:13px;line-height:1.55;">
+                            The Collision daily entry form is wired up next. It will only show fields when <strong>DCVB</strong> is the selected store, with Collision Gross trend, ICAR / OEM cert status, Body Shop Receivables (#22002, ≥15 days), Cash Clearing (≥4 days), Body Shop Sublet (≥30 days), Pending Parts Credit Balance, Parts Inventory EOM Variance, Labor WIP Account #24701, plus three named estimator slots tracking Keys-to-Keys, # ROs delivered not closed, and $ ROs delivered not closed.
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1109,6 +1222,98 @@
                 <h3 class="card-title">Advisor Comparison</h3>
                 <div class="chart-container">
                     <canvas id="advisorComparisonChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: PARTS DEPARTMENT -->
+        <div id="parts" class="tab-content">
+
+            <div class="controls" style="margin-bottom:16px;">
+                <div class="control-group">
+                    <label>Month / Year</label>
+                    <input type="month" id="partsMonthPicker">
+                </div>
+            </div>
+
+            <div class="kpi-grid" id="partsKpis">
+            </div>
+
+            <!-- Channel mix card -->
+            <div class="card" id="partsChannelMixCard">
+                <h3 class="card-title">Channel Mix — <span id="partsChannelMixSubtitle"></span></h3>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Where parts gross is coming from this month. Service / Wholesale / Counter / Obsolescence as a share of Total Parts Gross.</p>
+                <div id="partsChannelMixGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;"></div>
+            </div>
+
+            <!-- Per-counterperson leaderboard -->
+            <div class="card">
+                <h3 class="card-title">Counter People Leaderboard — MTD</h3>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Each counter person's MTD sales. In All Stores view, names are aggregated per slot across stores. Coach low performers; replicate top performers' approach.</p>
+                <div style="overflow-x:auto;">
+                    <table id="partsCounterLeaderboard">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Counter Person</th>
+                                <th>Store</th>
+                                <th>MTD Sales ($)</th>
+                                <th>% of Counter Total</th>
+                                <th>Avg / Day</th>
+                            </tr>
+                        </thead>
+                        <tbody id="partsCounterLeaderboardBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Daily Parts Performance table -->
+            <div class="card">
+                <h3 class="card-title">Daily Parts Performance — <span id="partsDailyMonth"></span></h3>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="background:#1a1a1a;color:#cc0000;">Day</th>
+                                <th>Date</th>
+                                <th>Service ($)</th>
+                                <th>Wholesale ($)</th>
+                                <th>Counter ($)</th>
+                                <th>Obso ($)</th>
+                                <th>Total Parts ($)</th>
+                                <th>Running Total ($)</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">TRACKING ($)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="partsDailyBody">
+                        </tbody>
+                        <tfoot id="partsDailyFooter">
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Parts Roster admin -->
+            <div class="card" id="partsRosterCard">
+                <h3 class="card-title">Parts Roster — Counter People</h3>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Configure up to three named parts counter people per store. Names appear on the Daily Entry → Parts Department card and on the leaderboard above.</p>
+                <div style="overflow-x:auto;">
+                    <table id="partsRosterTable">
+                        <thead>
+                            <tr>
+                                <th>Store</th>
+                                <th>Counter 1 Name</th>
+                                <th>Counter 2 Name</th>
+                                <th>Counter 3 Name</th>
+                            </tr>
+                        </thead>
+                        <tbody id="partsRosterBody">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="btn-group">
+                    <button class="btn" id="savePartsRosterBtn">Save Parts Roster</button>
                 </div>
             </div>
         </div>
@@ -1258,7 +1463,8 @@
         <!-- TAB 5: GOALS & SETTINGS -->
         <div id="goals" class="tab-content">
             <div class="card">
-                <h3 class="card-title">Monthly Goals</h3>
+                <h3 class="card-title">Service Department Goals</h3>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Service Manager goals for labor and parts on repair orders.</p>
                 <div style="overflow-x: auto;">
                     <table id="goalsTable">
                         <thead>
@@ -1271,6 +1477,26 @@
                             </tr>
                         </thead>
                         <tbody id="goalsBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">Parts Department Goals</h3>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Parts Manager goals for the full parts gross picture (service + wholesale + counter + obsolescence).</p>
+                <div style="overflow-x: auto;">
+                    <table id="partsGoalsTable">
+                        <thead>
+                            <tr>
+                                <th>Store</th>
+                                <th>Total Parts Gross Goal ($)</th>
+                                <th>Wholesale Goal ($)</th>
+                                <th>Counter Goal ($)</th>
+                                <th>Obso Goal ($)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="partsGoalsBody">
                         </tbody>
                     </table>
                 </div>
@@ -2355,7 +2581,10 @@
 
                 // Load data when tab becomes active
                 if (tabId === 'daily') loadDailyEntry();
+                if (tabId === 'partsDaily') loadPartsDailyEntry();
+                if (tabId === 'collisionDaily') loadCollisionDailyEntry();
                 if (tabId === 'dashboard') loadDashboard();
+                if (tabId === 'parts') loadPartsDashboard();
                 if (tabId === 'executive') loadExecutive();
                 if (tabId === 'advisor') loadAdvisor();
                 if (tabId === 'goals') loadGoals();
@@ -2624,6 +2853,91 @@
                         await db.from('roster_entries').upsert(row, { onConflict: 'advisor_id,week_start' });
                     } catch(e) { console.warn('Supabase saveRosterEntry failed', e); }
                 }
+            },
+
+            // --- Parts Department goals (LS-only for now; survives Supabase goals refresh) ---
+            // Keyed identically to goals: store_id + month + year, but lives in its own bucket
+            // so parts_total_goal / parts_wholesale_goal / parts_counter_goal / parts_obso_goal
+            // are not blown away when getGoals overwrites the goals cache from Supabase.
+            getPartsGoals() {
+                return this._get('dyer_parts_goals');
+            },
+            savePartsGoal(goal) {
+                // goal: { store_id, month, year, parts_total_goal, parts_wholesale_goal, parts_counter_goal, parts_obso_goal }
+                const all = this._get('dyer_parts_goals');
+                const idx = all.findIndex(g => g.store_id === goal.store_id && g.month === goal.month && g.year === goal.year);
+                if (idx >= 0) all[idx] = goal; else all.push(goal);
+                this._set('dyer_parts_goals', all);
+                return { ok: true };
+            },
+
+            // --- Parts Manager: counter people roster (3 named slots per store) ---
+            async getPartsRoster() {
+                if (useSupabase) {
+                    try {
+                        const { data, error } = await db.from('parts_roster').select('*');
+                        if (!error && data) { this._set('dyer_parts_roster', data); return data; }
+                    } catch(e) { /* table may not exist; fall back to LS */ }
+                }
+                return this._get('dyer_parts_roster');
+            },
+            async savePartsRoster(roster) {
+                // roster: { store_id, counter1_name, counter2_name, counter3_name }
+                const all = this._get('dyer_parts_roster');
+                const idx = all.findIndex(r => r.store_id === roster.store_id);
+                if (idx >= 0) all[idx] = roster; else all.push(roster);
+                this._set('dyer_parts_roster', all);
+                if (useSupabase) {
+                    try {
+                        const row = {
+                            store_id: roster.store_id,
+                            counter1_name: roster.counter1_name || '',
+                            counter2_name: roster.counter2_name || '',
+                            counter3_name: roster.counter3_name || '',
+                            updated_at: new Date().toISOString()
+                        };
+                        await db.from('parts_roster').upsert(row, { onConflict: 'store_id' });
+                    } catch(e) { /* offline / table missing — already in LS */ }
+                }
+                return { ok: true };
+            },
+
+            // --- Parts Manager: daily entries (separate stream from service-RO daily_entries) ---
+            async getPartsEntries() {
+                if (useSupabase) {
+                    try {
+                        const { data, error } = await db.from('parts_entries').select('*');
+                        if (!error && data) { this._set('dyer_parts_entries', data); return data; }
+                    } catch(e) { /* table may not exist; fall back to LS */ }
+                }
+                return this._get('dyer_parts_entries');
+            },
+            async savePartsEntry(entry) {
+                const all = this._get('dyer_parts_entries');
+                const idx = all.findIndex(d => d.store_id === entry.store_id && d.entry_date === entry.entry_date);
+                if (idx >= 0) all[idx] = entry; else all.push(entry);
+                this._set('dyer_parts_entries', all);
+                if (useSupabase) {
+                    try {
+                        const row = {
+                            store_id: entry.store_id,
+                            entry_date: entry.entry_date,
+                            service_parts: entry.service_parts || 0,
+                            wholesale: entry.wholesale || 0,
+                            counter1: entry.counter1 || 0,
+                            counter2: entry.counter2 || 0,
+                            counter3: entry.counter3 || 0,
+                            obso: entry.obso || 0,
+                            total_parts_gross: entry.total_parts_gross || 0,
+                            day_number: entry.day_number || 0,
+                            days_in_month: entry.days_in_month || 0,
+                            updated_at: new Date().toISOString(),
+                            updated_by: currentUser ? currentUser.id : null
+                        };
+                        await db.from('parts_entries').upsert(row, { onConflict: 'store_id,entry_date' });
+                    } catch(e) { /* offline / table missing — already in LS */ }
+                }
+                return { ok: true };
             },
 
             // --- Staff overrides ---
@@ -2925,9 +3239,11 @@
         // warn before navigation away and show a visible badge next to the save button.
         // Badges are tagged with data-section="daily"/"roster" and only the badges for
         // currently-dirty sections are visible.
-        const dirtyState = { daily: false, roster: false };
+        const dirtyState = { daily: false, partsDaily: false, collisionDaily: false, roster: false };
         const sectionLabels = {
-            daily: 'the Daily Entry tab',
+            daily: 'the Service Daily Entry tab',
+            partsDaily: 'the Parts Daily Entry tab',
+            collisionDaily: 'the Collision Daily Entry tab',
             roster: 'the Roster tab'
         };
         function updateUnsavedBadges() {
@@ -2980,7 +3296,10 @@
                 if (activeTab) clearDirty(activeTab);
                 lastStore = gss.value;
                 if (activeTab === 'daily') loadDailyEntry();
+                else if (activeTab === 'partsDaily') loadPartsDailyEntry();
+                else if (activeTab === 'collisionDaily') loadCollisionDailyEntry();
                 else if (activeTab === 'dashboard') loadDashboard();
+                else if (activeTab === 'parts') loadPartsDashboard();
                 else if (activeTab === 'executive') loadExecutive();
                 else if (activeTab === 'advisor') loadAdvisor();
                 else if (activeTab === 'goals') loadGoals();
@@ -3016,7 +3335,7 @@
             document.getElementById('partsDay').addEventListener('input', updateDailyCalculations);
             document.getElementById('saveDailyBtn').addEventListener('click', saveDailyEntry);
 
-            // Daily Entry dirty tracking — any input/change in the daily form marks it dirty.
+            // Service Daily Entry dirty tracking — any input/change in the daily form marks it dirty.
             // The advisor body is rendered later, so use event delegation on the container.
             ['laborDay', 'partsDay', 'dailyTotalRos', 'dailyTotalHours', 'dailyStoreNps', 'dailyRegionNps'].forEach(id => {
                 const el = document.getElementById(id);
@@ -3030,12 +3349,64 @@
                 dailyAdvBody.addEventListener('change', () => markDirty('daily'));
             }
 
+            // Parts Daily Entry — initialize date picker, wire change handler, save, inputs.
+            // Mirror the same restored-last-date logic the Service tab uses.
+            const partsDailyPicker = document.getElementById('partsDailyDatePicker');
+            if (partsDailyPicker) {
+                const initFromService = document.getElementById('dailyDatePicker')?.valueAsDate;
+                if (initFromService) {
+                    partsDailyPicker.valueAsDate = initFromService;
+                    const initDate = pickerDate(initFromService);
+                    document.getElementById('partsDailyDayNumber').value = getWorkingDayOfMonth(initDate);
+                    const pwd = getWorkingDaysInMonth(initDate.getFullYear(), initDate.getMonth() + 1);
+                    document.getElementById('partsDailyDaysInMonth').value = pwd.totalDays;
+                }
+                let lastPartsDateVal = partsDailyPicker.value;
+                partsDailyPicker.addEventListener('change', () => {
+                    if (!confirmLeaveSection('partsDaily')) {
+                        partsDailyPicker.value = lastPartsDateVal;
+                        return;
+                    }
+                    clearDirty('partsDaily');
+                    lastPartsDateVal = partsDailyPicker.value;
+                    const date = pickerDate(partsDailyPicker.valueAsDate);
+                    document.getElementById('partsDailyDayNumber').value = getWorkingDayOfMonth(date);
+                    const pwd = getWorkingDaysInMonth(date.getFullYear(), date.getMonth() + 1);
+                    document.getElementById('partsDailyDaysInMonth').value = pwd.totalDays;
+                    loadPartsDailyEntry();
+                });
+            }
+            const savePartsDailyBtn = document.getElementById('savePartsDailyBtn');
+            if (savePartsDailyBtn) {
+                savePartsDailyBtn.addEventListener('click', savePartsDailyEntry);
+            }
+            // Wire auto-sum + dirty tracking on parts inputs (now lives on the partsDaily tab)
+            ['partsServiceDay', 'partsWholesaleDay', 'partsObsoDay',
+             'partsCounter1Day', 'partsCounter2Day', 'partsCounter3Day'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('input', updatePartsDailyCalculations);
+                el.addEventListener('input', () => markDirty('partsDaily'));
+                el.addEventListener('change', () => markDirty('partsDaily'));
+            });
+
             // Dashboard month picker
             const dashMP = document.getElementById('dashMonthPicker');
             const now = new Date();
             const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             dashMP.value = currentMonthStr;
             dashMP.addEventListener('change', loadDashboard);
+
+            // Parts dashboard month picker + roster save
+            const partsMP = document.getElementById('partsMonthPicker');
+            if (partsMP) {
+                partsMP.value = currentMonthStr;
+                partsMP.addEventListener('change', loadPartsDashboard);
+            }
+            const savePartsRosterBtn = document.getElementById('savePartsRosterBtn');
+            if (savePartsRosterBtn) {
+                savePartsRosterBtn.addEventListener('click', savePartsRoster);
+            }
 
             // Executive month picker
             const execMP = document.getElementById('execMonthPicker');
@@ -3138,6 +3509,22 @@
             return [getSelectedStore()];
         }
 
+        // Pull counter person names from the per-store Parts roster and label the
+        // Counter 1/2/3 inputs on the Daily Entry → Parts Department card. Falls back
+        // to "Counter 1/2/3 $" if no roster row exists yet.
+        function applyPartsCounterLabels(storeId) {
+            const roster = LS.getPartsRoster ? LS.getPartsRoster() : [];
+            const row = (roster || []).find(r => r.store_id === storeId);
+            const lbl = (i, name) => {
+                const el = document.getElementById('partsCounter' + i + 'Label');
+                if (!el) return;
+                el.textContent = name ? `${name} $` : `Counter ${i} $`;
+            };
+            lbl(1, row?.counter1_name);
+            lbl(2, row?.counter2_name);
+            lbl(3, row?.counter3_name);
+        }
+
         async function loadDailyEntry() {
             // Loading fresh values — reset the dirty flag since we're painting the UI from storage
             clearDirty('daily');
@@ -3157,6 +3544,7 @@
             // Restore editable state (in case switching from All Stores)
             ['laborDay', 'partsDay', 'dailyTotalRos', 'dailyTotalHours', 'dailyStoreNps', 'dailyRegionNps'].forEach(id => {
                 const el = document.getElementById(id);
+                if (!el) return;
                 el.readOnly = false;
                 el.classList.remove('input-gray');
                 el.classList.add('input-yellow');
@@ -3185,6 +3573,8 @@
                     document.getElementById('dailyStoreNps').value = '';
                     document.getElementById('dailyRegionNps').value = '';
                 }
+
+                // Parts Department entry now loads on its own tab (Parts Daily Entry).
 
                 // Load advisor entries from localStorage
                 const advisorEntries = (await LS.getAdvisorEntries()).filter(d => d.store_id === storeId && d.entry_date === ds);
@@ -3225,8 +3615,9 @@
                 buildDailyTechRows('dailyTechBody', storeId, ds, 'tech', techDailyEntries);
                 buildDailyTechRows('dailyLubeBody', storeId, ds, 'lube', techDailyEntries);
 
-                // Add event listeners for calculations
-                document.querySelectorAll('.input-yellow').forEach(input => {
+                // Add event listeners for calculations — scoped to the daily tab only,
+                // since parts inputs (also class .input-yellow) live on the partsDaily tab.
+                document.querySelectorAll('#daily .input-yellow').forEach(input => {
                     input.addEventListener('input', updateDailyCalculations);
                 });
 
@@ -3334,6 +3725,8 @@
 
                 // Calculate total gross
                 document.getElementById('totalGrossDay').textContent = formatCurrency(totalLabor + totalParts);
+
+                // Parts aggregation in All Stores view now lives on the Parts Daily Entry tab.
 
                 // Build advisor rows — read-only, grouped by store
                 const dayAdvisors = allAdvisor.filter(d => d.entry_date === ds);
@@ -3558,8 +3951,281 @@
             const trackHoursEl = document.getElementById('dailyTrackingHours');
             if (trackHoursEl) trackHoursEl.textContent = trackingHours > 0 ? trackingHours.toFixed(1) : '0';
 
+            // Parts Department auto-sum + MTD/Pace lives on the Parts Daily Entry tab now —
+            // see updatePartsDailyCalculations.
+
             // Load goals and show daily targets + color coding
             await updateDailyGoalDisplay(storeId, date, daysInMonth, laborDay, partsDay, totalGrossDay);
+        }
+
+        // Auto-sum + MTD/Pace for the Parts Daily Entry tab. Pulls the date and day-#
+        // from the parts daily picker (the parts tab has its own picker independent of
+        // the service tab's). Reads day inputs each call so live edits update the day
+        // total without requiring a save.
+        async function updatePartsDailyCalculations() {
+            const storeId = getSelectedStore();
+            const partsPicker = document.getElementById('partsDailyDatePicker');
+            if (!partsPicker || !partsPicker.valueAsDate) {
+                // Picker not yet initialized — still update the auto-sum from inputs
+                const svc   = parseFloat(document.getElementById('partsServiceDay')?.value)   || 0;
+                const whs   = parseFloat(document.getElementById('partsWholesaleDay')?.value) || 0;
+                const obso  = parseFloat(document.getElementById('partsObsoDay')?.value)      || 0;
+                const c1    = parseFloat(document.getElementById('partsCounter1Day')?.value)  || 0;
+                const c2    = parseFloat(document.getElementById('partsCounter2Day')?.value)  || 0;
+                const c3    = parseFloat(document.getElementById('partsCounter3Day')?.value)  || 0;
+                const counterTotal = c1 + c2 + c3;
+                const partsTotalDay = svc + whs + counterTotal + obso;
+                const ctEl = document.getElementById('partsCounterTotalDay');
+                const tgEl = document.getElementById('partsTotalGrossDay');
+                if (ctEl) ctEl.textContent = formatCurrency(counterTotal);
+                if (tgEl) tgEl.textContent = formatCurrency(partsTotalDay);
+                return;
+            }
+            const date = pickerDate(partsPicker.valueAsDate);
+            const dayNum = parseInt(document.getElementById('partsDailyDayNumber')?.value) || 0;
+            const daysInMonth = parseInt(document.getElementById('partsDailyDaysInMonth')?.value) || 0;
+            return updatePartsCalculations(storeId, date, dayNum, daysInMonth);
+        }
+
+        // Recompute the Parts Department card: counter total, total parts gross day,
+        // and MTD/Pace from saved parts_entries. Reads day inputs each call so live edits
+        // update the day total without requiring a save.
+        async function updatePartsCalculations(storeId, date, dayNum, daysInMonth) {
+            const svc   = parseFloat(document.getElementById('partsServiceDay')?.value)   || 0;
+            const whs   = parseFloat(document.getElementById('partsWholesaleDay')?.value) || 0;
+            const obso  = parseFloat(document.getElementById('partsObsoDay')?.value)      || 0;
+            const c1    = parseFloat(document.getElementById('partsCounter1Day')?.value)  || 0;
+            const c2    = parseFloat(document.getElementById('partsCounter2Day')?.value)  || 0;
+            const c3    = parseFloat(document.getElementById('partsCounter3Day')?.value)  || 0;
+            const counterTotal = c1 + c2 + c3;
+            const partsTotalDay = svc + whs + counterTotal + obso;
+
+            const ctEl = document.getElementById('partsCounterTotalDay');
+            const tgEl = document.getElementById('partsTotalGrossDay');
+            if (ctEl) ctEl.textContent = formatCurrency(counterTotal);
+            if (tgEl) tgEl.textContent = formatCurrency(partsTotalDay);
+
+            if (!storeId || isAllStores()) return;
+
+            const monthStart = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
+            const ds = dateToString(date);
+            const partsMtdData = (await LS.getPartsEntries()).filter(p =>
+                p.store_id === storeId && p.entry_date >= monthStart && p.entry_date <= ds
+            );
+            // For the current day, prefer the live form value over any saved row so the user
+            // sees the impact of the number they're typing before they hit Save.
+            let totalPartsMtd = 0;
+            partsMtdData.forEach(p => {
+                if (p.entry_date === ds) return; // exclude saved row for today; use live form
+                totalPartsMtd += (p.total_parts_gross || 0);
+            });
+            totalPartsMtd += partsTotalDay;
+
+            const mtdEl = document.getElementById('partsTotalMtd');
+            const paceEl = document.getElementById('partsTotalPace');
+            if (mtdEl) mtdEl.textContent = formatCurrency(totalPartsMtd);
+            if (paceEl && dayNum > 0 && daysInMonth > 0) {
+                paceEl.textContent = formatCurrency((totalPartsMtd / dayNum) * daysInMonth);
+            }
+        }
+
+        // ============================================================================
+        // TAB: PARTS DAILY ENTRY (Parts Manager)
+        // ============================================================================
+        // Independent of the Service Daily Entry tab — has its own date picker, save
+        // button, and load/save flow. Saves to parts_entries (separate table from
+        // daily_entries). Counter labels come from the per-store parts_roster.
+        async function loadPartsDailyEntry() {
+            clearDirty('partsDaily');
+            const storeId = getSelectedStore();
+            const partsPicker = document.getElementById('partsDailyDatePicker');
+            if (!partsPicker) return;
+            const date = pickerDate(partsPicker.valueAsDate);
+
+            // Restore editable state for the parts inputs
+            ['partsServiceDay', 'partsWholesaleDay', 'partsObsoDay',
+             'partsCounter1Day', 'partsCounter2Day', 'partsCounter3Day'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.readOnly = false;
+                el.classList.remove('input-gray');
+                el.classList.add('input-yellow');
+                el.style.backgroundColor = '';
+            });
+            const saveBtn = document.getElementById('savePartsDailyBtn');
+            if (saveBtn) saveBtn.style.display = '';
+
+            if (!storeId) return;
+
+            if (isAllStores()) {
+                await loadPartsDailyEntryAllStores(date);
+                return;
+            }
+
+            // Apply counter labels from the per-store roster
+            applyPartsCounterLabels(storeId);
+
+            try {
+                const ds = dateToString(date);
+                const partsData = (await LS.getPartsEntries()).find(p => p.store_id === storeId && p.entry_date === ds);
+                document.getElementById('partsServiceDay').value    = partsData?.service_parts ?? '';
+                document.getElementById('partsWholesaleDay').value  = partsData?.wholesale     ?? '';
+                document.getElementById('partsObsoDay').value       = partsData?.obso          ?? '';
+                document.getElementById('partsCounter1Day').value   = partsData?.counter1      ?? '';
+                document.getElementById('partsCounter2Day').value   = partsData?.counter2      ?? '';
+                document.getElementById('partsCounter3Day').value   = partsData?.counter3      ?? '';
+                updatePartsDailyCalculations();
+            } catch (e) {
+                console.error('loadPartsDailyEntry error', e);
+            }
+        }
+
+        async function loadPartsDailyEntryAllStores(date) {
+            try {
+                const ds = dateToString(date);
+                const allParts = await LS.getPartsEntries();
+                const dayParts = allParts.filter(p => p.entry_date === ds);
+                let pSvc = 0, pWhs = 0, pObs = 0, pC1 = 0, pC2 = 0, pC3 = 0;
+                dayParts.forEach(p => {
+                    pSvc += parseFloat(p.service_parts) || 0;
+                    pWhs += parseFloat(p.wholesale)     || 0;
+                    pObs += parseFloat(p.obso)          || 0;
+                    pC1  += parseFloat(p.counter1)      || 0;
+                    pC2  += parseFloat(p.counter2)      || 0;
+                    pC3  += parseFloat(p.counter3)      || 0;
+                });
+                const ids =    ['partsServiceDay','partsWholesaleDay','partsObsoDay','partsCounter1Day','partsCounter2Day','partsCounter3Day'];
+                const values = [pSvc, pWhs, pObs, pC1, pC2, pC3];
+                ids.forEach((id, i) => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    el.value = values[i] || '';
+                    el.readOnly = true;
+                    el.classList.remove('input-yellow');
+                    el.classList.add('input-gray');
+                    el.style.backgroundColor = '#f0f0f0';
+                });
+                ['1', '2', '3'].forEach(i => {
+                    const el = document.getElementById('partsCounter' + i + 'Label');
+                    if (el) el.textContent = `Counter ${i} (all stores) $`;
+                });
+                // Hide save button — All Stores is read-only aggregation
+                const saveBtn = document.getElementById('savePartsDailyBtn');
+                if (saveBtn) saveBtn.style.display = 'none';
+                // Compute auto-totals (read-only display only)
+                const counterTotal = pC1 + pC2 + pC3;
+                const total = pSvc + pWhs + pObs + counterTotal;
+                document.getElementById('partsCounterTotalDay').textContent = formatCurrency(counterTotal);
+                document.getElementById('partsTotalGrossDay').textContent   = formatCurrency(total);
+                // MTD across all stores
+                const date2 = pickerDate(document.getElementById('partsDailyDatePicker').valueAsDate);
+                const monthStart = `${date2.getFullYear()}-${String(date2.getMonth() + 1).padStart(2, '0')}-01`;
+                const dayNum = parseInt(document.getElementById('partsDailyDayNumber')?.value) || 0;
+                const daysInMonth = parseInt(document.getElementById('partsDailyDaysInMonth')?.value) || 0;
+                const monthData = allParts.filter(p => p.entry_date >= monthStart && p.entry_date <= ds);
+                const totalMtd = monthData.reduce((s, p) => s + (parseFloat(p.total_parts_gross) || 0), 0);
+                document.getElementById('partsTotalMtd').textContent = formatCurrency(totalMtd);
+                if (dayNum > 0 && daysInMonth > 0) {
+                    document.getElementById('partsTotalPace').textContent = formatCurrency((totalMtd / dayNum) * daysInMonth);
+                }
+            } catch (e) {
+                console.error('loadPartsDailyEntryAllStores error', e);
+            }
+        }
+
+        async function savePartsDailyEntry() {
+            const storeId = getSelectedStore();
+            const partsPicker = document.getElementById('partsDailyDatePicker');
+            if (!storeId || isAllStores()) {
+                showToast('Select a specific store to save', 'error');
+                return;
+            }
+            if (!partsPicker || !partsPicker.valueAsDate) {
+                showToast('Pick a date first', 'error');
+                return;
+            }
+            const date = pickerDate(partsPicker.valueAsDate);
+            const ds = dateToString(date);
+            const dayNum = parseInt(document.getElementById('partsDailyDayNumber').value) || 0;
+            const daysInMonth = parseInt(document.getElementById('partsDailyDaysInMonth').value) || 0;
+
+            const pSvc  = parseFloat(document.getElementById('partsServiceDay')?.value)   || 0;
+            const pWhs  = parseFloat(document.getElementById('partsWholesaleDay')?.value) || 0;
+            const pObs  = parseFloat(document.getElementById('partsObsoDay')?.value)      || 0;
+            const pC1   = parseFloat(document.getElementById('partsCounter1Day')?.value)  || 0;
+            const pC2   = parseFloat(document.getElementById('partsCounter2Day')?.value)  || 0;
+            const pC3   = parseFloat(document.getElementById('partsCounter3Day')?.value)  || 0;
+            const pTotal = pSvc + pWhs + pC1 + pC2 + pC3 + pObs;
+
+            if (!pSvc && !pWhs && !pObs && !pC1 && !pC2 && !pC3) {
+                showToast('Enter at least one parts number before saving', 'error');
+                return;
+            }
+
+            try {
+                const result = await LS.savePartsEntry({
+                    store_id: storeId,
+                    entry_date: ds,
+                    day_number: dayNum,
+                    days_in_month: daysInMonth,
+                    service_parts: pSvc,
+                    wholesale: pWhs,
+                    obso: pObs,
+                    counter1: pC1,
+                    counter2: pC2,
+                    counter3: pC3,
+                    total_parts_gross: pTotal
+                });
+                if (result && result.ok === false) {
+                    showToast('Save FAILED for parts department — please try again', 'error');
+                } else if (!useSupabase) {
+                    showToast('Saved locally only — cloud is offline, reload to retry', 'error');
+                } else {
+                    showToast('Parts daily entry saved!');
+                }
+                clearDirty('partsDaily');
+                updatePartsDailyCalculations();
+            } catch (e) {
+                console.error('savePartsDailyEntry error', e);
+                showToast('Failed to save parts entry', 'error');
+            }
+        }
+
+        // ============================================================================
+        // TAB: COLLISION DAILY ENTRY (DCVB only) — Phase 2 placeholder
+        // ============================================================================
+        // The collision tab is currently a stub. When fully built it will:
+        //   - Show a friendly "DCVB only" message for any other store
+        //   - Render an EOS-style health card for DCVB with all the collision metrics
+        //   - Include a roster admin for naming the three estimators
+        async function loadCollisionDailyEntry() {
+            const storeId = getSelectedStore();
+            const target = document.getElementById('collisionDailyContent');
+            if (!target) return;
+            const allMode = isAllStores();
+            const isDcvb = storeId === 'dcvb';
+            if (!isDcvb && !allMode) {
+                target.innerHTML = `
+                    <div style="padding:30px 16px;text-align:center;color:#475569;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;">
+                        <div style="font-size:36px;margin-bottom:8px;">ℹ️</div>
+                        <div style="font-size:16px;font-weight:700;color:#92400e;margin-bottom:6px;">DCVB Only</div>
+                        <div style="max-width:520px;margin:0 auto;font-size:13px;line-height:1.5;">
+                            The Collision Center exists at DCVB only. Switch the store selector to <strong>DCVB</strong> to enter Collision daily numbers.
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            // DCVB or All Stores — show the Phase 2 stub for now
+            target.innerHTML = `
+                <div style="padding:30px 16px;text-align:center;color:#475569;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;">
+                    <div style="font-size:42px;margin-bottom:10px;">🚧</div>
+                    <div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:6px;">Coming Next</div>
+                    <div style="max-width:560px;margin:0 auto;font-size:13px;line-height:1.55;">
+                        The Collision daily entry form is wired up next. It will only show fields when <strong>DCVB</strong> is the selected store, with Collision Gross trend, ICAR / OEM cert status, Body Shop Receivables (#22002, ≥15 days), Cash Clearing (≥4 days), Body Shop Sublet (≥30 days), Pending Parts Credit Balance, Parts Inventory EOM Variance, Labor WIP Account #24701, plus three named estimator slots tracking Keys-to-Keys, # ROs delivered not closed, and $ ROs delivered not closed.
+                    </div>
+                </div>
+            `;
         }
 
         async function updateDailyGoalDisplay(storeId, date, daysInMonth, laborDay, partsDay, totalGrossDay) {
@@ -3666,6 +4332,10 @@
                 if (dailyResult && dailyResult.ok === false) {
                     failedSaves.push('daily totals');
                 }
+
+                // Parts Department entry is now its own tab (Parts Daily Entry) and is
+                // saved independently via savePartsDailyEntry — Service Manager's tab no
+                // longer touches parts_entries.
 
                 // Save advisor entries
                 const advRows = document.querySelectorAll('#dailyAdvisorBody tr');
@@ -4358,6 +5028,297 @@
                     </div>
                 </div>
             `;
+        }
+
+        // ============================================================================
+        // TAB: PARTS DASHBOARD
+        // ============================================================================
+        // The Parts tab shows the Parts Manager's view: store-level KPI tire-circles
+        // for Total Parts / Wholesale / Counter / Obso vs the Parts Goals, a channel mix
+        // breakdown, a counter-people leaderboard, the daily parts performance table,
+        // and a roster admin for naming up to 3 counter people per store.
+        async function loadPartsDashboard() {
+            const storeId = getSelectedStore();
+            if (!storeId) return;
+            const allMode = isAllStores();
+
+            try {
+                // Resolve month / year from the picker
+                const partsPicker = document.getElementById('partsMonthPicker');
+                let month, year;
+                if (partsPicker && partsPicker.value) {
+                    const [y, m] = partsPicker.value.split('-');
+                    year = parseInt(y); month = parseInt(m);
+                } else {
+                    ({ month, year } = getMonthYear(new Date()));
+                }
+                const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
+                const monthEnd = dateToString(new Date(year, month, 0));
+
+                // Goals — parts goals are stored in their own LS bucket so the Supabase
+                // goals refresh doesn't blow them away.
+                const allPartsGoals = (LS.getPartsGoals() || []).filter(g => g.month === month && g.year === year);
+                let pGoals = null;
+                if (allMode) {
+                    if (allPartsGoals.length > 0) {
+                        pGoals = {
+                            parts_total_goal:    allPartsGoals.reduce((s, g) => s + (g.parts_total_goal    || 0), 0),
+                            parts_wholesale_goal:allPartsGoals.reduce((s, g) => s + (g.parts_wholesale_goal|| 0), 0),
+                            parts_counter_goal:  allPartsGoals.reduce((s, g) => s + (g.parts_counter_goal  || 0), 0),
+                            parts_obso_goal:     allPartsGoals.reduce((s, g) => s + (g.parts_obso_goal     || 0), 0)
+                        };
+                    }
+                } else {
+                    pGoals = allPartsGoals.find(g => g.store_id === storeId) || null;
+                }
+
+                // Pull this month's parts entries — filter to the selected store unless All Stores
+                let entries = (await LS.getPartsEntries()).filter(p =>
+                    p.entry_date >= monthStart && p.entry_date <= monthEnd
+                );
+                if (!allMode) entries = entries.filter(p => p.store_id === storeId);
+
+                // Aggregate MTD across the entries
+                let mtdSvc = 0, mtdWhs = 0, mtdObso = 0, mtdC1 = 0, mtdC2 = 0, mtdC3 = 0, mtdTotal = 0;
+                entries.forEach(p => {
+                    mtdSvc   += parseFloat(p.service_parts) || 0;
+                    mtdWhs   += parseFloat(p.wholesale)     || 0;
+                    mtdObso  += parseFloat(p.obso)          || 0;
+                    mtdC1    += parseFloat(p.counter1)      || 0;
+                    mtdC2    += parseFloat(p.counter2)      || 0;
+                    mtdC3    += parseFloat(p.counter3)      || 0;
+                    mtdTotal += parseFloat(p.total_parts_gross)
+                              || ((parseFloat(p.service_parts)||0)+(parseFloat(p.wholesale)||0)+(parseFloat(p.obso)||0)
+                                  +(parseFloat(p.counter1)||0)+(parseFloat(p.counter2)||0)+(parseFloat(p.counter3)||0));
+                });
+                const mtdCounterTotal = mtdC1 + mtdC2 + mtdC3;
+
+                // Tracking — project MTD to month using the working day of the most recent entry
+                // (or today if the month is current). Same pattern as Service Daily Entry tracking.
+                const today = new Date();
+                const isCurrentMonth = today.getFullYear() === year && (today.getMonth() + 1) === month;
+                const refDate = isCurrentMonth ? today : new Date(year, month - 1, Math.min(today.getDate(), 28));
+                const dayNum = getWorkingDayOfMonth(refDate);
+                const wd = getWorkingDaysInMonth(year, month);
+                const daysInMonth = wd.totalDays;
+                const proj = (mtd) => (dayNum > 0 && daysInMonth > 0) ? (mtd / dayNum) * daysInMonth : 0;
+                const trackTotal     = proj(mtdTotal);
+                const trackWholesale = proj(mtdWhs);
+                const trackCounter   = proj(mtdCounterTotal);
+                const trackObso      = proj(mtdObso);
+
+                // Build KPI tiles using the existing tire-circle helper
+                const pct = (mtd, goal) => goal > 0 ? (mtd / goal) * 100 : 0;
+                const totalGoal = pGoals?.parts_total_goal || 0;
+                const whsGoal   = pGoals?.parts_wholesale_goal || 0;
+                const ctrGoal   = pGoals?.parts_counter_goal || 0;
+                const obsoGoal  = pGoals?.parts_obso_goal || 0;
+                const partsKpis = document.getElementById('partsKpis');
+                if (partsKpis) {
+                    partsKpis.innerHTML =
+                        createGoalPieCard('Total Parts', mtdTotal,         trackTotal,     totalGoal, pct(mtdTotal, totalGoal),         []) +
+                        createGoalPieCard('Wholesale',   mtdWhs,           trackWholesale, whsGoal,   pct(mtdWhs, whsGoal),             []) +
+                        createGoalPieCard('Counter',     mtdCounterTotal,  trackCounter,   ctrGoal,   pct(mtdCounterTotal, ctrGoal),    []) +
+                        createGoalPieCard('Obsolescence',mtdObso,          trackObso,      obsoGoal,  pct(mtdObso, obsoGoal),           []);
+                }
+
+                // Channel Mix — % share of MTD total per channel (Service-RO / Wholesale / Counter / Obso)
+                const subt = document.getElementById('partsChannelMixSubtitle');
+                if (subt) {
+                    const mLabel = new Date(year, month - 1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+                    subt.textContent = `${mLabel}${allMode ? ' • All Stores' : ''}`;
+                }
+                const mixGrid = document.getElementById('partsChannelMixGrid');
+                if (mixGrid) {
+                    const denom = mtdTotal || 1;
+                    const channels = [
+                        { label: 'Service Parts', val: mtdSvc, color: '#2563eb' },
+                        { label: 'Wholesale',     val: mtdWhs, color: '#0891b2' },
+                        { label: 'Counter',       val: mtdCounterTotal, color: '#7c3aed' },
+                        { label: 'Obsolescence',  val: mtdObso, color: '#ea580c' }
+                    ];
+                    mixGrid.innerHTML = channels.map(c => {
+                        const sharePct = (c.val / denom) * 100;
+                        const dispPct = mtdTotal > 0 ? sharePct.toFixed(1) + '%' : '—';
+                        return `
+                            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;">
+                                <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.5px;">${c.label}</div>
+                                <div style="font-size:22px;font-weight:800;color:#1a1a1a;margin-top:2px;">${formatCurrency(c.val)}</div>
+                                <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+                                    <div style="flex:1;background:#e2e8f0;border-radius:4px;height:8px;overflow:hidden;">
+                                        <div style="background:${c.color};height:100%;width:${Math.min(sharePct,100)}%;"></div>
+                                    </div>
+                                    <div style="font-size:12px;font-weight:700;color:#334155;min-width:46px;text-align:right;">${dispPct}</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                // Counter People Leaderboard — per slot, per store. Build rows of {storeCode, name, slot, mtd}
+                const roster = (await LS.getPartsRoster()) || [];
+                const rows = [];
+                entries.forEach(p => {
+                    const r = roster.find(x => x.store_id === p.store_id);
+                    const storeRow = (stores.find(s => s.id === p.store_id) || FALLBACK_STORES.find(s => s.id === p.store_id));
+                    const storeCode = storeRow ? storeRow.code : p.store_id;
+                    [1, 2, 3].forEach(i => {
+                        const v = parseFloat(p['counter' + i]) || 0;
+                        if (v <= 0) return;
+                        const nm = r?.['counter' + i + '_name'] || `Counter ${i}`;
+                        const key = `${p.store_id}|${i}|${nm}`;
+                        let slot = rows.find(x => x.key === key);
+                        if (!slot) {
+                            slot = { key, name: nm, storeCode, slot: i, mtd: 0, days: 0 };
+                            rows.push(slot);
+                        }
+                        slot.mtd += v;
+                        slot.days += 1;
+                    });
+                });
+                rows.sort((a, b) => b.mtd - a.mtd);
+                const lbBody = document.getElementById('partsCounterLeaderboardBody');
+                if (lbBody) {
+                    if (rows.length === 0) {
+                        lbBody.innerHTML = `<tr><td colspan="6" class="empty-state" style="padding:14px;color:#64748b;">No counter sales recorded yet for this month. Have the Parts Manager start entering daily numbers on the Parts Daily Entry tab.</td></tr>`;
+                    } else {
+                        const denom = rows.reduce((s, r) => s + r.mtd, 0) || 1;
+                        lbBody.innerHTML = rows.map((r, idx) => {
+                            const share = (r.mtd / denom) * 100;
+                            const avg = r.days > 0 ? r.mtd / r.days : 0;
+                            const rankBg = idx === 0 ? '#fef3c7' : idx === 1 ? '#e0e7ff' : idx === 2 ? '#fce7f3' : '';
+                            return `
+                                <tr style="${rankBg ? 'background:' + rankBg + ';' : ''}">
+                                    <td style="font-weight:700;text-align:center;">${idx + 1}</td>
+                                    <td style="font-weight:600;">${r.name}</td>
+                                    <td>${r.storeCode}</td>
+                                    <td style="font-weight:700;">${formatCurrency(r.mtd)}</td>
+                                    <td>${share.toFixed(1)}%</td>
+                                    <td>${formatCurrency(avg)}</td>
+                                </tr>
+                            `;
+                        }).join('');
+                    }
+                }
+
+                // Daily Parts Performance table — one row per working day in the month
+                const monthLabelEl = document.getElementById('partsDailyMonth');
+                if (monthLabelEl) {
+                    monthLabelEl.textContent = new Date(year, month - 1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' }) + (allMode ? ' • All Stores' : '');
+                }
+                const dailyBody = document.getElementById('partsDailyBody');
+                const dailyFooter = document.getElementById('partsDailyFooter');
+                if (dailyBody) {
+                    // Build a per-date roll-up across the entries (single store or all stores)
+                    const byDate = {};
+                    entries.forEach(p => {
+                        const d = byDate[p.entry_date] || (byDate[p.entry_date] = { svc: 0, whs: 0, ctr: 0, obso: 0, total: 0 });
+                        d.svc   += parseFloat(p.service_parts)   || 0;
+                        d.whs   += parseFloat(p.wholesale)       || 0;
+                        d.ctr   += (parseFloat(p.counter1)||0) + (parseFloat(p.counter2)||0) + (parseFloat(p.counter3)||0);
+                        d.obso  += parseFloat(p.obso)            || 0;
+                        d.total += parseFloat(p.total_parts_gross)
+                                || (d.svc + d.whs + d.ctr + d.obso) - (d.total || 0); // safe fallback
+                    });
+                    // Iterate working days only (Mon-Sat) — same convention as the Service Daily table
+                    const monthIdx = month - 1;
+                    let html = '';
+                    let running = 0;
+                    let workingDay = 0;
+                    const lastDate = new Date(year, monthIdx + 1, 0).getDate();
+                    for (let d = 1; d <= lastDate; d++) {
+                        const dt = new Date(year, monthIdx, d);
+                        const dow = dt.getDay();
+                        if (dow === 0) continue; // skip Sunday only — Sat counts as a working day
+                        workingDay++;
+                        const ds = dateToString(dt);
+                        const row = byDate[ds];
+                        const svc = row?.svc || 0, whs = row?.whs || 0, ctr = row?.ctr || 0, obso = row?.obso || 0;
+                        const tot = (row?.total || (svc + whs + ctr + obso)) || 0;
+                        running += tot;
+                        const tracking = (workingDay > 0 && daysInMonth > 0) ? (running / workingDay) * daysInMonth : 0;
+                        const labelDate = `${monthIdx + 1}/${d}`;
+                        const empty = !row;
+                        html += `
+                            <tr ${empty ? 'style="opacity:0.55;"' : ''}>
+                                <td style="background:#1a1a1a;color:#fff;font-weight:700;text-align:center;">${workingDay}</td>
+                                <td>${labelDate}</td>
+                                <td>${empty ? '—' : formatCurrency(svc)}</td>
+                                <td>${empty ? '—' : formatCurrency(whs)}</td>
+                                <td>${empty ? '—' : formatCurrency(ctr)}</td>
+                                <td>${empty ? '—' : formatCurrency(obso)}</td>
+                                <td style="font-weight:700;">${empty ? '—' : formatCurrency(tot)}</td>
+                                <td>${formatCurrency(running)}</td>
+                                <td style="background:#1a1a1a;color:#facc15;font-weight:700;">${formatCurrency(tracking)}</td>
+                            </tr>
+                        `;
+                    }
+                    dailyBody.innerHTML = html || `<tr><td colspan="9" class="empty-state">No parts entries yet for this month.</td></tr>`;
+                    if (dailyFooter) {
+                        const finalTracking = (workingDay > 0 && daysInMonth > 0) ? (mtdTotal / workingDay) * daysInMonth : 0;
+                        dailyFooter.innerHTML = `
+                            <tr style="background:#0f172a;color:#fff;font-weight:700;">
+                                <td colspan="2" style="background:#0f172a;color:#fff;">MTD</td>
+                                <td>${formatCurrency(mtdSvc)}</td>
+                                <td>${formatCurrency(mtdWhs)}</td>
+                                <td>${formatCurrency(mtdCounterTotal)}</td>
+                                <td>${formatCurrency(mtdObso)}</td>
+                                <td>${formatCurrency(mtdTotal)}</td>
+                                <td>—</td>
+                                <td style="color:#facc15;">${formatCurrency(finalTracking)}</td>
+                            </tr>
+                        `;
+                    }
+                }
+
+                // Parts Roster admin
+                await loadPartsRoster();
+            } catch (e) {
+                console.error('loadPartsDashboard error', e);
+            }
+        }
+
+        // Render the editable Parts Roster table — one row per store, three name cells.
+        async function loadPartsRoster() {
+            const body = document.getElementById('partsRosterBody');
+            if (!body) return;
+            const roster = (await LS.getPartsRoster()) || [];
+            const orderedStores = stores && stores.length ? stores : FALLBACK_STORES;
+            body.innerHTML = orderedStores.map(s => {
+                const r = roster.find(x => x.store_id === s.id) || {};
+                return `
+                    <tr data-store-id="${s.id}">
+                        <td style="font-weight:700;">${s.code} <span style="color:#64748b;font-weight:500;">— ${s.name}</span></td>
+                        <td><input type="text" class="parts-roster-c1" value="${r.counter1_name || ''}" placeholder="Counter 1 name" style="width:100%;padding:6px 8px;border:1px solid #cbd5e1;border-radius:4px;"></td>
+                        <td><input type="text" class="parts-roster-c2" value="${r.counter2_name || ''}" placeholder="Counter 2 name" style="width:100%;padding:6px 8px;border:1px solid #cbd5e1;border-radius:4px;"></td>
+                        <td><input type="text" class="parts-roster-c3" value="${r.counter3_name || ''}" placeholder="Counter 3 name" style="width:100%;padding:6px 8px;border:1px solid #cbd5e1;border-radius:4px;"></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Persist the Parts Roster — iterate visible rows, save each.
+        async function savePartsRoster() {
+            const rows = document.querySelectorAll('#partsRosterBody tr');
+            let count = 0;
+            for (const row of rows) {
+                const storeId = row.dataset.storeId;
+                if (!storeId) continue;
+                const c1 = row.querySelector('.parts-roster-c1')?.value.trim() || '';
+                const c2 = row.querySelector('.parts-roster-c2')?.value.trim() || '';
+                const c3 = row.querySelector('.parts-roster-c3')?.value.trim() || '';
+                await LS.savePartsRoster({
+                    store_id: storeId,
+                    counter1_name: c1,
+                    counter2_name: c2,
+                    counter3_name: c3
+                });
+                count++;
+            }
+            showToast(`Parts roster saved (${count} store${count === 1 ? '' : 's'})`);
+            // Refresh counter labels on the Parts Daily Entry tab if a single store is selected
+            const sid = getSelectedStore();
+            if (sid && !isAllStores()) applyPartsCounterLabels(sid);
         }
 
         // ============================================================================
@@ -5063,10 +6024,13 @@
                 const { month, year } = getMonthYear(new Date());
 
                 const goalsData = (await LS.getGoals()).filter(g => g.month === month && g.year === year);
+                const partsGoalsData = LS.getPartsGoals().filter(g => g.month === month && g.year === year);
 
                 let html = '';
+                let partsHtml = '';
                 stores.forEach(store => {
                     const goal = goalsData.find(g => g.store_id === store.id) || {};
+                    const pg = partsGoalsData.find(g => g.store_id === store.id) || {};
                     html += `
                         <tr>
                             <td>${store.name}</td>
@@ -5076,8 +6040,19 @@
                             <td><input type="number" step="0.01" class="goal-per-ro" data-store="${store.id}" value="${goal.gross_per_ro_target || ''}" placeholder="0"></td>
                         </tr>
                     `;
+                    partsHtml += `
+                        <tr>
+                            <td>${store.name}</td>
+                            <td><input type="number" class="goal-parts-total" data-store="${store.id}" value="${pg.parts_total_goal || ''}" placeholder="0"></td>
+                            <td><input type="number" class="goal-parts-wholesale" data-store="${store.id}" value="${pg.parts_wholesale_goal || ''}" placeholder="0"></td>
+                            <td><input type="number" class="goal-parts-counter" data-store="${store.id}" value="${pg.parts_counter_goal || ''}" placeholder="0"></td>
+                            <td><input type="number" class="goal-parts-obso" data-store="${store.id}" value="${pg.parts_obso_goal || ''}" placeholder="0"></td>
+                        </tr>
+                    `;
                 });
                 document.getElementById('goalsBody').innerHTML = html;
+                const partsBody = document.getElementById('partsGoalsBody');
+                if (partsBody) partsBody.innerHTML = partsHtml;
             } catch (error) {
                 console.error('Goals load error:', error);
             }
@@ -5103,6 +6078,22 @@
                         parts_goal: partsGoal,
                         total_gross_goal: totalGoal,
                         gross_per_ro_target: perRoTarget
+                    });
+                }
+
+                // Save Parts Department goals to their own bucket (LS-only)
+                const partsRows = document.querySelectorAll('#partsGoalsBody tr');
+                for (const row of partsRows) {
+                    const storeId = row.querySelector('.goal-parts-total')?.dataset.store;
+                    if (!storeId) continue;
+                    LS.savePartsGoal({
+                        store_id: storeId,
+                        month,
+                        year,
+                        parts_total_goal: parseFloat(row.querySelector('.goal-parts-total').value) || 0,
+                        parts_wholesale_goal: parseFloat(row.querySelector('.goal-parts-wholesale').value) || 0,
+                        parts_counter_goal: parseFloat(row.querySelector('.goal-parts-counter').value) || 0,
+                        parts_obso_goal: parseFloat(row.querySelector('.goal-parts-obso').value) || 0
                     });
                 }
 
