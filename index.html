@@ -237,12 +237,18 @@
             margin: 0;
         }
 
-        .nav-tab button {
+        .nav-tab > .nav-btn {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.12);
             color: rgba(255, 255, 255, 0.75);
-            padding: 10px 18px;
-            min-width: 140px;
+            padding: 0 14px;
+            width: 168px;
+            height: 42px;
+            box-sizing: border-box;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
             text-align: center;
             margin: 6px 3px;
             cursor: pointer;
@@ -255,9 +261,11 @@
             -webkit-backdrop-filter: blur(12px);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+            white-space: nowrap;
+            overflow: hidden;
         }
 
-        .nav-tab button:hover {
+        .nav-tab > .nav-btn:hover {
             color: white;
             background: rgba(255, 255, 255, 0.15);
             border-color: rgba(255, 255, 255, 0.25);
@@ -265,7 +273,7 @@
             transform: translateY(-1px);
         }
 
-        .nav-tab button.active {
+        .nav-tab > .nav-btn.active {
             color: white;
             background: linear-gradient(135deg, rgba(204, 0, 0, 0.35), rgba(160, 0, 0, 0.25));
             border-color: rgba(204, 0, 0, 0.5);
@@ -278,19 +286,18 @@
         .nav-dropdown {
             position: relative;
         }
-        .nav-dropdown .nav-dropdown-toggle {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
+        .nav-dropdown .nav-dropdown-toggle .nav-label {
+            font-size: 13px;
         }
         .nav-dropdown .nav-dropdown-toggle .nav-sub {
-            font-size: 11px;
-            font-weight: 500;
-            opacity: 0.75;
-            padding: 2px 7px;
-            background: rgba(255,255,255,0.08);
+            font-size: 10px;
+            font-weight: 600;
+            opacity: 0.85;
+            padding: 2px 6px;
+            background: rgba(255,255,255,0.12);
             border-radius: 4px;
-            letter-spacing: 0.2px;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
         }
         .nav-dropdown .nav-dropdown-toggle.active .nav-sub {
             background: rgba(255,255,255,0.18);
@@ -978,8 +985,20 @@
                         <li><button class="nav-dropdown-item" data-tab="collisionAdvisor" data-group="advisor" data-sub="Collision">Collision</button></li>
                     </ul>
                 </li>
+                <!-- Roster dropdown (Service / Parts / Collision) -->
+                <li class="nav-tab nav-dropdown" id="navGroupRoster" data-group="roster">
+                    <button class="nav-btn nav-dropdown-toggle" type="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="nav-label">Roster</span>
+                        <span class="nav-sub" id="navRosterSub">Service</span>
+                        <span class="nav-caret">▾</span>
+                    </button>
+                    <ul class="nav-dropdown-menu">
+                        <li><button class="nav-dropdown-item active" data-tab="roster" data-group="roster" data-sub="Service">Service</button></li>
+                        <li><button class="nav-dropdown-item" data-tab="partsRoster" data-group="roster" data-sub="Parts">Parts</button></li>
+                        <li><button class="nav-dropdown-item" data-tab="collisionRoster" data-group="roster" data-sub="Collision">Collision</button></li>
+                    </ul>
+                </li>
                 <li class="nav-tab"><button class="nav-btn" id="goalsTab" data-tab="goals" style="display:none;">Goals</button></li>
-                <li class="nav-tab"><button class="nav-btn" data-tab="roster">Roster</button></li>
                 <li class="nav-tab"><button class="nav-btn" id="adminConsoleTab" data-tab="admin" style="display:none;">Admin Console</button></li>
             </ul>
             <div class="navbar-right">
@@ -1195,61 +1214,112 @@
             <!-- Parts Department Daily Entry card -->
             <div class="card" id="dailyPartsCard">
                 <h3 class="card-title">Parts Department</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 32px;">
-                    <table style="flex:1;">
+                <p style="font-size:12px;color:#666;margin:-6px 0 14px 0;">
+                    Enter <strong>Sales</strong> and <strong>Gross</strong> for each channel — Gross % calculates automatically. The
+                    Counter Gross % goal is <strong>≥ 42%</strong>; Obsolescence is computed against parts inventory and goal is <strong>&lt; 9%</strong>.
+                </p>
+
+                <!-- Channel-by-channel sales + gross grid -->
+                <div style="overflow-x:auto;">
+                    <table style="min-width:780px;">
+                        <thead>
+                            <tr style="background-color:#f8fafc;">
+                                <th style="text-align:left;">Channel</th>
+                                <th style="width:140px;">Sales $</th>
+                                <th style="width:140px;">Gross $</th>
+                                <th style="width:100px;">Gross %</th>
+                            </tr>
+                        </thead>
                         <tbody>
                             <tr>
-                                <td style="font-weight:600;">Service Parts $</td>
-                                <td><input type="number" id="partsServiceDay" class="input-yellow" placeholder="0"></td>
+                                <td style="font-weight:600;">Service Parts (RO)</td>
+                                <td><input type="number" id="partsServiceDay" class="input-yellow parts-channel-sales" data-channel="service" placeholder="0"></td>
+                                <td><input type="number" id="partsServiceGrossDay" class="input-yellow parts-channel-gross" data-channel="service" placeholder="0"></td>
+                                <td class="input-gray parts-channel-gp" id="partsServiceGp" style="text-align:right;">—</td>
                             </tr>
                             <tr>
-                                <td style="font-weight:600;">Wholesale $</td>
-                                <td><input type="number" id="partsWholesaleDay" class="input-yellow" placeholder="0"></td>
+                                <td style="font-weight:600;">Wholesale</td>
+                                <td><input type="number" id="partsWholesaleDay" class="input-yellow parts-channel-sales" data-channel="wholesale" placeholder="0"></td>
+                                <td><input type="number" id="partsWholesaleGrossDay" class="input-yellow parts-channel-gross" data-channel="wholesale" placeholder="0"></td>
+                                <td class="input-gray parts-channel-gp" id="partsWholesaleGp" style="text-align:right;">—</td>
                             </tr>
                             <tr>
-                                <td style="font-weight:600;">Obsolescence Sales $</td>
-                                <td><input type="number" id="partsObsoDay" class="input-yellow" placeholder="0"></td>
+                                <td style="font-weight:600;" id="partsCounter1Label">Counter 1</td>
+                                <td><input type="number" id="partsCounter1Day" class="input-yellow parts-channel-sales parts-counter-sales" data-channel="counter1" placeholder="0"></td>
+                                <td><input type="number" id="partsCounter1GrossDay" class="input-yellow parts-channel-gross parts-counter-gross" data-channel="counter1" placeholder="0"></td>
+                                <td class="input-gray parts-channel-gp" id="partsCounter1Gp" style="text-align:right;">—</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight:600;" id="partsCounter2Label">Counter 2</td>
+                                <td><input type="number" id="partsCounter2Day" class="input-yellow parts-channel-sales parts-counter-sales" data-channel="counter2" placeholder="0"></td>
+                                <td><input type="number" id="partsCounter2GrossDay" class="input-yellow parts-channel-gross parts-counter-gross" data-channel="counter2" placeholder="0"></td>
+                                <td class="input-gray parts-channel-gp" id="partsCounter2Gp" style="text-align:right;">—</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight:600;" id="partsCounter3Label">Counter 3</td>
+                                <td><input type="number" id="partsCounter3Day" class="input-yellow parts-channel-sales parts-counter-sales" data-channel="counter3" placeholder="0"></td>
+                                <td><input type="number" id="partsCounter3GrossDay" class="input-yellow parts-channel-gross parts-counter-gross" data-channel="counter3" placeholder="0"></td>
+                                <td class="input-gray parts-channel-gp" id="partsCounter3Gp" style="text-align:right;">—</td>
                             </tr>
                             <tr style="background-color:#f3f4f6;">
-                                <td style="font-weight:600;">Counter Total $ (auto)</td>
+                                <td style="font-weight:700;">Counter Total (auto)</td>
                                 <td class="input-gray" id="partsCounterTotalDay">$0</td>
+                                <td class="input-gray" id="partsCounterTotalGross">$0</td>
+                                <td class="input-gray" id="partsCounterTotalGp" style="text-align:right;font-weight:700;">—</td>
                             </tr>
                             <tr style="background-color:#fff3cd;">
-                                <td style="font-weight:700;">Total Parts Gross $ (auto)</td>
+                                <td style="font-weight:700;">Total Parts (auto)</td>
+                                <td class="input-gray" id="partsTotalSalesDay" style="font-weight:700;">$0</td>
                                 <td class="input-gray" id="partsTotalGrossDay" style="font-weight:700;">$0</td>
-                            </tr>
-                            <tr style="background-color:#f3f4f6;">
-                                <td style="font-weight:600;">Total Parts MTD $</td>
-                                <td class="input-gray" id="partsTotalMtd">$0</td>
-                            </tr>
-                            <tr style="background-color:#f3f4f6;">
-                                <td style="font-weight:600;">Total Parts Pace $</td>
-                                <td class="input-gray" id="partsTotalPace">$0</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <table style="flex:1;">
-                        <tbody>
-                            <tr>
-                                <td style="font-weight:600;" id="partsCounter1Label">Counter 1 $</td>
-                                <td><input type="number" id="partsCounter1Day" class="input-yellow" placeholder="0"></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight:600;" id="partsCounter2Label">Counter 2 $</td>
-                                <td><input type="number" id="partsCounter2Day" class="input-yellow" placeholder="0"></td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight:600;" id="partsCounter3Label">Counter 3 $</td>
-                                <td><input type="number" id="partsCounter3Day" class="input-yellow" placeholder="0"></td>
-                            </tr>
-                            <tr style="background-color:#f3f4f6;">
-                                <td colspan="2" style="font-size:12px;color:#666;">
-                                    Configure counter person names on the <strong>Parts</strong> tab roster — they'll appear as labels here.
-                                </td>
+                                <td class="input-gray" id="partsTotalGpDay" style="text-align:right;font-weight:700;">—</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Inventory + obsolescence calc -->
+                <h3 class="card-title" style="margin-top:24px;">Inventory &amp; Obsolescence</h3>
+                <p style="font-size:12px;color:#666;margin:-6px 0 14px 0;">
+                    Set the parts <strong>inventory $</strong> for the month (most managers update this once per month). Obsolescence $ today
+                    is divided by inventory $ to compute Obso % — goal is to keep this <strong>under 9%</strong>.
+                </p>
+                <div style="display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:14px;">
+                    <div class="control-group">
+                        <label>Parts Inventory $ (this month)</label>
+                        <input type="number" id="partsInventoryDay" class="input-yellow" placeholder="0">
+                    </div>
+                    <div class="control-group">
+                        <label>Obsolescence $ (today)</label>
+                        <input type="number" id="partsObsoDay" class="input-yellow" placeholder="0">
+                    </div>
+                    <div class="control-group">
+                        <label>Obso % of Inventory (auto)</label>
+                        <input type="text" id="partsObsoPct" class="input-gray" readonly value="—" style="text-align:right;">
+                    </div>
+                    <div class="control-group">
+                        <label>vs 9% Goal (auto)</label>
+                        <input type="text" id="partsObsoVsGoal" class="input-gray" readonly value="—" style="text-align:right;font-weight:600;">
+                    </div>
+                </div>
+
+                <!-- MTD pace summary -->
+                <h3 class="card-title" style="margin-top:24px;">MTD &amp; Pace</h3>
+                <table style="max-width:520px;">
+                    <tbody>
+                        <tr style="background-color:#f3f4f6;">
+                            <td style="font-weight:600;">Total Parts MTD $</td>
+                            <td class="input-gray" id="partsTotalMtd">$0</td>
+                        </tr>
+                        <tr style="background-color:#f3f4f6;">
+                            <td style="font-weight:600;">Total Parts Pace $</td>
+                            <td class="input-gray" id="partsTotalPace">$0</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p style="font-size:12px;color:#666;margin-top:14px;">
+                    Configure counter person names in <strong>Admin Console → Manage Parts Counter People</strong> — they'll appear as row labels here.
+                </p>
             </div>
 
             <div class="card">
@@ -1410,8 +1480,8 @@
             <!-- Channel mix card -->
             <div class="card" id="partsChannelMixCard">
                 <h3 class="card-title">Channel Mix — <span id="partsChannelMixSubtitle"></span></h3>
-                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Where parts gross is coming from this month. Service / Wholesale / Counter / Obsolescence as a share of Total Parts Gross.</p>
-                <div id="partsChannelMixGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;"></div>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Where parts sales and gross are coming from this month. Service / Wholesale / Counter as a share of Total Parts Sales, with gross dollars and gross % shown for each channel.</p>
+                <div id="partsChannelMixGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;"></div>
             </div>
 
             <!-- Per-counterperson leaderboard -->
@@ -1426,8 +1496,10 @@
                                 <th>Counter Person</th>
                                 <th>Store</th>
                                 <th>MTD Sales ($)</th>
-                                <th>% of Counter Total</th>
-                                <th>Avg / Day</th>
+                                <th>MTD Gross ($)</th>
+                                <th>Gross %</th>
+                                <th>% of Counter Sales</th>
+                                <th>Avg Sales / Day</th>
                             </tr>
                         </thead>
                         <tbody id="partsCounterLeaderboardBody">
@@ -1462,28 +1534,6 @@
                 </div>
             </div>
 
-            <!-- Parts Roster admin -->
-            <div class="card" id="partsRosterCard">
-                <h3 class="card-title">Parts Roster — Counter People</h3>
-                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Configure up to three named parts counter people per store. Names appear on the Daily Entry → Parts Department card and on the leaderboard above.</p>
-                <div style="overflow-x:auto;">
-                    <table id="partsRosterTable">
-                        <thead>
-                            <tr>
-                                <th>Store</th>
-                                <th>Counter 1 Name</th>
-                                <th>Counter 2 Name</th>
-                                <th>Counter 3 Name</th>
-                            </tr>
-                        </thead>
-                        <tbody id="partsRosterBody">
-                        </tbody>
-                    </table>
-                </div>
-                <div class="btn-group">
-                    <button class="btn" id="savePartsRosterBtn">Save Parts Roster</button>
-                </div>
-            </div>
         </div>
 
         <!-- TAB 3: EXECUTIVE OVERVIEW -->
@@ -1652,16 +1702,20 @@
 
             <div class="card">
                 <h3 class="card-title">Parts Department Goals</h3>
-                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Parts Manager goals for the full parts gross picture (service + wholesale + counter + obsolescence).</p>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">
+                    Parts Manager goals. <strong>Counter Gross %</strong> goal is a floor (default 42) — hit when actual ≥ goal.
+                    <strong>Obso %</strong> goal is a ceiling (default 9) — hit when actual ≤ goal.
+                </p>
                 <div style="overflow-x: auto;">
                     <table id="partsGoalsTable">
                         <thead>
                             <tr>
                                 <th>Store</th>
-                                <th>Total Parts Gross Goal ($)</th>
-                                <th>Wholesale Goal ($)</th>
-                                <th>Counter Goal ($)</th>
-                                <th>Obso Goal ($)</th>
+                                <th>Total Parts Sales Goal ($)</th>
+                                <th>Wholesale Sales Goal ($)</th>
+                                <th>Counter Sales Goal ($)</th>
+                                <th>Counter Gross % Goal (≥)</th>
+                                <th>Obso % Goal (≤)</th>
                             </tr>
                         </thead>
                         <tbody id="partsGoalsBody">
@@ -1802,6 +1856,57 @@
             </div>
 
         </div>
+
+        <!-- TAB: PARTS ROSTER (per-counter performance) -->
+        <div id="partsRoster" class="tab-content">
+            <div class="controls">
+                <div class="control-group">
+                    <label>Month / Year</label>
+                    <input type="month" id="partsRosterMonthPicker">
+                </div>
+            </div>
+            <div class="card">
+                <h2 class="card-title">Parts Counter People</h2>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Monthly performance per counter person. Names are managed in <strong>Admin Console → Department Staff → Parts Counter People</strong>. Sales / gross / gross % come from the Parts Daily Entry tab.</p>
+                <div style="overflow-x:auto;">
+                    <table id="partsRosterPerfTable">
+                        <thead>
+                            <tr>
+                                <th>Counter Person</th>
+                                <th>Store</th>
+                                <th>MTD Sales</th>
+                                <th>MTD Gross</th>
+                                <th style="background:#1a1a1a;color:#cc0000;">Gross %</th>
+                                <th>vs 42% Goal</th>
+                                <th>Avg Daily Sales</th>
+                                <th>Working Days</th>
+                            </tr>
+                        </thead>
+                        <tbody id="partsRosterPerfBody">
+                            <tr><td colspan="8" style="text-align:center;color:#888;padding:20px;">Counter performance will populate from Parts Daily Entry data once entries with sales + gross are saved for the selected month.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: COLLISION ROSTER (DCVB only — body techs / painters / estimators) -->
+        <div id="collisionRoster" class="tab-content">
+            <div class="card">
+                <h2 class="card-title">Collision Roster <span style="font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-left:8px;">DCVB Only</span></h2>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Body Techs, Painters, and Estimators for the DCVB collision center. Names are managed in <strong>Admin Console → Department Staff</strong>. Performance metrics will populate once the Collision daily entry form is live.</p>
+                <div id="collisionRosterContent">
+                    <div style="padding:30px 16px;text-align:center;color:#475569;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;">
+                        <div style="font-size:38px;margin-bottom:8px;">🚧</div>
+                        <div style="font-size:16px;font-weight:700;color:#1e293b;margin-bottom:6px;">Roster view ready, performance pending</div>
+                        <div style="max-width:560px;margin:0 auto;font-size:13px;line-height:1.55;">
+                            Manage the roster (add, edit, deactivate body techs / painters / estimators) from <strong>Admin Console → Department Staff</strong>. Performance tables (Keys-to-Keys, ROs delivered-not-closed, hours turned, etc.) will populate here once the Collision Daily Entry form is wired up.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- TAB 7: STAFF MANAGEMENT -->
         <!-- ADMIN CONSOLE TAB -->
         <div id="admin" class="tab-content">
@@ -1964,6 +2069,114 @@
                 </div>
                 <div class="btn-group">
                     <button class="btn" id="addApprenticeBtn">+ Add Apprentice</button>
+                </div>
+            </div>
+
+            <!-- ============================================================================
+                 DEPARTMENT STAFF — Parts Counter, Body Tech, Painter, Estimator
+                 Admin sees all four. Service Manager → hidden (uses Service-side cards above).
+                 Parts Manager → only Counter card. Collision Manager → only the 3 collision cards.
+                 Storage: staff_overrides table, types parts_counter / body_tech / painter / estimator
+                 ============================================================================ -->
+            <div class="card" id="staffPartsCounterCard">
+                <h2 class="card-title">Manage Parts Counter People</h2>
+                <p style="color:#666; margin: -8px 0 14px 0; font-size: 13px;">
+                    Counter people are tied to a specific store. Their daily Sales / Gross numbers are entered on Parts Daily Entry.
+                </p>
+                <div style="overflow-x: auto;">
+                    <table id="staffPartsCounterTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Store</th>
+                                <th>Employee ID</th>
+                                <th>Status</th>
+                                <th style="width:160px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staffPartsCounterBody">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="btn-group">
+                    <button class="btn" id="addPartsCounterBtn">+ Add Counter Person</button>
+                </div>
+            </div>
+
+            <div class="card" id="staffBodyTechCard">
+                <h2 class="card-title">Manage Body Technicians</h2>
+                <p style="color:#666; margin: -8px 0 14px 0; font-size: 13px;">
+                    Body shop techs (DCVB collision department). Track flag hours and labor production.
+                </p>
+                <div style="overflow-x: auto;">
+                    <table id="staffBodyTechTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Store</th>
+                                <th>Employee ID</th>
+                                <th>Skill Level</th>
+                                <th>Status</th>
+                                <th style="width:160px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staffBodyTechBody">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="btn-group">
+                    <button class="btn" id="addBodyTechBtn">+ Add Body Tech</button>
+                </div>
+            </div>
+
+            <div class="card" id="staffPainterCard">
+                <h2 class="card-title">Manage Painters</h2>
+                <p style="color:#666; margin: -8px 0 14px 0; font-size: 13px;">
+                    Paint department. Track paint hours, refinish production, and supplies usage.
+                </p>
+                <div style="overflow-x: auto;">
+                    <table id="staffPainterTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Store</th>
+                                <th>Employee ID</th>
+                                <th>Skill Level</th>
+                                <th>Status</th>
+                                <th style="width:160px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staffPainterBody">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="btn-group">
+                    <button class="btn" id="addPainterBtn">+ Add Painter</button>
+                </div>
+            </div>
+
+            <div class="card" id="staffEstimatorCard">
+                <h2 class="card-title">Manage Estimators</h2>
+                <p style="color:#666; margin: -8px 0 14px 0; font-size: 13px;">
+                    Collision estimators / writers. Track close ratio, average ticket, and supplements.
+                </p>
+                <div style="overflow-x: auto;">
+                    <table id="staffEstimatorTable">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Store</th>
+                                <th>Employee ID</th>
+                                <th>Status</th>
+                                <th style="width:160px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staffEstimatorBody">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="btn-group">
+                    <button class="btn" id="addEstimatorBtn">+ Add Estimator</button>
                 </div>
             </div>
         </div>
@@ -2155,6 +2368,31 @@
             const saveFacilityBtn = document.getElementById('saveFacilityBtn');
             const baysKpiCard = document.getElementById('baysKpiCard');
 
+            // Department staff cards (Parts Counter / Body Tech / Painter / Estimator)
+            const partsCounterCard = document.getElementById('staffPartsCounterCard');
+            const bodyTechCard     = document.getElementById('staffBodyTechCard');
+            const painterCard      = document.getElementById('staffPainterCard');
+            const estimatorCard    = document.getElementById('staffEstimatorCard');
+
+            // Service-side staff cards (Manage Advisors / Technicians / Lube Techs / Apprentices)
+            const advisorMgmtCard    = document.getElementById('staffAdvisorTable')?.closest('.card');
+            const technicianMgmtCard = document.getElementById('staffTechnicianTable')?.closest('.card');
+            const lubeTechMgmtCard   = document.getElementById('staffTechTable')?.closest('.card');
+            const apprenticeMgmtCard = document.getElementById('staffApprenticeTable')?.closest('.card');
+
+            const showServiceStaffCards = (visible) => {
+                const disp = visible ? '' : 'none';
+                [advisorMgmtCard, technicianMgmtCard, lubeTechMgmtCard, apprenticeMgmtCard].forEach(c => {
+                    if (c) c.style.display = disp;
+                });
+            };
+            const showDeptCards = (parts, body, paint, est) => {
+                if (partsCounterCard) partsCounterCard.style.display = parts ? '' : 'none';
+                if (bodyTechCard)     bodyTechCard.style.display     = body  ? '' : 'none';
+                if (painterCard)      painterCard.style.display      = paint ? '' : 'none';
+                if (estimatorCard)    estimatorCard.style.display    = est   ? '' : 'none';
+            };
+
             const goalsTab = document.getElementById('goalsTab');
 
             if (currentUser.role === 'admin') {
@@ -2166,6 +2404,8 @@
                 if (facilityBaysGroup) facilityBaysGroup.style.display = '';
                 if (saveFacilityBtn) saveFacilityBtn.style.display = '';
                 if (baysKpiCard) baysKpiCard.style.display = '';
+                showServiceStaffCards(true);
+                showDeptCards(true, true, true, true);
             } else if (currentUser.role === 'manager') {
                 // Managers can see Admin Console. They can manage user accounts for their
                 // store staff (advisors + technicians only) but cannot create admin/manager/executive users.
@@ -2180,6 +2420,9 @@
                 if (facilityBaysGroup) facilityBaysGroup.style.display = 'none';
                 if (saveFacilityBtn) saveFacilityBtn.style.display = 'none';
                 if (baysKpiCard) baysKpiCard.style.display = 'none';
+                // Service Manager owns the service-side staff cards; the new department cards aren't theirs.
+                showServiceStaffCards(true);
+                showDeptCards(false, false, false, false);
             } else if (currentUser.role === 'parts_manager' || currentUser.role === 'collision_manager') {
                 // Parts/Collision Managers — manager-level admin access scoped to their staff.
                 // Full nav access (can drill into any dropdown), default-lands on their daily entry.
@@ -2192,6 +2435,14 @@
                 if (facilityBaysGroup) facilityBaysGroup.style.display = 'none';
                 if (saveFacilityBtn) saveFacilityBtn.style.display = 'none';
                 if (baysKpiCard) baysKpiCard.style.display = 'none';
+
+                // Hide the service-side staff cards — those belong to the Service Manager.
+                showServiceStaffCards(false);
+                if (currentUser.role === 'parts_manager') {
+                    showDeptCards(true, false, false, false);
+                } else { // collision_manager
+                    showDeptCards(false, true, true, true);
+                }
 
                 // Default landing tab: parts_manager → Parts Daily Entry, collision_manager → Collision Daily Entry
                 // Just set the visual active states here — initialize() will run the actual loader.
@@ -2241,18 +2492,23 @@
                     }
                 });
             } else if (currentUser.role === 'technician') {
-                // Technicians: only see the Roster tab, read-only
+                // Technicians: only see the Roster → Service tab, read-only
                 adminTab.style.display = 'none';
                 if (goalsTab) goalsTab.style.display = 'none';
                 if (facilityBaysGroup) facilityBaysGroup.style.display = 'none';
                 if (saveFacilityBtn) saveFacilityBtn.style.display = 'none';
                 if (baysKpiCard) baysKpiCard.style.display = 'none';
 
-                // Hide every nav-tab li except the standalone Roster button
+                // Hide every nav-tab li except the Roster dropdown
                 document.querySelectorAll('.nav-tab').forEach(li => {
-                    const standaloneBtn = li.querySelector(':scope > .nav-btn:not(.nav-dropdown-toggle)');
-                    const isRoster = standaloneBtn && standaloneBtn.dataset.tab === 'roster';
-                    if (!isRoster) li.style.display = 'none';
+                    if (li.id !== 'navGroupRoster') li.style.display = 'none';
+                });
+                // Hide non-Service items inside the Roster dropdown
+                document.querySelectorAll('#navGroupRoster .nav-dropdown-item').forEach(item => {
+                    if (item.dataset.tab !== 'roster') {
+                        const liParent = item.closest('li');
+                        if (liParent) liParent.style.display = 'none';
+                    }
                 });
 
                 setNavActiveState('roster');
@@ -2811,6 +3067,8 @@
             else if (tabId === 'collisionAdvisor') { /* placeholder */ }
             else if (tabId === 'goals') loadGoals();
             else if (tabId === 'roster') loadRoster();
+            else if (tabId === 'partsRoster') { if (typeof loadPartsRosterPerf === 'function') loadPartsRosterPerf(); }
+            else if (tabId === 'collisionRoster') { /* placeholder */ }
             else if (tabId === 'admin') loadStaffManagement();
             return true;
         }
@@ -3181,12 +3439,23 @@
                         const row = {
                             store_id: entry.store_id,
                             entry_date: entry.entry_date,
+                            // Sales per channel
                             service_parts: entry.service_parts || 0,
                             wholesale: entry.wholesale || 0,
                             counter1: entry.counter1 || 0,
                             counter2: entry.counter2 || 0,
                             counter3: entry.counter3 || 0,
+                            // Gross per channel (new)
+                            service_parts_gross: entry.service_parts_gross || 0,
+                            wholesale_gross: entry.wholesale_gross || 0,
+                            counter1_gross: entry.counter1_gross || 0,
+                            counter2_gross: entry.counter2_gross || 0,
+                            counter3_gross: entry.counter3_gross || 0,
+                            // Inventory + obso for obso% calc
+                            inventory: entry.inventory || 0,
                             obso: entry.obso || 0,
+                            // Rollups
+                            total_parts_sales: entry.total_parts_sales || 0,
                             total_parts_gross: entry.total_parts_gross || 0,
                             day_number: entry.day_number || 0,
                             days_in_month: entry.days_in_month || 0,
@@ -3194,7 +3463,7 @@
                             updated_by: currentUser ? currentUser.id : null
                         };
                         await db.from('parts_entries').upsert(row, { onConflict: 'store_id,entry_date' });
-                    } catch(e) { /* offline / table missing — already in LS */ }
+                    } catch(e) { /* offline / table missing or new columns missing — already in LS */ }
                 }
                 return { ok: true };
             },
@@ -3644,9 +3913,17 @@
             if (savePartsDailyBtn) {
                 savePartsDailyBtn.addEventListener('click', savePartsDailyEntry);
             }
-            // Wire auto-sum + dirty tracking on parts inputs (now lives on the partsDaily tab)
-            ['partsServiceDay', 'partsWholesaleDay', 'partsObsoDay',
-             'partsCounter1Day', 'partsCounter2Day', 'partsCounter3Day'].forEach(id => {
+            // Wire auto-sum + dirty tracking on parts inputs (now lives on the partsDaily tab).
+            // New schema: paired Sales + Gross per channel, plus Inventory $ + Obso $.
+            const partsInputIds = [
+                'partsServiceDay', 'partsServiceGrossDay',
+                'partsWholesaleDay', 'partsWholesaleGrossDay',
+                'partsCounter1Day', 'partsCounter1GrossDay',
+                'partsCounter2Day', 'partsCounter2GrossDay',
+                'partsCounter3Day', 'partsCounter3GrossDay',
+                'partsInventoryDay', 'partsObsoDay'
+            ];
+            partsInputIds.forEach(id => {
                 const el = document.getElementById(id);
                 if (!el) return;
                 el.addEventListener('input', updatePartsDailyCalculations);
@@ -3748,6 +4025,12 @@
             document.getElementById('addApprenticeBtn').addEventListener('click', addNewApprentice);
             document.getElementById('addManagementStaffBtn')?.addEventListener('click', addNewManagementStaff);
             document.getElementById('addExecutiveStaffBtn')?.addEventListener('click', addNewExecutiveStaff);
+
+            // Department staff (Parts Counter / Body Tech / Painter / Estimator)
+            document.getElementById('addPartsCounterBtn')?.addEventListener('click', () => addNewDepartmentStaff('parts_counter'));
+            document.getElementById('addBodyTechBtn')?.addEventListener('click', () => addNewDepartmentStaff('body_tech'));
+            document.getElementById('addPainterBtn')?.addEventListener('click', () => addNewDepartmentStaff('painter'));
+            document.getElementById('addEstimatorBtn')?.addEventListener('click', () => addNewDepartmentStaff('estimator'));
         }
 
         // ============================================================================
@@ -4222,66 +4505,119 @@
             await updateDailyGoalDisplay(storeId, date, daysInMonth, laborDay, partsDay, totalGrossDay);
         }
 
+        // Read the live numbers off the Parts Daily Entry form. Each channel has paired
+        // Sales + Gross fields; this returns a normalized snapshot the rest of the
+        // calc/save code can lean on.
+        function readPartsDailyForm() {
+            const num = (id) => parseFloat(document.getElementById(id)?.value) || 0;
+            const channels = {
+                service:   { sales: num('partsServiceDay'),    gross: num('partsServiceGrossDay') },
+                wholesale: { sales: num('partsWholesaleDay'),  gross: num('partsWholesaleGrossDay') },
+                counter1:  { sales: num('partsCounter1Day'),   gross: num('partsCounter1GrossDay') },
+                counter2:  { sales: num('partsCounter2Day'),   gross: num('partsCounter2GrossDay') },
+                counter3:  { sales: num('partsCounter3Day'),   gross: num('partsCounter3GrossDay') }
+            };
+            const counterSales = channels.counter1.sales + channels.counter2.sales + channels.counter3.sales;
+            const counterGross = channels.counter1.gross + channels.counter2.gross + channels.counter3.gross;
+            const totalSales   = channels.service.sales + channels.wholesale.sales + counterSales;
+            const totalGross   = channels.service.gross + channels.wholesale.gross + counterGross;
+            return {
+                channels,
+                counterSales, counterGross,
+                totalSales, totalGross,
+                inventory: num('partsInventoryDay'),
+                obso:      num('partsObsoDay')
+            };
+        }
+
+        // Render the gross % cells (per channel + counter total + grand total) and the
+        // obsolescence-as-percent-of-inventory readout with red/green vs the 9% goal.
+        function renderPartsDailyDerived(snap) {
+            const fmtPct = (sales, gross) => sales > 0 ? ((gross / sales) * 100).toFixed(1) + '%' : '—';
+            const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+            // Per-channel gross %
+            setText('partsServiceGp',   fmtPct(snap.channels.service.sales,   snap.channels.service.gross));
+            setText('partsWholesaleGp', fmtPct(snap.channels.wholesale.sales, snap.channels.wholesale.gross));
+            setText('partsCounter1Gp',  fmtPct(snap.channels.counter1.sales,  snap.channels.counter1.gross));
+            setText('partsCounter2Gp',  fmtPct(snap.channels.counter2.sales,  snap.channels.counter2.gross));
+            setText('partsCounter3Gp',  fmtPct(snap.channels.counter3.sales,  snap.channels.counter3.gross));
+
+            // Counter rollup (Sales / Gross / Gross %). Counter Gross % is the headline
+            // metric for the Parts Manager — flagged red when below 42%.
+            setText('partsCounterTotalDay',   formatCurrency(snap.counterSales));
+            setText('partsCounterTotalGross', formatCurrency(snap.counterGross));
+            const counterGp = snap.counterSales > 0 ? (snap.counterGross / snap.counterSales) * 100 : 0;
+            const ctgpEl = document.getElementById('partsCounterTotalGp');
+            if (ctgpEl) {
+                ctgpEl.textContent = snap.counterSales > 0 ? counterGp.toFixed(1) + '%' : '—';
+                ctgpEl.style.color = snap.counterSales > 0
+                    ? (counterGp >= 42 ? '#16a34a' : '#dc2626')
+                    : '';
+            }
+
+            // Total parts day rollup
+            setText('partsTotalSalesDay', formatCurrency(snap.totalSales));
+            setText('partsTotalGrossDay', formatCurrency(snap.totalGross));
+            const totalGp = snap.totalSales > 0 ? (snap.totalGross / snap.totalSales) * 100 : 0;
+            setText('partsTotalGpDay', snap.totalSales > 0 ? totalGp.toFixed(1) + '%' : '—');
+
+            // Obso % vs inventory + 9% goal indicator
+            const obsoPctEl   = document.getElementById('partsObsoPct');
+            const obsoVsGoalEl = document.getElementById('partsObsoVsGoal');
+            if (obsoPctEl) {
+                const pct = snap.inventory > 0 ? (snap.obso / snap.inventory) * 100 : 0;
+                obsoPctEl.value = snap.inventory > 0 ? pct.toFixed(2) + '%' : '—';
+                if (obsoVsGoalEl) {
+                    if (snap.inventory <= 0) {
+                        obsoVsGoalEl.value = '—';
+                        obsoVsGoalEl.style.color = '';
+                    } else if (pct < 9) {
+                        obsoVsGoalEl.value = `On goal · ${(9 - pct).toFixed(2)} pts under`;
+                        obsoVsGoalEl.style.color = '#16a34a';
+                    } else {
+                        obsoVsGoalEl.value = `OVER goal · ${(pct - 9).toFixed(2)} pts over`;
+                        obsoVsGoalEl.style.color = '#dc2626';
+                    }
+                }
+            }
+        }
+
         // Auto-sum + MTD/Pace for the Parts Daily Entry tab. Pulls the date and day-#
         // from the parts daily picker (the parts tab has its own picker independent of
         // the service tab's). Reads day inputs each call so live edits update the day
         // total without requiring a save.
         async function updatePartsDailyCalculations() {
+            const snap = readPartsDailyForm();
+            renderPartsDailyDerived(snap);
+
             const storeId = getSelectedStore();
+            if (!storeId || isAllStores()) return;
             const partsPicker = document.getElementById('partsDailyDatePicker');
-            if (!partsPicker || !partsPicker.valueAsDate) {
-                // Picker not yet initialized — still update the auto-sum from inputs
-                const svc   = parseFloat(document.getElementById('partsServiceDay')?.value)   || 0;
-                const whs   = parseFloat(document.getElementById('partsWholesaleDay')?.value) || 0;
-                const obso  = parseFloat(document.getElementById('partsObsoDay')?.value)      || 0;
-                const c1    = parseFloat(document.getElementById('partsCounter1Day')?.value)  || 0;
-                const c2    = parseFloat(document.getElementById('partsCounter2Day')?.value)  || 0;
-                const c3    = parseFloat(document.getElementById('partsCounter3Day')?.value)  || 0;
-                const counterTotal = c1 + c2 + c3;
-                const partsTotalDay = svc + whs + counterTotal + obso;
-                const ctEl = document.getElementById('partsCounterTotalDay');
-                const tgEl = document.getElementById('partsTotalGrossDay');
-                if (ctEl) ctEl.textContent = formatCurrency(counterTotal);
-                if (tgEl) tgEl.textContent = formatCurrency(partsTotalDay);
-                return;
-            }
+            if (!partsPicker || !partsPicker.valueAsDate) return;
             const date = pickerDate(partsPicker.valueAsDate);
             const dayNum = parseInt(document.getElementById('partsDailyDayNumber')?.value) || 0;
             const daysInMonth = parseInt(document.getElementById('partsDailyDaysInMonth')?.value) || 0;
-            return updatePartsCalculations(storeId, date, dayNum, daysInMonth);
+            return updatePartsCalculations(storeId, date, dayNum, daysInMonth, snap);
         }
 
-        // Recompute the Parts Department card: counter total, total parts gross day,
-        // and MTD/Pace from saved parts_entries. Reads day inputs each call so live edits
-        // update the day total without requiring a save.
-        async function updatePartsCalculations(storeId, date, dayNum, daysInMonth) {
-            const svc   = parseFloat(document.getElementById('partsServiceDay')?.value)   || 0;
-            const whs   = parseFloat(document.getElementById('partsWholesaleDay')?.value) || 0;
-            const obso  = parseFloat(document.getElementById('partsObsoDay')?.value)      || 0;
-            const c1    = parseFloat(document.getElementById('partsCounter1Day')?.value)  || 0;
-            const c2    = parseFloat(document.getElementById('partsCounter2Day')?.value)  || 0;
-            const c3    = parseFloat(document.getElementById('partsCounter3Day')?.value)  || 0;
-            const counterTotal = c1 + c2 + c3;
-            const partsTotalDay = svc + whs + counterTotal + obso;
-
-            const ctEl = document.getElementById('partsCounterTotalDay');
-            const tgEl = document.getElementById('partsTotalGrossDay');
-            if (ctEl) ctEl.textContent = formatCurrency(counterTotal);
-            if (tgEl) tgEl.textContent = formatCurrency(partsTotalDay);
+        // Recompute MTD + pace from saved parts_entries, blending in the live form values
+        // for "today" so users see the impact of what they're typing before they save.
+        async function updatePartsCalculations(storeId, date, dayNum, daysInMonth, snap) {
+            const partsTotalDay = (snap || readPartsDailyForm()).totalSales;
 
             if (!storeId || isAllStores()) return;
-
             const monthStart = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
             const ds = dateToString(date);
             const partsMtdData = (await LS.getPartsEntries()).filter(p =>
                 p.store_id === storeId && p.entry_date >= monthStart && p.entry_date <= ds
             );
-            // For the current day, prefer the live form value over any saved row so the user
-            // sees the impact of the number they're typing before they hit Save.
             let totalPartsMtd = 0;
             partsMtdData.forEach(p => {
                 if (p.entry_date === ds) return; // exclude saved row for today; use live form
-                totalPartsMtd += (p.total_parts_gross || 0);
+                // Prefer total_parts_sales (new field); fall back to total_parts_gross from
+                // legacy rows where sales wasn't recorded separately.
+                totalPartsMtd += (parseFloat(p.total_parts_sales) || parseFloat(p.total_parts_gross) || 0);
             });
             totalPartsMtd += partsTotalDay;
 
@@ -4306,9 +4642,16 @@
             if (!partsPicker) return;
             const date = pickerDate(partsPicker.valueAsDate);
 
-            // Restore editable state for the parts inputs
-            ['partsServiceDay', 'partsWholesaleDay', 'partsObsoDay',
-             'partsCounter1Day', 'partsCounter2Day', 'partsCounter3Day'].forEach(id => {
+            // Restore editable state for the parts inputs (10 channel inputs + inventory + obso)
+            const editableIds = [
+                'partsServiceDay', 'partsServiceGrossDay',
+                'partsWholesaleDay', 'partsWholesaleGrossDay',
+                'partsCounter1Day', 'partsCounter1GrossDay',
+                'partsCounter2Day', 'partsCounter2GrossDay',
+                'partsCounter3Day', 'partsCounter3GrossDay',
+                'partsInventoryDay', 'partsObsoDay'
+            ];
+            editableIds.forEach(id => {
                 const el = document.getElementById(id);
                 if (!el) return;
                 el.readOnly = false;
@@ -4332,12 +4675,21 @@
             try {
                 const ds = dateToString(date);
                 const partsData = (await LS.getPartsEntries()).find(p => p.store_id === storeId && p.entry_date === ds);
-                document.getElementById('partsServiceDay').value    = partsData?.service_parts ?? '';
-                document.getElementById('partsWholesaleDay').value  = partsData?.wholesale     ?? '';
-                document.getElementById('partsObsoDay').value       = partsData?.obso          ?? '';
-                document.getElementById('partsCounter1Day').value   = partsData?.counter1      ?? '';
-                document.getElementById('partsCounter2Day').value   = partsData?.counter2      ?? '';
-                document.getElementById('partsCounter3Day').value   = partsData?.counter3      ?? '';
+                // Sales fields (canonical names: service_parts / wholesale / counter1..3)
+                document.getElementById('partsServiceDay').value     = partsData?.service_parts ?? '';
+                document.getElementById('partsWholesaleDay').value   = partsData?.wholesale     ?? '';
+                document.getElementById('partsCounter1Day').value    = partsData?.counter1      ?? '';
+                document.getElementById('partsCounter2Day').value    = partsData?.counter2      ?? '';
+                document.getElementById('partsCounter3Day').value    = partsData?.counter3      ?? '';
+                // Gross fields (new — default '' when missing on legacy rows)
+                document.getElementById('partsServiceGrossDay').value   = partsData?.service_parts_gross ?? '';
+                document.getElementById('partsWholesaleGrossDay').value = partsData?.wholesale_gross     ?? '';
+                document.getElementById('partsCounter1GrossDay').value  = partsData?.counter1_gross      ?? '';
+                document.getElementById('partsCounter2GrossDay').value  = partsData?.counter2_gross      ?? '';
+                document.getElementById('partsCounter3GrossDay').value  = partsData?.counter3_gross      ?? '';
+                // Inventory + obso
+                document.getElementById('partsInventoryDay').value = partsData?.inventory ?? '';
+                document.getElementById('partsObsoDay').value      = partsData?.obso      ?? '';
                 updatePartsDailyCalculations();
             } catch (e) {
                 console.error('loadPartsDailyEntry error', e);
@@ -4349,21 +4701,49 @@
                 const ds = dateToString(date);
                 const allParts = await LS.getPartsEntries();
                 const dayParts = allParts.filter(p => p.entry_date === ds);
-                let pSvc = 0, pWhs = 0, pObs = 0, pC1 = 0, pC2 = 0, pC3 = 0;
+                // Aggregate Sales + Gross per channel + Inventory + Obso across all stores
+                const agg = {
+                    service:   { sales: 0, gross: 0 },
+                    wholesale: { sales: 0, gross: 0 },
+                    counter1:  { sales: 0, gross: 0 },
+                    counter2:  { sales: 0, gross: 0 },
+                    counter3:  { sales: 0, gross: 0 }
+                };
+                let invTotal = 0, obsoTotal = 0;
                 dayParts.forEach(p => {
-                    pSvc += parseFloat(p.service_parts) || 0;
-                    pWhs += parseFloat(p.wholesale)     || 0;
-                    pObs += parseFloat(p.obso)          || 0;
-                    pC1  += parseFloat(p.counter1)      || 0;
-                    pC2  += parseFloat(p.counter2)      || 0;
-                    pC3  += parseFloat(p.counter3)      || 0;
+                    agg.service.sales   += parseFloat(p.service_parts)       || 0;
+                    agg.service.gross   += parseFloat(p.service_parts_gross) || 0;
+                    agg.wholesale.sales += parseFloat(p.wholesale)           || 0;
+                    agg.wholesale.gross += parseFloat(p.wholesale_gross)     || 0;
+                    agg.counter1.sales  += parseFloat(p.counter1)            || 0;
+                    agg.counter1.gross  += parseFloat(p.counter1_gross)      || 0;
+                    agg.counter2.sales  += parseFloat(p.counter2)            || 0;
+                    agg.counter2.gross  += parseFloat(p.counter2_gross)      || 0;
+                    agg.counter3.sales  += parseFloat(p.counter3)            || 0;
+                    agg.counter3.gross  += parseFloat(p.counter3_gross)      || 0;
+                    invTotal  += parseFloat(p.inventory) || 0;
+                    obsoTotal += parseFloat(p.obso)      || 0;
                 });
-                const ids =    ['partsServiceDay','partsWholesaleDay','partsObsoDay','partsCounter1Day','partsCounter2Day','partsCounter3Day'];
-                const values = [pSvc, pWhs, pObs, pC1, pC2, pC3];
-                ids.forEach((id, i) => {
+
+                // Push aggregates into the form fields and lock them read-only
+                const fieldMap = {
+                    partsServiceDay:        agg.service.sales,
+                    partsServiceGrossDay:   agg.service.gross,
+                    partsWholesaleDay:      agg.wholesale.sales,
+                    partsWholesaleGrossDay: agg.wholesale.gross,
+                    partsCounter1Day:       agg.counter1.sales,
+                    partsCounter1GrossDay:  agg.counter1.gross,
+                    partsCounter2Day:       agg.counter2.sales,
+                    partsCounter2GrossDay:  agg.counter2.gross,
+                    partsCounter3Day:       agg.counter3.sales,
+                    partsCounter3GrossDay:  agg.counter3.gross,
+                    partsInventoryDay:      invTotal,
+                    partsObsoDay:           obsoTotal
+                };
+                Object.entries(fieldMap).forEach(([id, value]) => {
                     const el = document.getElementById(id);
                     if (!el) return;
-                    el.value = values[i] || '';
+                    el.value = value || '';
                     el.readOnly = true;
                     el.classList.remove('input-yellow');
                     el.classList.add('input-gray');
@@ -4371,23 +4751,23 @@
                 });
                 ['1', '2', '3'].forEach(i => {
                     const el = document.getElementById('partsCounter' + i + 'Label');
-                    if (el) el.textContent = `Counter ${i} (all stores) $`;
+                    if (el) el.textContent = `Counter ${i} (all stores)`;
                 });
+
                 // Hide save button — All Stores is read-only aggregation
                 const saveBtn = document.getElementById('savePartsDailyBtn');
                 if (saveBtn) saveBtn.style.display = 'none';
-                // Compute auto-totals (read-only display only)
-                const counterTotal = pC1 + pC2 + pC3;
-                const total = pSvc + pWhs + pObs + counterTotal;
-                document.getElementById('partsCounterTotalDay').textContent = formatCurrency(counterTotal);
-                document.getElementById('partsTotalGrossDay').textContent   = formatCurrency(total);
+
+                // Recompute derived cells (gross %, totals, obso %) from the populated fields
+                renderPartsDailyDerived(readPartsDailyForm());
+
                 // MTD across all stores
-                const date2 = pickerDate(document.getElementById('partsDailyDatePicker').valueAsDate);
-                const monthStart = `${date2.getFullYear()}-${String(date2.getMonth() + 1).padStart(2, '0')}-01`;
+                const monthStart = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
                 const dayNum = parseInt(document.getElementById('partsDailyDayNumber')?.value) || 0;
                 const daysInMonth = parseInt(document.getElementById('partsDailyDaysInMonth')?.value) || 0;
                 const monthData = allParts.filter(p => p.entry_date >= monthStart && p.entry_date <= ds);
-                const totalMtd = monthData.reduce((s, p) => s + (parseFloat(p.total_parts_gross) || 0), 0);
+                const totalMtd = monthData.reduce((s, p) =>
+                    s + (parseFloat(p.total_parts_sales) || parseFloat(p.total_parts_gross) || 0), 0);
                 document.getElementById('partsTotalMtd').textContent = formatCurrency(totalMtd);
                 if (dayNum > 0 && daysInMonth > 0) {
                     document.getElementById('partsTotalPace').textContent = formatCurrency((totalMtd / dayNum) * daysInMonth);
@@ -4413,15 +4793,9 @@
             const dayNum = parseInt(document.getElementById('partsDailyDayNumber').value) || 0;
             const daysInMonth = parseInt(document.getElementById('partsDailyDaysInMonth').value) || 0;
 
-            const pSvc  = parseFloat(document.getElementById('partsServiceDay')?.value)   || 0;
-            const pWhs  = parseFloat(document.getElementById('partsWholesaleDay')?.value) || 0;
-            const pObs  = parseFloat(document.getElementById('partsObsoDay')?.value)      || 0;
-            const pC1   = parseFloat(document.getElementById('partsCounter1Day')?.value)  || 0;
-            const pC2   = parseFloat(document.getElementById('partsCounter2Day')?.value)  || 0;
-            const pC3   = parseFloat(document.getElementById('partsCounter3Day')?.value)  || 0;
-            const pTotal = pSvc + pWhs + pC1 + pC2 + pC3 + pObs;
-
-            if (!pSvc && !pWhs && !pObs && !pC1 && !pC2 && !pC3) {
+            const snap = readPartsDailyForm();
+            const anySales = snap.totalSales > 0 || snap.obso > 0 || snap.inventory > 0;
+            if (!anySales) {
                 showToast('Enter at least one parts number before saving', 'error');
                 return;
             }
@@ -4432,13 +4806,24 @@
                     entry_date: ds,
                     day_number: dayNum,
                     days_in_month: daysInMonth,
-                    service_parts: pSvc,
-                    wholesale: pWhs,
-                    obso: pObs,
-                    counter1: pC1,
-                    counter2: pC2,
-                    counter3: pC3,
-                    total_parts_gross: pTotal
+                    // Sales (legacy field names — kept stable for back-compat)
+                    service_parts: snap.channels.service.sales,
+                    wholesale:     snap.channels.wholesale.sales,
+                    counter1:      snap.channels.counter1.sales,
+                    counter2:      snap.channels.counter2.sales,
+                    counter3:      snap.channels.counter3.sales,
+                    // Gross per channel (new)
+                    service_parts_gross: snap.channels.service.gross,
+                    wholesale_gross:     snap.channels.wholesale.gross,
+                    counter1_gross:      snap.channels.counter1.gross,
+                    counter2_gross:      snap.channels.counter2.gross,
+                    counter3_gross:      snap.channels.counter3.gross,
+                    // Inventory + obso for the obso% calc
+                    inventory: snap.inventory,
+                    obso:      snap.obso,
+                    // Rollups (saved so the dashboard can read without re-summing)
+                    total_parts_sales: snap.totalSales,
+                    total_parts_gross: snap.totalGross
                 });
                 if (result && result.ok === false) {
                     showToast('Save FAILED for parts department — please try again', 'error');
@@ -5342,20 +5727,44 @@
                 );
                 if (!allMode) entries = entries.filter(p => p.store_id === storeId);
 
-                // Aggregate MTD across the entries
-                let mtdSvc = 0, mtdWhs = 0, mtdObso = 0, mtdC1 = 0, mtdC2 = 0, mtdC3 = 0, mtdTotal = 0;
+                // Aggregate MTD across the entries — sales AND gross per channel + obso + inventory
+                let mtdSvc = 0, mtdWhs = 0, mtdObso = 0, mtdC1 = 0, mtdC2 = 0, mtdC3 = 0, mtdTotalSales = 0;
+                let mtdSvcG = 0, mtdWhsG = 0, mtdC1G = 0, mtdC2G = 0, mtdC3G = 0, mtdTotalGross = 0;
+                let mtdInventory = 0, mtdInventorySamples = 0;
                 entries.forEach(p => {
-                    mtdSvc   += parseFloat(p.service_parts) || 0;
-                    mtdWhs   += parseFloat(p.wholesale)     || 0;
-                    mtdObso  += parseFloat(p.obso)          || 0;
-                    mtdC1    += parseFloat(p.counter1)      || 0;
-                    mtdC2    += parseFloat(p.counter2)      || 0;
-                    mtdC3    += parseFloat(p.counter3)      || 0;
-                    mtdTotal += parseFloat(p.total_parts_gross)
-                              || ((parseFloat(p.service_parts)||0)+(parseFloat(p.wholesale)||0)+(parseFloat(p.obso)||0)
-                                  +(parseFloat(p.counter1)||0)+(parseFloat(p.counter2)||0)+(parseFloat(p.counter3)||0));
+                    // Sales
+                    mtdSvc        += parseFloat(p.service_parts) || 0;
+                    mtdWhs        += parseFloat(p.wholesale)     || 0;
+                    mtdObso       += parseFloat(p.obso)          || 0;
+                    mtdC1         += parseFloat(p.counter1)      || 0;
+                    mtdC2         += parseFloat(p.counter2)      || 0;
+                    mtdC3         += parseFloat(p.counter3)      || 0;
+                    mtdTotalSales += parseFloat(p.total_parts_sales)
+                                   || parseFloat(p.total_parts_gross)
+                                   || ((parseFloat(p.service_parts)||0)+(parseFloat(p.wholesale)||0)
+                                      +(parseFloat(p.counter1)||0)+(parseFloat(p.counter2)||0)+(parseFloat(p.counter3)||0));
+                    // Gross
+                    mtdSvcG       += parseFloat(p.service_parts_gross) || 0;
+                    mtdWhsG       += parseFloat(p.wholesale_gross)     || 0;
+                    mtdC1G        += parseFloat(p.counter1_gross)      || 0;
+                    mtdC2G        += parseFloat(p.counter2_gross)      || 0;
+                    mtdC3G        += parseFloat(p.counter3_gross)      || 0;
+                    mtdTotalGross += parseFloat(p.total_parts_gross)
+                                   || ((parseFloat(p.service_parts_gross)||0)+(parseFloat(p.wholesale_gross)||0)
+                                      +(parseFloat(p.counter1_gross)||0)+(parseFloat(p.counter2_gross)||0)+(parseFloat(p.counter3_gross)||0));
+                    // Inventory — average across days that recorded one
+                    const inv = parseFloat(p.inventory) || 0;
+                    if (inv > 0) { mtdInventory += inv; mtdInventorySamples++; }
                 });
-                const mtdCounterTotal = mtdC1 + mtdC2 + mtdC3;
+                const mtdCounterTotal      = mtdC1  + mtdC2  + mtdC3;
+                const mtdCounterTotalGross = mtdC1G + mtdC2G + mtdC3G;
+                const avgInventory         = mtdInventorySamples > 0 ? mtdInventory / mtdInventorySamples : 0;
+                // Counter Gross %  =  counter gross / counter sales
+                const counterGpPct = mtdCounterTotal > 0 ? (mtdCounterTotalGross / mtdCounterTotal) * 100 : 0;
+                // Obso %  =  obso $ / inventory $  (per Jay: under 9% goal)
+                const obsoPct      = avgInventory     > 0 ? (mtdObso / avgInventory) * 100 : 0;
+                // Back-compat alias for downstream code that still uses mtdTotal
+                const mtdTotal = mtdTotalSales || mtdTotalGross;
 
                 // Tracking — project MTD to month using the working day of the most recent entry
                 // (or today if the month is current). Same pattern as Service Daily Entry tracking.
@@ -5371,19 +5780,47 @@
                 const trackCounter   = proj(mtdCounterTotal);
                 const trackObso      = proj(mtdObso);
 
-                // Build KPI tiles using the existing tire-circle helper
+                // Build KPI tiles. First three use the tire-circle (currency vs $ goal); the
+                // last two are percentage KPIs against thresholds (Counter GP% ≥ 42, Obso% ≤ 9).
                 const pct = (mtd, goal) => goal > 0 ? (mtd / goal) * 100 : 0;
-                const totalGoal = pGoals?.parts_total_goal || 0;
-                const whsGoal   = pGoals?.parts_wholesale_goal || 0;
-                const ctrGoal   = pGoals?.parts_counter_goal || 0;
-                const obsoGoal  = pGoals?.parts_obso_goal || 0;
+                const totalGoal     = pGoals?.parts_total_goal      || 0;
+                const whsGoal       = pGoals?.parts_wholesale_goal  || 0;
+                const ctrGoal       = pGoals?.parts_counter_goal    || 0;
+                const counterGpGoal = (pGoals?.parts_counter_gp_goal != null) ? pGoals.parts_counter_gp_goal : 42;
+                const obsoPctGoal   = (pGoals?.parts_obso_pct_goal   != null) ? pGoals.parts_obso_pct_goal   : 9;
+
+                // Inline percent-vs-threshold KPI tile. `direction` is 'up' (higher is
+                // better, e.g. counter gross %) or 'down' (lower is better, e.g. obso %).
+                const pctThresholdCard = (label, valuePct, goalPct, direction, subtext) => {
+                    const ok = direction === 'up' ? valuePct >= goalPct : valuePct <= goalPct;
+                    const has = !isNaN(valuePct) && isFinite(valuePct) && valuePct > 0;
+                    const color = !has ? '#94a3b8' : ok ? '#22c55e' : '#dc2626';
+                    const bg    = !has ? '#f1f5f9' : ok ? '#dcfce7' : '#fee2e2';
+                    const arrow = direction === 'up' ? '↑' : '↓';
+                    const goalLabel = direction === 'up' ? `≥ ${goalPct}%` : `≤ ${goalPct}%`;
+                    const display = has ? valuePct.toFixed(1) + '%' : '—';
+                    return `
+                        <div class="kpi-card" style="background:${bg};border:2px solid ${color};">
+                            <div class="kpi-label" style="color:#475569;">${label}</div>
+                            <div class="kpi-value" style="color:${color};font-size:38px;">${display}</div>
+                            <div class="kpi-subtext" style="font-weight:700;color:${color};">${arrow} Goal ${goalLabel}</div>
+                            <div class="kpi-subtext" style="color:#475569;font-weight:500;">${subtext}</div>
+                        </div>
+                    `;
+                };
+
                 const partsKpis = document.getElementById('partsKpis');
                 if (partsKpis) {
+                    const counterSub = `${formatCurrency(mtdCounterTotalGross)} gross / ${formatCurrency(mtdCounterTotal)} sales`;
+                    const obsoSub    = avgInventory > 0
+                        ? `${formatCurrency(mtdObso)} obso of ${formatCurrency(avgInventory)} inventory`
+                        : 'Awaiting inventory data';
                     partsKpis.innerHTML =
-                        createGoalPieCard('Total Parts', mtdTotal,         trackTotal,     totalGoal, pct(mtdTotal, totalGoal),         []) +
+                        createGoalPieCard('Total Parts', mtdTotalSales,    trackTotal,     totalGoal, pct(mtdTotalSales, totalGoal),    []) +
                         createGoalPieCard('Wholesale',   mtdWhs,           trackWholesale, whsGoal,   pct(mtdWhs, whsGoal),             []) +
                         createGoalPieCard('Counter',     mtdCounterTotal,  trackCounter,   ctrGoal,   pct(mtdCounterTotal, ctrGoal),    []) +
-                        createGoalPieCard('Obsolescence',mtdObso,          trackObso,      obsoGoal,  pct(mtdObso, obsoGoal),           []);
+                        pctThresholdCard('Counter Gross %', counterGpPct, counterGpGoal, 'up',   counterSub) +
+                        pctThresholdCard('Obsolescence %',  obsoPct,      obsoPctGoal,   'down', obsoSub);
                 }
 
                 // Channel Mix — % share of MTD total per channel (Service-RO / Wholesale / Counter / Obso)
@@ -5394,20 +5831,26 @@
                 }
                 const mixGrid = document.getElementById('partsChannelMixGrid');
                 if (mixGrid) {
-                    const denom = mtdTotal || 1;
+                    const denom = mtdTotalSales || 1;
                     const channels = [
-                        { label: 'Service Parts', val: mtdSvc, color: '#2563eb' },
-                        { label: 'Wholesale',     val: mtdWhs, color: '#0891b2' },
-                        { label: 'Counter',       val: mtdCounterTotal, color: '#7c3aed' },
-                        { label: 'Obsolescence',  val: mtdObso, color: '#ea580c' }
+                        { label: 'Service Parts', sales: mtdSvc,             gross: mtdSvcG,             color: '#2563eb' },
+                        { label: 'Wholesale',     sales: mtdWhs,             gross: mtdWhsG,             color: '#0891b2' },
+                        { label: 'Counter',       sales: mtdCounterTotal,    gross: mtdCounterTotalGross, color: '#7c3aed' }
                     ];
                     mixGrid.innerHTML = channels.map(c => {
-                        const sharePct = (c.val / denom) * 100;
-                        const dispPct = mtdTotal > 0 ? sharePct.toFixed(1) + '%' : '—';
+                        const sharePct = (c.sales / denom) * 100;
+                        const dispPct  = mtdTotalSales > 0 ? sharePct.toFixed(1) + '%' : '—';
+                        const gpPct    = c.sales > 0 ? (c.gross / c.sales) * 100 : 0;
+                        // Counter row gets a red/green tint vs the 42% threshold; other channels just show GP%.
+                        const isCounter = c.label === 'Counter';
+                        const gpOk     = !isCounter || gpPct >= counterGpGoal;
+                        const gpColor  = isCounter ? (gpPct > 0 ? (gpOk ? '#16a34a' : '#dc2626') : '#475569') : '#475569';
+                        const gpLabel  = c.sales > 0 ? gpPct.toFixed(1) + '%' : '—';
                         return `
                             <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;">
                                 <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.5px;">${c.label}</div>
-                                <div style="font-size:22px;font-weight:800;color:#1a1a1a;margin-top:2px;">${formatCurrency(c.val)}</div>
+                                <div style="font-size:20px;font-weight:800;color:#1a1a1a;margin-top:2px;">${formatCurrency(c.sales)}</div>
+                                <div style="font-size:12px;color:#475569;margin-top:2px;">Gross: <strong style="color:#1e293b;">${formatCurrency(c.gross)}</strong> <span style="color:${gpColor};font-weight:700;">(${gpLabel})</span></div>
                                 <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
                                     <div style="flex:1;background:#e2e8f0;border-radius:4px;height:8px;overflow:hidden;">
                                         <div style="background:${c.color};height:100%;width:${Math.min(sharePct,100)}%;"></div>
@@ -5419,7 +5862,7 @@
                     }).join('');
                 }
 
-                // Counter People Leaderboard — per slot, per store. Build rows of {storeCode, name, slot, mtd}
+                // Counter People Leaderboard — per slot, per store. Build rows of {storeCode, name, slot, sales, gross, days}
                 const roster = (await LS.getPartsRoster()) || [];
                 const rows = [];
                 entries.forEach(p => {
@@ -5427,36 +5870,44 @@
                     const storeRow = (stores.find(s => s.id === p.store_id) || FALLBACK_STORES.find(s => s.id === p.store_id));
                     const storeCode = storeRow ? storeRow.code : p.store_id;
                     [1, 2, 3].forEach(i => {
-                        const v = parseFloat(p['counter' + i]) || 0;
-                        if (v <= 0) return;
+                        const sales = parseFloat(p['counter' + i])         || 0;
+                        const gross = parseFloat(p['counter' + i + '_gross']) || 0;
+                        if (sales <= 0 && gross <= 0) return;
                         const nm = r?.['counter' + i + '_name'] || `Counter ${i}`;
                         const key = `${p.store_id}|${i}|${nm}`;
                         let slot = rows.find(x => x.key === key);
                         if (!slot) {
-                            slot = { key, name: nm, storeCode, slot: i, mtd: 0, days: 0 };
+                            slot = { key, name: nm, storeCode, slot: i, sales: 0, gross: 0, days: 0 };
                             rows.push(slot);
                         }
-                        slot.mtd += v;
-                        slot.days += 1;
+                        slot.sales += sales;
+                        slot.gross += gross;
+                        slot.days  += 1;
                     });
                 });
-                rows.sort((a, b) => b.mtd - a.mtd);
+                rows.sort((a, b) => b.sales - a.sales);
                 const lbBody = document.getElementById('partsCounterLeaderboardBody');
                 if (lbBody) {
                     if (rows.length === 0) {
-                        lbBody.innerHTML = `<tr><td colspan="6" class="empty-state" style="padding:14px;color:#64748b;">No counter sales recorded yet for this month. Have the Parts Manager start entering daily numbers on the Parts Daily Entry tab.</td></tr>`;
+                        lbBody.innerHTML = `<tr><td colspan="8" class="empty-state" style="padding:14px;color:#64748b;">No counter sales recorded yet for this month. Have the Parts Manager start entering daily numbers on the Parts Daily Entry tab.</td></tr>`;
                     } else {
-                        const denom = rows.reduce((s, r) => s + r.mtd, 0) || 1;
+                        const denom = rows.reduce((s, r) => s + r.sales, 0) || 1;
                         lbBody.innerHTML = rows.map((r, idx) => {
-                            const share = (r.mtd / denom) * 100;
-                            const avg = r.days > 0 ? r.mtd / r.days : 0;
+                            const share = (r.sales / denom) * 100;
+                            const avg   = r.days > 0 ? r.sales / r.days : 0;
+                            const gpPct = r.sales > 0 ? (r.gross / r.sales) * 100 : 0;
+                            const gpOk  = gpPct >= counterGpGoal;
+                            const gpColor = r.sales > 0 ? (gpOk ? '#16a34a' : '#dc2626') : '#475569';
+                            const gpBg    = r.sales > 0 ? (gpOk ? '#dcfce7' : '#fee2e2') : '';
                             const rankBg = idx === 0 ? '#fef3c7' : idx === 1 ? '#e0e7ff' : idx === 2 ? '#fce7f3' : '';
                             return `
                                 <tr style="${rankBg ? 'background:' + rankBg + ';' : ''}">
                                     <td style="font-weight:700;text-align:center;">${idx + 1}</td>
                                     <td style="font-weight:600;">${r.name}</td>
                                     <td>${r.storeCode}</td>
-                                    <td style="font-weight:700;">${formatCurrency(r.mtd)}</td>
+                                    <td style="font-weight:700;">${formatCurrency(r.sales)}</td>
+                                    <td>${formatCurrency(r.gross)}</td>
+                                    <td style="background:${gpBg};color:${gpColor};font-weight:700;">${r.sales > 0 ? gpPct.toFixed(1) + '%' : '—'}</td>
                                     <td>${share.toFixed(1)}%</td>
                                     <td>${formatCurrency(avg)}</td>
                                 </tr>
@@ -5535,8 +5986,7 @@
                     }
                 }
 
-                // Parts Roster admin
-                await loadPartsRoster();
+                // (Parts Counter People CRUD now lives in Admin Console → Department Staff)
             } catch (e) {
                 console.error('loadPartsDashboard error', e);
             }
@@ -5559,6 +6009,18 @@
                     </tr>
                 `;
             }).join('');
+        }
+
+        // Per-counter MTD performance for the new Roster → Parts tab. Left as a stub
+        // until daily entries carry sales + gross per counter (Task #16). At that point
+        // this will aggregate by counter name + store from LS.getPartsEntries() and
+        // render gross % against the 42% goal.
+        async function loadPartsRosterPerf() {
+            const body = document.getElementById('partsRosterPerfBody');
+            if (!body) return;
+            // TODO: aggregate parts entries by (store_id, counterN_name) for the selected month
+            // and render Sales / Gross / Gross % / vs 42% / Avg Daily / Working Days.
+            // For now keep the placeholder rendered server-side.
         }
 
         // Persist the Parts Roster — iterate visible rows, save each.
@@ -6304,13 +6766,18 @@
                             <td><input type="number" step="0.01" class="goal-per-ro" data-store="${store.id}" value="${goal.gross_per_ro_target || ''}" placeholder="0"></td>
                         </tr>
                     `;
+                    // Default the percentage goals to 42 / 9 if no row exists yet — these are
+                    // the canonical Parts Manager benchmarks (per Jay).
+                    const counterGpGoal = pg.parts_counter_gp_goal != null ? pg.parts_counter_gp_goal : 42;
+                    const obsoPctGoal   = pg.parts_obso_pct_goal   != null ? pg.parts_obso_pct_goal   : 9;
                     partsHtml += `
                         <tr>
                             <td>${store.name}</td>
                             <td><input type="number" class="goal-parts-total" data-store="${store.id}" value="${pg.parts_total_goal || ''}" placeholder="0"></td>
                             <td><input type="number" class="goal-parts-wholesale" data-store="${store.id}" value="${pg.parts_wholesale_goal || ''}" placeholder="0"></td>
                             <td><input type="number" class="goal-parts-counter" data-store="${store.id}" value="${pg.parts_counter_goal || ''}" placeholder="0"></td>
-                            <td><input type="number" class="goal-parts-obso" data-store="${store.id}" value="${pg.parts_obso_goal || ''}" placeholder="0"></td>
+                            <td><input type="number" step="0.1" class="goal-parts-counter-gp" data-store="${store.id}" value="${counterGpGoal}" placeholder="42"></td>
+                            <td><input type="number" step="0.1" class="goal-parts-obso-pct" data-store="${store.id}" value="${obsoPctGoal}" placeholder="9"></td>
                         </tr>
                     `;
                 });
@@ -6345,7 +6812,9 @@
                     });
                 }
 
-                // Save Parts Department goals to their own bucket (LS-only)
+                // Save Parts Department goals to their own bucket (LS-only). Note the % goals
+                // (counter gross %, obso %) are stored as raw percentage values, not ratios —
+                // 42 means "42%", not "0.42".
                 const partsRows = document.querySelectorAll('#partsGoalsBody tr');
                 for (const row of partsRows) {
                     const storeId = row.querySelector('.goal-parts-total')?.dataset.store;
@@ -6357,7 +6826,9 @@
                         parts_total_goal: parseFloat(row.querySelector('.goal-parts-total').value) || 0,
                         parts_wholesale_goal: parseFloat(row.querySelector('.goal-parts-wholesale').value) || 0,
                         parts_counter_goal: parseFloat(row.querySelector('.goal-parts-counter').value) || 0,
-                        parts_obso_goal: parseFloat(row.querySelector('.goal-parts-obso').value) || 0
+                        // New % goals — Counter Gross % (≥42) and Obso % (≤9)
+                        parts_counter_gp_goal: parseFloat(row.querySelector('.goal-parts-counter-gp').value) || 42,
+                        parts_obso_pct_goal:   parseFloat(row.querySelector('.goal-parts-obso-pct').value)   || 9
                     });
                 }
 
@@ -7503,6 +7974,9 @@
             if (document.getElementById('staffManagementBody')) renderManagementStaff();
             if (document.getElementById('staffExecutiveBody')) renderExecutiveStaff();
 
+            // Load and render department staff (Parts Counter / Body Tech / Painter / Estimator)
+            await loadDepartmentStaff();
+
             const getStoreName = (sid) => stores.find(s => s.id === sid)?.name || '';
 
             // Advisors for this store (or all)
@@ -8003,6 +8477,261 @@
                 showToast(`${name} removed`);
             } catch(e) {
                 console.error('Remove exec staff error:', e);
+                showToast('Failed to remove', 'error');
+            }
+        }
+
+        // ============================================================================
+        // DEPARTMENT STAFF (Parts Counter / Body Tech / Painter / Estimator)
+        //
+        // Storage: leverages the existing staff_overrides table via LS.recordStaffChange.
+        // Types: 'parts_counter', 'body_tech', 'painter', 'estimator'.
+        //
+        // Visibility (set up in applyRoleAccess()):
+        //   admin              → all four cards
+        //   manager (service)  → none (already has Service-side staff cards above)
+        //   parts_manager      → Parts Counter only
+        //   collision_manager  → Body Tech / Painter / Estimator only
+        // ============================================================================
+        let partsCounterStaff = [];
+        let bodyTechStaff = [];
+        let painterStaff = [];
+        let estimatorStaff = [];
+
+        // Maps: staff type → { card id, body id, name class, store class, empid class, extra class, status class, save fn name, remove fn name, label }
+        const DEPT_STAFF_TYPES = {
+            parts_counter: {
+                cardId: 'staffPartsCounterCard', bodyId: 'staffPartsCounterBody',
+                nameClass: 'pc-name', storeClass: 'pc-store', empidClass: 'pc-empid',
+                extra: null, statusClass: 'pc-status',
+                label: 'Counter Person',
+                emptyCols: 5
+            },
+            body_tech: {
+                cardId: 'staffBodyTechCard', bodyId: 'staffBodyTechBody',
+                nameClass: 'bt-name', storeClass: 'bt-store', empidClass: 'bt-empid',
+                extra: { class: 'bt-skill', placeholder: 'A / B / C', dataKey: 'skill_level' },
+                statusClass: 'bt-status',
+                label: 'Body Tech',
+                emptyCols: 6
+            },
+            painter: {
+                cardId: 'staffPainterCard', bodyId: 'staffPainterBody',
+                nameClass: 'pa-name', storeClass: 'pa-store', empidClass: 'pa-empid',
+                extra: { class: 'pa-skill', placeholder: 'A / B / C', dataKey: 'skill_level' },
+                statusClass: 'pa-status',
+                label: 'Painter',
+                emptyCols: 6
+            },
+            estimator: {
+                cardId: 'staffEstimatorCard', bodyId: 'staffEstimatorBody',
+                nameClass: 'es-name', storeClass: 'es-store', empidClass: 'es-empid',
+                extra: null, statusClass: 'es-status',
+                label: 'Estimator',
+                emptyCols: 5
+            }
+        };
+
+        function getDeptStaffArray(type) {
+            switch(type) {
+                case 'parts_counter': return partsCounterStaff;
+                case 'body_tech':     return bodyTechStaff;
+                case 'painter':       return painterStaff;
+                case 'estimator':     return estimatorStaff;
+            }
+            return [];
+        }
+        function setDeptStaffArray(type, arr) {
+            switch(type) {
+                case 'parts_counter': partsCounterStaff = arr; break;
+                case 'body_tech':     bodyTechStaff = arr; break;
+                case 'painter':       painterStaff = arr; break;
+                case 'estimator':     estimatorStaff = arr; break;
+            }
+        }
+
+        // Stores accessible to current user — used to filter the store dropdown in each row.
+        function getAccessibleStores() {
+            if (!currentUser || currentUser.role === 'admin') return stores;
+            const allowed = new Set(currentUser.store_access || []);
+            return stores.filter(s => allowed.has(s.id));
+        }
+
+        // For collision roles we restrict the store dropdown to stores that actually have a body shop.
+        // Right now that's only DCVB; tagged here so it's easy to add more later.
+        function getCollisionStores() {
+            return stores.filter(s => s.id === 'dcvb');
+        }
+
+        async function loadDepartmentStaff() {
+            // Pull all overrides once and bucket by type.
+            try {
+                const overrides = await LS.getStaffOverrides();
+                const filterType = (t) => overrides
+                    .filter(o => o.type === t && o.action !== 'delete')
+                    .map(o => ({ id: o.id, ...o.data }));
+                partsCounterStaff = filterType('parts_counter');
+                bodyTechStaff     = filterType('body_tech');
+                painterStaff      = filterType('painter');
+                estimatorStaff    = filterType('estimator');
+            } catch(e) {
+                console.warn('Error loading department staff:', e);
+            }
+            // Render each table that the current user can see.
+            ['parts_counter', 'body_tech', 'painter', 'estimator'].forEach(t => {
+                const card = document.getElementById(DEPT_STAFF_TYPES[t].cardId);
+                if (card && card.style.display !== 'none') {
+                    renderDeptStaff(t);
+                }
+            });
+        }
+
+        function renderDeptStaff(type) {
+            const cfg = DEPT_STAFF_TYPES[type];
+            const tbody = document.getElementById(cfg.bodyId);
+            if (!tbody) return;
+
+            // Scope to stores the current user can see, then to collision-eligible stores for collision types.
+            const accessible = getAccessibleStores();
+            const accessibleIds = new Set(accessible.map(s => s.id));
+            const isCollision = (type === 'body_tech' || type === 'painter' || type === 'estimator');
+            const storeOptions = isCollision ? getCollisionStores() : accessible;
+
+            const rows = getDeptStaffArray(type)
+                .filter(s => !s.store_id || accessibleIds.has(s.store_id));
+
+            if (rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${cfg.emptyCols}" style="text-align:center;color:#888;padding:20px;">No ${cfg.label.toLowerCase()}s added yet — click "+ Add ${cfg.label}" below.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            rows.forEach(s => {
+                const inactiveStyle = s.is_active === false ? 'opacity:0.45;' : '';
+                const storeSelect = `
+                    <select class="${cfg.storeClass}">
+                        <option value="">-- Select Store --</option>
+                        ${storeOptions.map(st => `<option value="${st.id}" ${s.store_id === st.id ? 'selected' : ''}>${st.code} - ${st.name}</option>`).join('')}
+                    </select>`;
+                const extraCell = cfg.extra
+                    ? `<td><input type="text" class="${cfg.extra.class}" value="${s[cfg.extra.dataKey] || ''}" placeholder="${cfg.extra.placeholder}"></td>`
+                    : '';
+                html += `
+                    <tr data-id="${s.id}" data-type="${type}" style="${inactiveStyle}">
+                        <td><input type="text" class="${cfg.nameClass}" value="${s.name || ''}" style="font-weight:600" placeholder="Name"></td>
+                        <td>${storeSelect}</td>
+                        <td><input type="text" class="${cfg.empidClass}" value="${s.employee_id || ''}" placeholder="Employee ID"></td>
+                        ${extraCell}
+                        <td>
+                            <select class="${cfg.statusClass}">
+                                <option value="true" ${s.is_active !== false ? 'selected' : ''}>Active</option>
+                                <option value="false" ${s.is_active === false ? 'selected' : ''}>Inactive</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="btn" style="padding:6px 12px;font-size:12px;" onclick="saveDepartmentStaff(this, '${type}')">Save</button>
+                            <button class="btn btn-danger" style="padding:6px 12px;font-size:12px;" onclick="removeDepartmentStaff(this, '${type}')">Remove</button>
+                        </td>
+                    </tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function addNewDepartmentStaff(type) {
+            const cfg = DEPT_STAFF_TYPES[type];
+            const tbody = document.getElementById(cfg.bodyId);
+            if (!tbody) return;
+
+            // Strip empty-state placeholder if present
+            if (tbody.querySelector('td[colspan]')) tbody.innerHTML = '';
+
+            const newId = type + '_' + Date.now();
+            const isCollision = (type === 'body_tech' || type === 'painter' || type === 'estimator');
+            const storeOptions = isCollision ? getCollisionStores() : getAccessibleStores();
+            // Default-select if there's only one accessible store (very common — collision mgrs only have DCVB)
+            const onlyStore = storeOptions.length === 1 ? storeOptions[0].id : '';
+
+            const storeSelect = `
+                <select class="${cfg.storeClass}">
+                    <option value="">-- Select Store --</option>
+                    ${storeOptions.map(st => `<option value="${st.id}" ${onlyStore === st.id ? 'selected' : ''}>${st.code} - ${st.name}</option>`).join('')}
+                </select>`;
+            const extraCell = cfg.extra
+                ? `<td><input type="text" class="${cfg.extra.class}" value="" placeholder="${cfg.extra.placeholder}"></td>`
+                : '';
+
+            const row = document.createElement('tr');
+            row.dataset.id = newId;
+            row.dataset.type = type;
+            row.innerHTML = `
+                <td><input type="text" class="${cfg.nameClass}" value="" style="font-weight:600" placeholder="Name"></td>
+                <td>${storeSelect}</td>
+                <td><input type="text" class="${cfg.empidClass}" value="" placeholder="Employee ID"></td>
+                ${extraCell}
+                <td>
+                    <select class="${cfg.statusClass}">
+                        <option value="true" selected>Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </td>
+                <td>
+                    <button class="btn" style="padding:6px 12px;font-size:12px;" onclick="saveDepartmentStaff(this, '${type}')">Save</button>
+                    <button class="btn btn-danger" style="padding:6px 12px;font-size:12px;" onclick="this.closest('tr').remove()">Cancel</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+            row.querySelector('.' + cfg.nameClass).focus();
+        }
+
+        async function saveDepartmentStaff(btn, type) {
+            const cfg = DEPT_STAFF_TYPES[type];
+            const row = btn.closest('tr');
+            const id = row.dataset.id;
+            const name = row.querySelector('.' + cfg.nameClass).value.trim();
+            const storeId = row.querySelector('.' + cfg.storeClass).value;
+            const empId = row.querySelector('.' + cfg.empidClass).value.trim();
+            const isActive = row.querySelector('.' + cfg.statusClass).value === 'true';
+
+            if (!name) { showToast('Name is required', 'error'); return; }
+            if (!storeId) { showToast('Store is required', 'error'); return; }
+
+            const data = { id, name, store_id: storeId, employee_id: empId, is_active: isActive };
+            if (cfg.extra) {
+                const extraVal = row.querySelector('.' + cfg.extra.class).value.trim();
+                data[cfg.extra.dataKey] = extraVal;
+            }
+
+            try {
+                await LS.recordStaffChange(type, id, data, 'add');
+                // Update local cache
+                const arr = getDeptStaffArray(type);
+                const idx = arr.findIndex(s => s.id === id);
+                if (idx >= 0) arr[idx] = data; else arr.push(data);
+                setDeptStaffArray(type, arr);
+                showToast(`${cfg.label} saved`);
+                // After save, swap the Cancel button for a Remove button on this fresh row.
+                renderDeptStaff(type);
+            } catch(e) {
+                console.error('Save department staff error:', e);
+                showToast('Failed to save', 'error');
+            }
+        }
+
+        async function removeDepartmentStaff(btn, type) {
+            const cfg = DEPT_STAFF_TYPES[type];
+            const row = btn.closest('tr');
+            const id = row.dataset.id;
+            const name = row.querySelector('.' + cfg.nameClass).value;
+            if (!confirm(`Remove ${name}?`)) return;
+            try {
+                await LS.recordStaffChange(type, id, { is_active: false }, 'delete');
+                const arr = getDeptStaffArray(type).filter(s => s.id !== id);
+                setDeptStaffArray(type, arr);
+                row.remove();
+                renderDeptStaff(type);
+                showToast(`${name} removed`);
+            } catch(e) {
+                console.error('Remove department staff error:', e);
                 showToast('Failed to remove', 'error');
             }
         }
