@@ -1754,6 +1754,26 @@
             <div class="card">
                 <h3 class="card-title" id="advisorRankTitle">Advisor Ranking Report — MTD</h3>
                 <p style="font-size:12px;color:#666;margin:-8px 0 12px 0;">Click any column header to sort. Click again to reverse.</p>
+
+                <!-- Total Score formula explainer (collapsible) -->
+                <details style="margin:0 0 14px 0;background:#fff8e1;border:1px solid #f0d97a;border-radius:6px;padding:10px 14px;">
+                    <summary style="cursor:pointer;font-weight:700;font-size:13px;color:#5a4500;user-select:none;">How is the Total Score calculated?</summary>
+                    <div style="margin-top:10px;font-size:13px;color:#3a2e00;line-height:1.55;">
+                        <p style="margin:0 0 8px 0;">Each advisor's <strong>Total Score</strong> is a 0–100 composite that blends customer experience with revenue performance against their peers in the selected period. A score of <strong>100</strong> means the advisor is at the top of class on every axis below.</p>
+                        <p style="margin:0 0 6px 0;font-weight:700;">The formula:</p>
+                        <ul style="margin:0 0 8px 18px;padding:0;">
+                            <li style="margin-bottom:4px;"><strong>33%</strong> &nbsp;—&nbsp; <strong>CSI</strong> vs the manufacturer's regional NPS target. (Hit the region target = full credit on this axis.)</li>
+                            <li style="margin-bottom:4px;"><strong>13.4%</strong> &nbsp;—&nbsp; <strong>Gross / RO</strong> vs the top advisor in the group.</li>
+                            <li style="margin-bottom:4px;"><strong>13.4%</strong> &nbsp;—&nbsp; <strong>ELR</strong> (Effective Labor Rate) vs the top advisor.</li>
+                            <li style="margin-bottom:4px;"><strong>13.4%</strong> &nbsp;—&nbsp; <strong>HRO</strong> (Hours per RO) — <em>lower is better</em>, scored against the lowest HRO in the group.</li>
+                            <li style="margin-bottom:4px;"><strong>13.4%</strong> &nbsp;—&nbsp; <strong>MPVI %</strong> (Multi-Point Vehicle Inspection completion) vs a 75% target.</li>
+                            <li style="margin-bottom:4px;"><strong>13.4%</strong> &nbsp;—&nbsp; <strong>CP %</strong> (Customer-Pay mix) vs the top advisor.</li>
+                        </ul>
+                        <p style="margin:0 0 6px 0;"><strong>Read it like this:</strong> CSI counts about a third of the score because customer experience drives retention. The five revenue / efficiency axes each count about an eighth, so an advisor can't ride one strong number — consistency across all of them is what wins.</p>
+                        <p style="margin:0;color:#7a5b00;font-style:italic;">Note: advisors with no gross and no ROs in the period are scored 0. Each axis caps at 100 — being the leader on Gross/RO doesn't compensate for a weak CSI score.</p>
+                    </div>
+                </details>
+
                 <div style="overflow-x: auto;">
                     <table id="advisorRankTable">
                         <thead>
@@ -3094,6 +3114,29 @@
 
         function formatPercent(value) {
             return ((value || 0) * 100).toFixed(1) + '%';
+        }
+
+        // Round a numeric value to at most 2 decimal places and stringify cleanly
+        // for use in <input type="number"> .value assignments. Used to wash out
+        // float drift like 0.30000000000000004 when summing dollar amounts across
+        // stores. Returns '' for empty/zero so the field stays blank-looking.
+        function fmtAmt(value) {
+            if (value === null || value === undefined || value === '' || isNaN(value)) return '';
+            const n = parseFloat(value);
+            if (!isFinite(n) || n === 0) return '';
+            // Round to 2 decimals, then drop trailing zeros (12345 stays "12345", 12.30 → "12.3")
+            const rounded = Math.round(n * 100) / 100;
+            return rounded.toString();
+        }
+
+        // Same idea but for hour fields — keep up to 1 decimal place since
+        // technicians clock to the tenth of an hour.
+        function fmtHours(value) {
+            if (value === null || value === undefined || value === '' || isNaN(value)) return '';
+            const n = parseFloat(value);
+            if (!isFinite(n) || n === 0) return '';
+            const rounded = Math.round(n * 10) / 10;
+            return rounded.toString();
         }
 
         // Surface the most useful fields out of a Supabase/PostgREST error so "Failed"
@@ -4579,10 +4622,12 @@
                 const storeNpsEl = document.getElementById('dailyStoreNps');
                 const regionNpsEl = document.getElementById('dailyRegionNps');
 
-                laborEl.value = totalLabor || '';
-                partsEl.value = totalParts || '';
-                rosEl.value = totalRos || '';
-                if (hoursEl) hoursEl.value = totalHours || '';
+                // Use fmtAmt / fmtHours to wash out float drift from cross-store sums
+                // (e.g. 0.1 + 0.2 = 0.30000000000000004) before showing managers raw decimals.
+                laborEl.value = fmtAmt(totalLabor);
+                partsEl.value = fmtAmt(totalParts);
+                rosEl.value = totalRos || ''; // RO count is always an integer
+                if (hoursEl) hoursEl.value = fmtHours(totalHours);
                 storeNpsEl.value = npsCount > 0 ? (npsSum / npsCount).toFixed(1) : '';
                 regionNpsEl.value = regionNpsCount > 0 ? (regionNpsSum / regionNpsCount).toFixed(1) : '';
 
@@ -5084,7 +5129,8 @@
                 Object.entries(fieldMap).forEach(([id, value]) => {
                     const el = document.getElementById(id);
                     if (!el) return;
-                    el.value = value || '';
+                    // fmtAmt clamps cross-store sums to 2 decimals so float drift never reaches managers
+                    el.value = fmtAmt(value);
                     el.readOnly = true;
                     el.classList.remove('input-yellow');
                     el.classList.add('input-gray');
@@ -5111,8 +5157,8 @@
                             tr.setAttribute('data-counter-id', key);
                             tr.innerHTML = `
                                 <td style="font-weight:600;">${name}</td>
-                                <td><input type="number" class="parts-counter-row-sales input-gray" value="${v.sales || ''}" readonly style="background-color:#f0f0f0;"></td>
-                                <td><input type="number" class="parts-counter-row-gross input-gray" value="${v.gross || ''}" readonly style="background-color:#f0f0f0;"></td>
+                                <td><input type="number" class="parts-counter-row-sales input-gray" value="${fmtAmt(v.sales)}" readonly style="background-color:#f0f0f0;"></td>
+                                <td><input type="number" class="parts-counter-row-gross input-gray" value="${fmtAmt(v.gross)}" readonly style="background-color:#f0f0f0;"></td>
                                 <td class="parts-counter-row-gp" style="text-align:right;font-weight:700;color:${gpPct === null ? '' : (gpPct >= 42 ? '#16a34a' : '#dc2626')};">
                                     ${gpPct === null ? '—' : gpPct.toFixed(1) + '%'}
                                 </td>`;
@@ -5453,14 +5499,16 @@
                     entry = allEntries.find(e => e.store_id === storeId && e.entry_date === ds);
                 }
 
-                // Money panel
-                document.getElementById('collisionGrossDay').value             = entry?.collision_gross          ?? '';
-                document.getElementById('collisionReceivablesDay').value       = entry?.body_shop_receivables    ?? '';
-                document.getElementById('collisionCashClearingDay').value      = entry?.cash_clearing            ?? '';
-                document.getElementById('collisionSubletDay').value            = entry?.body_shop_sublet         ?? '';
-                document.getElementById('collisionPartsCreditDay').value       = entry?.pending_parts_credit     ?? '';
-                document.getElementById('collisionInventoryVarianceDay').value = entry?.parts_inventory_variance ?? '';
-                document.getElementById('collisionLaborWipDay').value          = entry?.labor_wip                ?? '';
+                // Money panel — fmtAmt washes float drift out of cross-store sums in allMode.
+                // For single-store entries the value is whatever the user typed, which is also
+                // safe to round to 2 decimals (cents are the smallest unit anyone enters).
+                document.getElementById('collisionGrossDay').value             = fmtAmt(entry?.collision_gross);
+                document.getElementById('collisionReceivablesDay').value       = fmtAmt(entry?.body_shop_receivables);
+                document.getElementById('collisionCashClearingDay').value      = fmtAmt(entry?.cash_clearing);
+                document.getElementById('collisionSubletDay').value            = fmtAmt(entry?.body_shop_sublet);
+                document.getElementById('collisionPartsCreditDay').value       = fmtAmt(entry?.pending_parts_credit);
+                document.getElementById('collisionInventoryVarianceDay').value = fmtAmt(entry?.parts_inventory_variance);
+                document.getElementById('collisionLaborWipDay').value          = fmtAmt(entry?.labor_wip);
                 // Cert
                 document.getElementById('collisionIcarCert').checked  = !!entry?.icar_certified;
                 document.getElementById('collisionIcarExpiry').value  = entry?.icar_expiry || '';
