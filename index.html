@@ -3745,7 +3745,16 @@
                         else if (o.action === 'add') { arr.push(o.data); }
                     }
                 });
-                return { advisors: advs, lubeTechs: lubes, technicians: techs, apprentices: apps };
+                // Final guard: drop any entries with a non-finite id. A corrupted override
+                // (id=null/NaN/undefined in data) would otherwise render in the daily form
+                // with data-tech-id="null", which the save path can't write to Supabase.
+                const finiteId = (a) => a && Number.isFinite(Number(a.id));
+                return {
+                    advisors:    advs.filter(finiteId),
+                    lubeTechs:   lubes.filter(finiteId),
+                    technicians: techs.filter(finiteId),
+                    apprentices: apps.filter(finiteId)
+                };
             },
 
             // Record a staff change
@@ -6147,6 +6156,15 @@
                     const techId = row.dataset.techId;
                     const techType = row.dataset.techType;
                     if (!techId || !techType) continue;
+                    // Reject the literal strings "null"/"undefined"/"NaN" (a corrupted staff
+                    // override can render data-tech-id="null" via template-literal coercion,
+                    // which is truthy as a string but parses to NaN, then Supabase fails the
+                    // tech_id NOT NULL constraint and the whole save reports "Save FAILED").
+                    const techIdNum = parseInt(techId, 10);
+                    if (!Number.isFinite(techIdNum) || techIdNum <= 0) {
+                        console.warn('Skipping tech row with invalid tech_id', { techId, techType, name: row.querySelector('td')?.textContent });
+                        continue;
+                    }
                     const rosRaw = row.querySelector('.daily-tech-ros')?.value ?? '';
                     const csiRaw = row.querySelector('.daily-tech-csi')?.value ?? '';
                     const hrsRaw = row.querySelector('.daily-tech-hrs-turned')?.value ?? '';
@@ -6161,7 +6179,7 @@
                     try {
                         await LS.saveTechWeeklyEntry({
                             store_id: storeId,
-                            tech_id: parseInt(techId),
+                            tech_id: techIdNum,
                             tech_type: techType,
                             week_start: ds,                 // now functions as entry_date (one row per day)
                             period_end: ds,                 // required NOT NULL in DB; same as week_start for 1-day rows
@@ -9239,7 +9257,14 @@
                     record.updated_at = new Date().toISOString();
                     await LS.recordStaffChange(type, record.id, record, 'update');
                 } else {
-                    record.id = Math.max(0, ...arr.map(a => a.id)) + 1;
+                    // Generate next id safely. Filter to finite numbers first — if any
+                    // existing row in `arr` has id=null/undefined/NaN (from a prior bad
+                    // override), a naive Math.max(...arr.map(a=>a.id)) returns NaN, and
+                    // that NaN cascades into staff_overrides + tech_weekly_entries upserts
+                    // and breaks every subsequent daily save. (See the Edwin Del Rio
+                    // incident on 2026-04-29 — broken row blocked all lube saves at dclw.)
+                    const validIds = arr.map(a => Number(a && a.id)).filter(n => Number.isFinite(n));
+                    record.id = (validIds.length ? Math.max(...validIds) : 0) + 1;
                     row.dataset.id = record.id;
                     arr.push(record);
                     await LS.recordStaffChange(type, record.id, record, 'add');
