@@ -1194,7 +1194,7 @@
         <div id="partsDaily" class="tab-content">
             <div class="card">
                 <h2 class="card-title">Parts Daily Entry <span style="font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-left:8px;">Parts Manager</span></h2>
-                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Parts Manager's full daily numbers across every channel — Service-RO Parts, Wholesale, Counter (per person), and Obsolescence sales. Independent of the Service Manager's entry. Total Parts Gross auto-sums.</p>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Parts Manager's full daily numbers — <strong>Service-RO Parts</strong> and <strong>Wholesale</strong> are the two sales channels (Total Parts = Service + Wholesale). <strong>Counter People</strong> is a per-person attribution of those same dollars (counter tickets already live inside Service or Wholesale), so the Counter Total is shown for sanity-checking but does not add to the day total. Obsolescence is tracked separately against inventory.</p>
                 <div class="controls">
                     <div class="control-group">
                         <label>Date</label>
@@ -1251,7 +1251,7 @@
                         <tbody id="partsCounterRowsBody"></tbody>
                         <tbody>
                             <tr style="background-color:#f3f4f6;">
-                                <td style="font-weight:700;">Counter Total (auto)</td>
+                                <td style="font-weight:700;">Counter Total (auto) <span style="font-weight:500;color:#888;font-size:11px;">— attribution only, does not add to Total Parts</span></td>
                                 <td class="input-gray" id="partsCounterTotalDay">$0</td>
                                 <td class="input-gray" id="partsCounterTotalGross">$0</td>
                                 <td class="input-gray" id="partsCounterTotalGp" style="text-align:right;font-weight:700;">—</td>
@@ -4895,8 +4895,12 @@
                 counterSales += sales;
                 counterGross += gross;
             });
-            const totalSales = channels.service.sales + channels.wholesale.sales + counterSales;
-            const totalGross = channels.service.gross + channels.wholesale.gross + counterGross;
+            // Counter-person sales are a per-person ATTRIBUTION of the Service-RO and
+            // Wholesale dollars — every counter ticket already lives inside one of those
+            // two channels. So the day total is Service + Wholesale only; adding counter
+            // would double-count. Counter Total is shown separately as a sanity check.
+            const totalSales = channels.service.sales + channels.wholesale.sales;
+            const totalGross = channels.service.gross + channels.wholesale.gross;
             return {
                 channels,
                 counterBreakdown,
@@ -6861,11 +6865,13 @@
                     });
                     mtdCounterTotal      += cSales;
                     mtdCounterTotalGross += cGross;
+                    // Counter is a per-person split of Service + Wholesale, not a third
+                    // channel — fallback math must not add cSales/cGross on top.
                     mtdTotalSales += parseFloat(p.total_parts_sales)
                                    || parseFloat(p.total_parts_gross)
-                                   || ((parseFloat(p.service_parts)||0)+(parseFloat(p.wholesale)||0) + cSales);
+                                   || ((parseFloat(p.service_parts)||0)+(parseFloat(p.wholesale)||0));
                     mtdTotalGross += parseFloat(p.total_parts_gross)
-                                   || ((parseFloat(p.service_parts_gross)||0)+(parseFloat(p.wholesale_gross)||0) + cGross);
+                                   || ((parseFloat(p.service_parts_gross)||0)+(parseFloat(p.wholesale_gross)||0));
                     // Inventory — average across days that recorded one
                     const inv = parseFloat(p.inventory) || 0;
                     if (inv > 0) { mtdInventory += inv; mtdInventorySamples++; }
@@ -7047,8 +7053,11 @@
                         const bd = counterBreakdownForEntry(p) || {};
                         Object.values(bd).forEach(v => { d.ctr += parseFloat(v.sales) || 0; });
                         d.obso  += parseFloat(p.obso)            || 0;
+                        // Fallback total = Service + Wholesale only. Counter is a per-person
+                        // attribution of those same dollars (not additive). Obso is a separate
+                        // metric vs inventory and shouldn't roll into total sales either.
                         d.total += parseFloat(p.total_parts_gross)
-                                || (d.svc + d.whs + d.ctr + d.obso) - (d.total || 0); // safe fallback
+                                || (parseFloat(p.service_parts)||0) + (parseFloat(p.wholesale)||0);
                     });
                     // Iterate working days only (Mon-Sat) — same convention as the Service Daily table
                     const monthIdx = month - 1;
@@ -7064,7 +7073,7 @@
                         const ds = dateToString(dt);
                         const row = byDate[ds];
                         const svc = row?.svc || 0, whs = row?.whs || 0, ctr = row?.ctr || 0, obso = row?.obso || 0;
-                        const tot = (row?.total || (svc + whs + ctr + obso)) || 0;
+                        const tot = (row?.total || (svc + whs)) || 0;
                         running += tot;
                         const tracking = (workingDay > 0 && daysInMonth > 0) ? (running / workingDay) * daysInMonth : 0;
                         const labelDate = `${monthIdx + 1}/${d}`;
