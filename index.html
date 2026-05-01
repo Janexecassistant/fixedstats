@@ -1194,7 +1194,7 @@
         <div id="partsDaily" class="tab-content">
             <div class="card">
                 <h2 class="card-title">Parts Daily Entry <span style="font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-left:8px;">Parts Manager</span></h2>
-                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Parts Manager's full daily numbers across every channel — Service-RO Parts, Wholesale, Counter (per person), and Obsolescence sales. Independent of the Service Manager's entry. Total Parts Gross auto-sums.</p>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Parts Manager's full daily numbers across every channel — Service-RO Parts ("Total Parts"), Wholesale, Counter (per person), and Obsolescence. Independent of the Service Manager's entry. <strong>Total Parts (auto) = Total Parts + Wholesale only</strong> — counter people are tracked separately for coaching.</p>
                 <div class="controls">
                     <div class="control-group">
                         <label>Date</label>
@@ -1232,7 +1232,7 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td style="font-weight:600;">Service Parts (RO)</td>
+                                <td style="font-weight:600;">Total Parts</td>
                                 <td><input type="number" id="partsServiceDay" class="input-yellow parts-channel-sales" data-channel="service" placeholder="0"></td>
                                 <td><input type="number" id="partsServiceGrossDay" class="input-yellow parts-channel-gross" data-channel="service" placeholder="0"></td>
                                 <td class="input-gray parts-channel-gp" id="partsServiceGp" style="text-align:right;">—</td>
@@ -4912,8 +4912,10 @@
                 counterSales += sales;
                 counterGross += gross;
             });
-            const totalSales = channels.service.sales + channels.wholesale.sales + counterSales;
-            const totalGross = channels.service.gross + channels.wholesale.gross + counterGross;
+            // Counter people are tracked for coaching but NOT included in the headline
+            // "Total Parts" auto-sum. Total Parts = Service-RO Parts + Wholesale only.
+            const totalSales = channels.service.sales + channels.wholesale.sales;
+            const totalGross = channels.service.gross + channels.wholesale.gross;
             return {
                 channels,
                 counterBreakdown,
