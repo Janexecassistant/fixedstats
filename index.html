@@ -1194,7 +1194,7 @@
         <div id="partsDaily" class="tab-content">
             <div class="card">
                 <h2 class="card-title">Parts Daily Entry <span style="font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-left:8px;">Parts Manager</span></h2>
-                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Parts Manager's full daily numbers — <strong>Service-RO Parts</strong> and <strong>Wholesale</strong> are the two sales channels (Total Parts = Service + Wholesale). <strong>Counter People</strong> is a per-person attribution of those same dollars (counter tickets already live inside Service or Wholesale), so the Counter Total is shown for sanity-checking but does not add to the day total. Obsolescence is tracked separately against inventory.</p>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Parts Manager's full daily numbers across every channel — Service-RO Parts, Wholesale, Counter (per person), and Obsolescence sales. Independent of the Service Manager's entry. Total Parts Gross auto-sums.</p>
                 <div class="controls">
                     <div class="control-group">
                         <label>Date</label>
@@ -1251,7 +1251,7 @@
                         <tbody id="partsCounterRowsBody"></tbody>
                         <tbody>
                             <tr style="background-color:#f3f4f6;">
-                                <td style="font-weight:700;">Counter Total (auto) <span style="font-weight:500;color:#888;font-size:11px;">— attribution only, does not add to Total Parts</span></td>
+                                <td style="font-weight:700;">Counter Total (auto)</td>
                                 <td class="input-gray" id="partsCounterTotalDay">$0</td>
                                 <td class="input-gray" id="partsCounterTotalGross">$0</td>
                                 <td class="input-gray" id="partsCounterTotalGp" style="text-align:right;font-weight:700;">—</td>
@@ -3745,16 +3745,7 @@
                         else if (o.action === 'add') { arr.push(o.data); }
                     }
                 });
-                // Final guard: drop any entries with a non-finite id. A corrupted override
-                // (id=null/NaN/undefined in data) would otherwise render in the daily form
-                // with data-tech-id="null", which the save path can't write to Supabase.
-                const finiteId = (a) => a && Number.isFinite(Number(a.id));
-                return {
-                    advisors:    advs.filter(finiteId),
-                    lubeTechs:   lubes.filter(finiteId),
-                    technicians: techs.filter(finiteId),
-                    apprentices: apps.filter(finiteId)
-                };
+                return { advisors: advs, lubeTechs: lubes, technicians: techs, apprentices: apps };
             },
 
             // Record a staff change
@@ -4904,12 +4895,8 @@
                 counterSales += sales;
                 counterGross += gross;
             });
-            // Counter-person sales are a per-person ATTRIBUTION of the Service-RO and
-            // Wholesale dollars — every counter ticket already lives inside one of those
-            // two channels. So the day total is Service + Wholesale only; adding counter
-            // would double-count. Counter Total is shown separately as a sanity check.
-            const totalSales = channels.service.sales + channels.wholesale.sales;
-            const totalGross = channels.service.gross + channels.wholesale.gross;
+            const totalSales = channels.service.sales + channels.wholesale.sales + counterSales;
+            const totalGross = channels.service.gross + channels.wholesale.gross + counterGross;
             return {
                 channels,
                 counterBreakdown,
@@ -6156,15 +6143,6 @@
                     const techId = row.dataset.techId;
                     const techType = row.dataset.techType;
                     if (!techId || !techType) continue;
-                    // Reject the literal strings "null"/"undefined"/"NaN" (a corrupted staff
-                    // override can render data-tech-id="null" via template-literal coercion,
-                    // which is truthy as a string but parses to NaN, then Supabase fails the
-                    // tech_id NOT NULL constraint and the whole save reports "Save FAILED").
-                    const techIdNum = parseInt(techId, 10);
-                    if (!Number.isFinite(techIdNum) || techIdNum <= 0) {
-                        console.warn('Skipping tech row with invalid tech_id', { techId, techType, name: row.querySelector('td')?.textContent });
-                        continue;
-                    }
                     const rosRaw = row.querySelector('.daily-tech-ros')?.value ?? '';
                     const csiRaw = row.querySelector('.daily-tech-csi')?.value ?? '';
                     const hrsRaw = row.querySelector('.daily-tech-hrs-turned')?.value ?? '';
@@ -6179,7 +6157,7 @@
                     try {
                         await LS.saveTechWeeklyEntry({
                             store_id: storeId,
-                            tech_id: techIdNum,
+                            tech_id: parseInt(techId),
                             tech_type: techType,
                             week_start: ds,                 // now functions as entry_date (one row per day)
                             period_end: ds,                 // required NOT NULL in DB; same as week_start for 1-day rows
@@ -6883,13 +6861,11 @@
                     });
                     mtdCounterTotal      += cSales;
                     mtdCounterTotalGross += cGross;
-                    // Counter is a per-person split of Service + Wholesale, not a third
-                    // channel — fallback math must not add cSales/cGross on top.
                     mtdTotalSales += parseFloat(p.total_parts_sales)
                                    || parseFloat(p.total_parts_gross)
-                                   || ((parseFloat(p.service_parts)||0)+(parseFloat(p.wholesale)||0));
+                                   || ((parseFloat(p.service_parts)||0)+(parseFloat(p.wholesale)||0) + cSales);
                     mtdTotalGross += parseFloat(p.total_parts_gross)
-                                   || ((parseFloat(p.service_parts_gross)||0)+(parseFloat(p.wholesale_gross)||0));
+                                   || ((parseFloat(p.service_parts_gross)||0)+(parseFloat(p.wholesale_gross)||0) + cGross);
                     // Inventory — average across days that recorded one
                     const inv = parseFloat(p.inventory) || 0;
                     if (inv > 0) { mtdInventory += inv; mtdInventorySamples++; }
@@ -7071,11 +7047,8 @@
                         const bd = counterBreakdownForEntry(p) || {};
                         Object.values(bd).forEach(v => { d.ctr += parseFloat(v.sales) || 0; });
                         d.obso  += parseFloat(p.obso)            || 0;
-                        // Fallback total = Service + Wholesale only. Counter is a per-person
-                        // attribution of those same dollars (not additive). Obso is a separate
-                        // metric vs inventory and shouldn't roll into total sales either.
                         d.total += parseFloat(p.total_parts_gross)
-                                || (parseFloat(p.service_parts)||0) + (parseFloat(p.wholesale)||0);
+                                || (d.svc + d.whs + d.ctr + d.obso) - (d.total || 0); // safe fallback
                     });
                     // Iterate working days only (Mon-Sat) — same convention as the Service Daily table
                     const monthIdx = month - 1;
@@ -7091,7 +7064,7 @@
                         const ds = dateToString(dt);
                         const row = byDate[ds];
                         const svc = row?.svc || 0, whs = row?.whs || 0, ctr = row?.ctr || 0, obso = row?.obso || 0;
-                        const tot = (row?.total || (svc + whs)) || 0;
+                        const tot = (row?.total || (svc + whs + ctr + obso)) || 0;
                         running += tot;
                         const tracking = (workingDay > 0 && daysInMonth > 0) ? (running / workingDay) * daysInMonth : 0;
                         const labelDate = `${monthIdx + 1}/${d}`;
@@ -7995,16 +7968,51 @@
         const WEEKDAY_HOURS = 9;  // Mon-Fri after lunch
         const SATURDAY_HOURS = 5; // Sat after lunch
 
+        // ============================================================================
+        // COMPANY HOLIDAYS — store is closed on these dates
+        // New Year's Day (Jan 1), Memorial Day (last Mon of May), Independence Day
+        // (Jul 4), Labor Day (first Mon of Sep), Christmas Day (Dec 25).
+        // If a holiday falls on Sunday it's already a non-working day, so no impact.
+        // ============================================================================
+        function getCompanyHolidays(year) {
+            // Memorial Day = last Monday of May
+            const memorial = new Date(year, 4, 31); // May 31
+            memorial.setDate(31 - ((memorial.getDay() + 6) % 7));
+            // Labor Day = first Monday of September
+            const labor = new Date(year, 8, 1); // Sep 1
+            labor.setDate(1 + ((8 - labor.getDay()) % 7));
+            return [
+                new Date(year, 0, 1),    // New Year's Day
+                memorial,                // Memorial Day
+                new Date(year, 6, 4),    // Independence Day
+                labor,                   // Labor Day
+                new Date(year, 11, 25),  // Christmas Day
+            ];
+        }
+
+        function isCompanyHoliday(date) {
+            const y = date.getFullYear(), m = date.getMonth(), d = date.getDate();
+            return getCompanyHolidays(y).some(h =>
+                h.getFullYear() === y && h.getMonth() === m && h.getDate() === d
+            );
+        }
+
         function getWorkingDaysInMonth(year, month) {
             // month is 1-indexed
             const daysInMonth = new Date(year, month, 0).getDate();
-            let weekdays = 0, saturdays = 0;
+            let weekdays = 0, saturdays = 0, holidays = 0;
             for (let d = 1; d <= daysInMonth; d++) {
-                const day = new Date(year, month - 1, d).getDay();
+                const dt = new Date(year, month - 1, d);
+                const day = dt.getDay();
+                if (day === 0) continue; // Sunday — closed anyway
+                if (isCompanyHoliday(dt)) {
+                    holidays++;
+                    continue; // store closed for holiday
+                }
                 if (day >= 1 && day <= 5) weekdays++;
                 else if (day === 6) saturdays++;
             }
-            return { weekdays, saturdays, totalDays: weekdays + saturdays };
+            return { weekdays, saturdays, holidays, totalDays: weekdays + saturdays };
         }
 
         function getAvailableHoursInMonth(year, month) {
@@ -8014,15 +8022,20 @@
 
         function getWorkingDaysInWeek(weekStartDate) {
             // Count Mon-Fri and Sat in the 7-day span starting from weekStartDate
-            let weekdays = 0, saturdays = 0;
+            let weekdays = 0, saturdays = 0, holidays = 0;
             for (let i = 0; i < 7; i++) {
                 const d = new Date(weekStartDate);
                 d.setDate(d.getDate() + i);
                 const day = d.getDay();
+                if (day === 0) continue;
+                if (isCompanyHoliday(d)) {
+                    holidays++;
+                    continue;
+                }
                 if (day >= 1 && day <= 5) weekdays++;
                 else if (day === 6) saturdays++;
             }
-            return { weekdays, saturdays, totalDays: weekdays + saturdays };
+            return { weekdays, saturdays, holidays, totalDays: weekdays + saturdays };
         }
 
         function getAvailableHoursInWeek(weekStartDate) {
@@ -8031,28 +8044,35 @@
         }
 
         function getWorkingDayOfMonth(date) {
-            // Count working days (Mon-Fri + Sat) from 1st of month up to and including date
+            // Count working days (Mon-Sat, excluding company holidays) from 1st of month up to and including date
             const year = date.getFullYear();
             const month = date.getMonth();
             const targetDate = date.getDate();
             let count = 0;
             for (let d = 1; d <= targetDate; d++) {
-                const day = new Date(year, month, d).getDay();
-                if (day >= 1 && day <= 6) count++; // Mon-Sat
+                const dt = new Date(year, month, d);
+                const day = dt.getDay();
+                if (day >= 1 && day <= 6 && !isCompanyHoliday(dt)) count++;
             }
             return count;
         }
 
         function getAvailableHoursInRange(startDate, endDate) {
-            let weekdays = 0, saturdays = 0;
+            let weekdays = 0, saturdays = 0, holidays = 0;
             const d = new Date(startDate);
             while (d <= endDate) {
                 const day = d.getDay();
-                if (day >= 1 && day <= 5) weekdays++;
-                else if (day === 6) saturdays++;
+                if (day === 0) { d.setDate(d.getDate() + 1); continue; }
+                if (isCompanyHoliday(d)) {
+                    holidays++;
+                } else if (day >= 1 && day <= 5) {
+                    weekdays++;
+                } else if (day === 6) {
+                    saturdays++;
+                }
                 d.setDate(d.getDate() + 1);
             }
-            return { weekdays, saturdays, totalDays: weekdays + saturdays,
+            return { weekdays, saturdays, holidays, totalDays: weekdays + saturdays,
                      hours: (weekdays * WEEKDAY_HOURS) + (saturdays * SATURDAY_HOURS) };
         }
 
@@ -8122,9 +8142,11 @@
                 const monthHrs = getAvailableHoursInMonth(currentYear, currentMonth);
 
                 // Show auto-calculated schedule
+                const weekHolText = weekWd.holidays ? ` (−${weekWd.holidays} hol)` : '';
+                const monthHolText = monthWd.holidays ? ` (−${monthWd.holidays} holiday${monthWd.holidays > 1 ? 's' : ''})` : '';
                 document.getElementById('facilityAutoCalc').innerHTML = `
-                    <div><strong>This Week:</strong> ${weekWd.weekdays} weekdays + ${weekWd.saturdays} Sat = <strong>${weekHrsTotal}h/tech</strong></div>
-                    <div><strong>${now.toLocaleString('default',{month:'long'})} ${currentYear}:</strong> ${monthWd.weekdays} weekdays + ${monthWd.saturdays} Sat = <strong>${monthWd.totalDays} working days</strong></div>
+                    <div><strong>This Week:</strong> ${weekWd.weekdays} weekdays + ${weekWd.saturdays} Sat = <strong>${weekHrsTotal}h/tech</strong>${weekHolText}</div>
+                    <div><strong>${now.toLocaleString('default',{month:'long'})} ${currentYear}:</strong> ${monthWd.weekdays} weekdays + ${monthWd.saturdays} Sat = <strong>${monthWd.totalDays} working days</strong>${monthHolText}</div>
                     <div><strong>Monthly Hrs/Tech:</strong> (${monthWd.weekdays}×${WEEKDAY_HOURS}) + (${monthWd.saturdays}×${SATURDAY_HOURS}) = <strong>${monthHrs}h</strong></div>
                 `;
 
@@ -9257,14 +9279,7 @@
                     record.updated_at = new Date().toISOString();
                     await LS.recordStaffChange(type, record.id, record, 'update');
                 } else {
-                    // Generate next id safely. Filter to finite numbers first — if any
-                    // existing row in `arr` has id=null/undefined/NaN (from a prior bad
-                    // override), a naive Math.max(...arr.map(a=>a.id)) returns NaN, and
-                    // that NaN cascades into staff_overrides + tech_weekly_entries upserts
-                    // and breaks every subsequent daily save. (See the Edwin Del Rio
-                    // incident on 2026-04-29 — broken row blocked all lube saves at dclw.)
-                    const validIds = arr.map(a => Number(a && a.id)).filter(n => Number.isFinite(n));
-                    record.id = (validIds.length ? Math.max(...validIds) : 0) + 1;
+                    record.id = Math.max(0, ...arr.map(a => a.id)) + 1;
                     row.dataset.id = record.id;
                     arr.push(record);
                     await LS.recordStaffChange(type, record.id, record, 'add');
