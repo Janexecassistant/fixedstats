@@ -1739,14 +1739,19 @@
                     <select id="advisorPeriod">
                         <option value="mtd">Month to Date</option>
                         <option value="ytd">Year to Date</option>
-                        <option value="custom">Custom Range</option>
+                        <option value="month">Specific Month</option>
+                        <option value="custom">Custom Date Range</option>
                     </select>
+                </div>
+                <div class="control-group" id="advisorMonthPick" style="display:none;">
+                    <label>Month</label>
+                    <input type="month" id="advisorSingleMonth">
                 </div>
                 <div class="control-group" id="advisorCustomRange" style="display:none;">
                     <label>From</label>
-                    <input type="month" id="advisorFromMonth">
+                    <input type="date" id="advisorFromMonth">
                     <label>To</label>
-                    <input type="month" id="advisorToMonth">
+                    <input type="date" id="advisorToMonth">
                 </div>
             </div>
 
@@ -4258,12 +4263,24 @@
 
             // Advisor
             document.getElementById('advisorPeriod').addEventListener('change', () => {
-                document.getElementById('advisorCustomRange').style.display =
-                    document.getElementById('advisorPeriod').value === 'custom' ? 'flex' : 'none';
+                const v = document.getElementById('advisorPeriod').value;
+                document.getElementById('advisorCustomRange').style.display = v === 'custom' ? 'flex' : 'none';
+                document.getElementById('advisorMonthPick').style.display   = v === 'month'  ? 'flex' : 'none';
+                if (v === 'custom') {
+                    const fromInput = document.getElementById('advisorFromMonth');
+                    const toInput   = document.getElementById('advisorToMonth');
+                    if (!fromInput.value) fromInput.value = `${currentYear}-01-01`;
+                    if (!toInput.value)   toInput.value   = dateToString(new Date());
+                }
+                if (v === 'month') {
+                    const m = document.getElementById('advisorSingleMonth');
+                    if (!m.value) m.value = `${currentYear}-${String(currentMonth).padStart(2,'0')}`;
+                }
                 loadAdvisor();
             });
             document.getElementById('advisorFromMonth')?.addEventListener('change', loadAdvisor);
             document.getElementById('advisorToMonth')?.addEventListener('change', loadAdvisor);
+            document.getElementById('advisorSingleMonth')?.addEventListener('change', loadAdvisor);
             document.getElementById('advisorSelect').addEventListener('change', () => {
                 const { startDate, endDate } = getAdvisorDateRange();
                 loadAdvisorDrillDown(startDate, endDate);
@@ -7342,13 +7359,21 @@
                 startDate = `${currentYear}-01-01`;
                 endDate = dateToString(now);
                 label = `${currentYear} — Year to Date`;
+            } else if (period === 'month') {
+                const m = document.getElementById('advisorSingleMonth').value
+                          || `${currentYear}-${String(currentMonth).padStart(2,'0')}`;
+                const [my, mm] = m.split('-').map(Number);
+                startDate = `${my}-${String(mm).padStart(2,'0')}-01`;
+                endDate   = dateToString(new Date(my, mm, 0));
+                const monthLabel = new Date(my, mm-1, 1).toLocaleString('default',{month:'long'});
+                label = `${monthLabel} ${my}`;
             } else {
-                const from = document.getElementById('advisorFromMonth').value || `${currentYear}-01`;
-                const to = document.getElementById('advisorToMonth').value || `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
-                const [fy, fm] = from.split('-').map(Number);
-                const [ty, tm] = to.split('-').map(Number);
-                startDate = `${fy}-${String(fm).padStart(2, '0')}-01`;
-                endDate = dateToString(new Date(ty, tm, 0));
+                const from = document.getElementById('advisorFromMonth').value
+                          || `${currentYear}-01-01`;
+                const to   = document.getElementById('advisorToMonth').value
+                          || dateToString(now);
+                startDate = from;
+                endDate   = to;
                 label = `${from} to ${to}`;
             }
             return { startDate, endDate, label };
