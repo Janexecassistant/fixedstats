@@ -3743,12 +3743,23 @@
                         const idx = apps.findIndex(x => String(x.id) === String(o.id));
                         if (idx >= 0) { Object.assign(apps[idx], o.data); }
                         else if (o.action === 'add') { apps.push(o.data); }
-                    } else {
-                        const arr = o.type === 'advisor' ? advs : o.type === 'technician' ? techs : lubes;
-                        const idx = arr.findIndex(x => String(x.id) === String(o.id));
-                        if (idx >= 0) { Object.assign(arr[idx], o.data); }
-                        else if (o.action === 'add') { arr.push(o.data); }
+                        return;
                     }
+                    // ONLY service-side staff types belong in this merge. parts_counter,
+                    // body_tech, painter, estimator are handled separately by
+                    // loadDepartmentStaff() reading the same overrides table. Without this
+                    // guard, those rows fall through into `lubes` and pollute the lube
+                    // tech roster — and remove attempts can't unstick them because the
+                    // string ids (e.g. "parts_counter_1777303469270") don't match any
+                    // FALLBACK_TECHS row to override.
+                    let arr;
+                    if (o.type === 'advisor')         arr = advs;
+                    else if (o.type === 'technician') arr = techs;
+                    else if (o.type === 'tech')       arr = lubes;
+                    else return; // ignore parts_counter / body_tech / painter / estimator / unknown
+                    const idx = arr.findIndex(x => String(x.id) === String(o.id));
+                    if (idx >= 0) { Object.assign(arr[idx], o.data); }
+                    else if (o.action === 'add') { arr.push(o.data); }
                 });
                 return { advisors: advs, lubeTechs: lubes, technicians: techs, apprentices: apps };
             },
@@ -4244,6 +4255,15 @@
             const execMP = document.getElementById('execMonthPicker');
             execMP.value = currentMonthStr;
             execMP.addEventListener('change', loadExecutive);
+
+            // Parts Roster month picker — defaults to current month, re-renders on change
+            const prMP = document.getElementById('partsRosterMonthPicker');
+            if (prMP) {
+                if (!prMP.value) prMP.value = currentMonthStr;
+                prMP.addEventListener('change', () => {
+                    if (typeof loadPartsRosterPerf === 'function') loadPartsRosterPerf();
+                });
+            }
 
             // Goals
             document.getElementById('saveGoalsBtn').addEventListener('click', saveGoals);
@@ -7152,9 +7172,112 @@
         async function loadPartsRosterPerf() {
             const body = document.getElementById('partsRosterPerfBody');
             if (!body) return;
-            // TODO: aggregate parts entries by (store_id, counterN_name) for the selected month
-            // and render Sales / Gross / Gross % / vs 42% / Avg Daily / Working Days.
-            // For now keep the placeholder rendered server-side.
+
+            // 1) Determine the selected month (default = current month)
+            const picker = document.getElementById('partsRosterMonthPicker');
+            const now = new Date();
+            let year, month;
+            if (picker && picker.value) {
+                const parts = picker.value.split('-');
+                year = parseInt(parts[0]);
+                month = parseInt(parts[1]);
+            } else {
+                year  = now.getFullYear();
+                month = now.getMonth() + 1;
+            }
+            const monthStart = `${year}-${String(month).padStart(2,'0')}-01`;
+            const monthEnd   = dateToString(new Date(year, month, 0));
+
+            // 2) Make sure counter staff is loaded (Admin tab may not have run yet)
+            if (!partsCounterStaff || partsCounterStaff.length === 0) {
+                try { await loadDepartmentStaff(); } catch(e) { /* non-fatal */ }
+            }
+
+            // 3) Fetch parts entries for the month, scoped to the selected store(s)
+            const storeId = getSelectedStore();
+            const allMode = isAllStores();
+            let entries = (await LS.getPartsEntries()).filter(p =>
+                p.entry_date >= monthStart && p.entry_date <= monthEnd
+            );
+            if (!allMode && storeId) {
+                entries = entries.filter(p => p.store_id === storeId);
+            }
+
+            // 4) Per-store gp goal (default 42%)
+            const goals = (await LS.getGoals()).filter(g => g.month === month && g.year === year);
+            const gpGoalByStore = {};
+            goals.forEach(g => {
+                gpGoalByStore[g.store_id] = (g.parts_counter_gp_goal != null) ? g.parts_counter_gp_goal : 42;
+            });
+
+            // 5) Aggregate per counter person from counter_breakdown jsonb
+            const agg = {}; // staff_id -> { sales, gross, days }
+            entries.forEach(p => {
+                const cb = p.counter_breakdown || {};
+                Object.keys(cb).forEach(sid => {
+                    const row = cb[sid];
+                    if (!row) return;
+                    const sales = parseFloat(row.sales) || 0;
+                    const gross = parseFloat(row.gross) || 0;
+                    if (!agg[sid]) agg[sid] = { sales: 0, gross: 0, days: 0 };
+                    agg[sid].sales += sales;
+                    agg[sid].gross += gross;
+                    if (sales > 0 || gross > 0) agg[sid].days++;
+                });
+            });
+
+            // 6) Build the row set — active counter people, scoped to accessible stores
+            //    and (if a single store is selected) to that store only.
+            const accessibleIds = new Set(getAccessibleStores().map(s => s.id));
+            const counters = (partsCounterStaff || [])
+                .filter(c => c.is_active !== false)
+                .filter(c => !c.store_id || accessibleIds.has(c.store_id))
+                .filter(c => allMode || !storeId || c.store_id === storeId);
+
+            if (counters.length === 0) {
+                body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#888;padding:20px;">No active counter people for the selected store. Add or activate them in <strong>Admin Console &rarr; Department Staff &rarr; Parts Counter People</strong>.</td></tr>';
+                return;
+            }
+
+            // Working-day denominator: working days elapsed for the current month,
+            // total working days for past months. Sundays + holidays excluded.
+            const wdMonth = getWorkingDaysInMonth(year, month);
+            const isCurrentMonth = (year === now.getFullYear() && month === (now.getMonth() + 1));
+            const workingDaysSoFar = isCurrentMonth ? getWorkingDayOfMonth(now) : wdMonth.totalDays;
+
+            // 7) Render rows — sort by MTD Sales desc so top performers float to the top
+            const rows = counters.map(c => {
+                const a       = agg[c.id] || { sales: 0, gross: 0, days: 0 };
+                const gpPct   = a.sales > 0 ? (a.gross / a.sales) * 100 : 0;
+                const goal    = gpGoalByStore[c.store_id] != null ? gpGoalByStore[c.store_id] : 42;
+                const avgDaily = workingDaysSoFar > 0 ? a.sales / workingDaysSoFar : 0;
+                const storeCode = (stores.find(s => s.id === c.store_id) || {}).code || c.store_id || '';
+                return { c, a, gpPct, goal, avgDaily, workingDaysSoFar, storeCode };
+            }).sort((x, y) => y.a.sales - x.a.sales);
+
+            let html = '';
+            rows.forEach(({ c, a, gpPct, goal, avgDaily, workingDaysSoFar, storeCode }) => {
+                const has = a.sales > 0;
+                const onGoal = has && gpPct >= goal;
+                const gpColor = has ? (onGoal ? '#16a34a' : '#dc2626') : '#888';
+                const vsGoal = has
+                    ? ((gpPct - goal >= 0 ? '+' : '') + (gpPct - goal).toFixed(1) + ' pts')
+                    : '—';
+                const vsGoalColor = has ? (onGoal ? '#16a34a' : '#dc2626') : '#888';
+                html += `
+                    <tr>
+                        <td style="font-weight:600;">${c.name || '(unnamed)'}</td>
+                        <td>${storeCode}</td>
+                        <td>${formatCurrency(a.sales)}</td>
+                        <td>${formatCurrency(a.gross)}</td>
+                        <td style="color:${gpColor};font-weight:700;">${has ? gpPct.toFixed(1) + '%' : '—'}</td>
+                        <td style="color:${vsGoalColor};">${vsGoal}</td>
+                        <td>${formatCurrency(avgDaily)}</td>
+                        <td>${workingDaysSoFar}</td>
+                    </tr>
+                `;
+            });
+            body.innerHTML = html;
         }
 
         // Persist the Parts Roster — iterate visible rows, save each.
@@ -9330,12 +9453,16 @@
 
             try {
                 const arr = type === 'advisor' ? advisors : type === 'technician' ? technicians : type === 'apprentice' ? apprentices : lubeTechs;
-                const numId = parseInt(id);
-                const idx = arr.findIndex(a => a.id === numId);
-                if (idx >= 0) {
-                    arr[idx].is_active = false;
-                    await LS.recordStaffChange(type, numId, { ...arr[idx], is_active: false }, 'update');
+                // String comparison so non-numeric ids (e.g. parts_counter_*) still match.
+                const idx = arr.findIndex(a => String(a.id) === String(id));
+                if (idx < 0) {
+                    console.warn('removeStaffRow: id not found in', type, 'array:', id);
+                    showToast(`Could not deactivate — ${name} is not in the ${type} list. Reload the page and try again.`, 'error');
+                    return;
                 }
+                arr[idx].is_active = false;
+                // Use the original (possibly string) id — recordStaffChange stringifies it before upsert.
+                await LS.recordStaffChange(type, arr[idx].id, { ...arr[idx], is_active: false }, 'update');
 
                 row.remove();
                 if (type === 'advisor') populateAdvisorSelect();
