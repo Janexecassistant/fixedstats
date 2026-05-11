@@ -3586,11 +3586,29 @@
             // --- Goal carry-forward ---
             // Goals are meant to persist month-to-month: if no row exists for the
             // requested (month, year), fall back to the most recent prior month that
-            // does have a row for that store. Returns one row per store with the
-            // month/year re-stamped to the requested period so callers that key on
-            // those fields keep working. Cloned rows are flagged with _carriedForward
-            // so UI layers can show a "(carried from <month>)" hint if desired.
+            // does have a meaningful row for that store. An "empty" row (all dollar
+            // goal fields zero) is treated as missing so a stale all-zeros current-
+            // month row doesn't shadow real prior-month targets.
+            // Returns one row per store with the month/year re-stamped to the
+            // requested period so callers that key on those fields keep working.
+            // Cloned rows are flagged with _carriedForward.
+            _isMeaningfulGoalRow(g) {
+                if (!g) return false;
+                let sum = 0;
+                for (const k of Object.keys(g)) {
+                    // Skip identity / metadata fields and percentage goals (which
+                    // default to 42 / 9 and so don't constitute "real data" on their own).
+                    if (k === 'month' || k === 'year' || k === 'store_id'
+                        || k === 'updated_at' || k === 'updated_by' || k === 'id'
+                        || k === 'parts_counter_gp_goal' || k === 'parts_obso_pct_goal'
+                        || k.startsWith('_')) continue;
+                    const v = parseFloat(g[k]);
+                    if (Number.isFinite(v)) sum += Math.abs(v);
+                }
+                return sum > 0;
+            },
             _carryForwardGoals(allRows, month, year) {
+                const self = this;
                 const out = [];
                 const byStore = {};
                 (allRows || []).forEach(g => {
@@ -3599,11 +3617,15 @@
                 });
                 Object.keys(byStore).forEach(sid => {
                     const rows = byStore[sid];
-                    let pick = rows.find(g => g.month === month && g.year === year);
+                    // Exact match — but only if the current-month row actually has
+                    // meaningful values. An all-zero row is treated as missing so
+                    // carry-forward still kicks in.
+                    let pick = rows.find(g => g.month === month && g.year === year && self._isMeaningfulGoalRow(g));
                     let carried = false, fromMonth = null, fromYear = null;
                     if (!pick) {
                         const prior = rows
                             .filter(g => (g.year < year) || (g.year === year && g.month < month))
+                            .filter(g => self._isMeaningfulGoalRow(g))
                             .sort((a, b) => (b.year - a.year) || (b.month - a.month));
                         pick = prior[0];
                         if (pick) { carried = true; fromMonth = pick.month; fromYear = pick.year; }
@@ -8144,6 +8166,14 @@
                     const partsGoal = parseFloat(row.querySelector('.goal-parts').value) || 0;
                     const totalGoal = parseFloat(row.querySelector('.goal-total').value) || 0;
                     const perRoTarget = parseFloat(row.querySelector('.goal-per-ro').value) || 0;
+
+                    // Skip writing all-zero rows so they don't pollute the DB and
+                    // shadow real prior-month goals via carry-forward. If the user
+                    // ever needs to deliberately zero out a store, that should be
+                    // an explicit admin op, not the side-effect of an empty form.
+                    if (laborGoal === 0 && partsGoal === 0 && totalGoal === 0 && perRoTarget === 0) {
+                        continue;
+                    }
 
                     await LS.saveGoal({
                         store_id: storeId,
