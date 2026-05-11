@@ -3583,6 +3583,51 @@
                 return { ok: true };
             },
 
+            // --- Goal carry-forward ---
+            // Goals are meant to persist month-to-month: if no row exists for the
+            // requested (month, year), fall back to the most recent prior month that
+            // does have a row for that store. Returns one row per store with the
+            // month/year re-stamped to the requested period so callers that key on
+            // those fields keep working. Cloned rows are flagged with _carriedForward
+            // so UI layers can show a "(carried from <month>)" hint if desired.
+            _carryForwardGoals(allRows, month, year) {
+                const out = [];
+                const byStore = {};
+                (allRows || []).forEach(g => {
+                    if (!g || !g.store_id) return;
+                    (byStore[g.store_id] = byStore[g.store_id] || []).push(g);
+                });
+                Object.keys(byStore).forEach(sid => {
+                    const rows = byStore[sid];
+                    let pick = rows.find(g => g.month === month && g.year === year);
+                    let carried = false, fromMonth = null, fromYear = null;
+                    if (!pick) {
+                        const prior = rows
+                            .filter(g => (g.year < year) || (g.year === year && g.month < month))
+                            .sort((a, b) => (b.year - a.year) || (b.month - a.month));
+                        pick = prior[0];
+                        if (pick) { carried = true; fromMonth = pick.month; fromYear = pick.year; }
+                    }
+                    if (pick) {
+                        out.push(Object.assign({}, pick, {
+                            month, year,
+                            _carriedForward: carried,
+                            _carriedFromMonth: fromMonth,
+                            _carriedFromYear: fromYear
+                        }));
+                    }
+                });
+                return out;
+            },
+            async getEffectiveGoals(month, year) {
+                const all = await this.getGoals();
+                return this._carryForwardGoals(all, month, year);
+            },
+            getEffectivePartsGoals(month, year) {
+                const all = this.getPartsGoals() || [];
+                return this._carryForwardGoals(all, month, year);
+            },
+
             // --- Parts Manager: counter people roster (3 named slots per store) ---
             async getPartsRoster() {
                 if (useSupabase) {
@@ -4790,10 +4835,10 @@
 
             // Load and display aggregated daily goals for All Stores
             if (isAllStores()) {
-                const allGoals = await LS.getGoals();
                 const goalMonth = d.getMonth() + 1;
                 const goalYear = d.getFullYear();
-                const monthGoals = allGoals.filter(g => g.month === goalMonth && g.year === goalYear);
+                // Carry-forward so missing current-month goals don't blank the banner.
+                const monthGoals = await LS.getEffectiveGoals(goalMonth, goalYear);
 
                 let totalLaborGoal = 0, totalPartsGoal = 0, totalGrossGoal = 0, grossRoGoalSum = 0, goalCount = 0;
 
@@ -6036,7 +6081,8 @@
             }
 
             const { month, year } = getMonthYear(date);
-            const goalsData = (await LS.getGoals()).find(g => g.store_id === storeId && g.month === month && g.year === year);
+            // Carry-forward: use most recent prior month's goal if no current-month row exists.
+            const goalsData = (await LS.getEffectiveGoals(month, year)).find(g => g.store_id === storeId);
 
             if (!goalsData || (!goalsData.labor_goal && !goalsData.parts_goal && !goalsData.total_gross_goal)) {
                 banner.style.display = 'none';
@@ -6257,8 +6303,8 @@
                     ({ month, year } = getMonthYear(new Date()));
                 }
 
-                // Load goals from localStorage
-                const allGoals = (await LS.getGoals()).filter(g => g.month === month && g.year === year);
+                // Load goals from localStorage (carry-forward if no current-month row).
+                const allGoals = await LS.getEffectiveGoals(month, year);
                 let goalsData = null;
                 if (allMode) {
                     if (allGoals.length > 0) {
@@ -6856,8 +6902,8 @@
                 const monthEnd = dateToString(new Date(year, month, 0));
 
                 // Goals — parts goals are stored in their own LS bucket so the Supabase
-                // goals refresh doesn't blow them away.
-                const allPartsGoals = (LS.getPartsGoals() || []).filter(g => g.month === month && g.year === year);
+                // goals refresh doesn't blow them away. Carry-forward if no current-month row.
+                const allPartsGoals = LS.getEffectivePartsGoals(month, year);
                 let pGoals = null;
                 if (allMode) {
                     if (allPartsGoals.length > 0) {
@@ -7203,8 +7249,8 @@
                 entries = entries.filter(p => p.store_id === storeId);
             }
 
-            // 4) Per-store gp goal (default 42%)
-            const goals = (await LS.getGoals()).filter(g => g.month === month && g.year === year);
+            // 4) Per-store gp goal (default 42%); carry-forward last set value.
+            const goals = await LS.getEffectiveGoals(month, year);
             const gpGoalByStore = {};
             goals.forEach(g => {
                 gpGoalByStore[g.store_id] = (g.parts_counter_gp_goal != null) ? g.parts_counter_gp_goal : 42;
@@ -7329,7 +7375,9 @@
 
                 const advisorData = (await LS.getAdvisorEntries()).filter(d => d.entry_date >= monthStart && d.entry_date <= monthEnd);
 
-                const goalsData = (await LS.getGoals()).filter(g => g.month === month && g.year === year);
+                // Carry-forward: store summaries should use the most recent goals if
+                // no row exists yet for the requested month.
+                const goalsData = await LS.getEffectiveGoals(month, year);
 
                 // Build store summaries
                 const storeSummaries = stores.map(store => {
@@ -8017,14 +8065,20 @@
             try {
                 const { month, year } = getMonthYear(new Date());
 
-                const goalsData = (await LS.getGoals()).filter(g => g.month === month && g.year === year);
-                const partsGoalsData = LS.getPartsGoals().filter(g => g.month === month && g.year === year);
+                // Goals carry forward month-to-month: if the current month has no
+                // row for a store, fall back to its most recent prior month so the
+                // form pre-fills (clicking Save then writes those values into the
+                // current month).
+                const goalsData = await LS.getEffectiveGoals(month, year);
+                const partsGoalsData = LS.getEffectivePartsGoals(month, year);
 
                 let html = '';
                 let partsHtml = '';
+                let anyCarried = false;
                 stores.forEach(store => {
                     const goal = goalsData.find(g => g.store_id === store.id) || {};
                     const pg = partsGoalsData.find(g => g.store_id === store.id) || {};
+                    if (goal._carriedForward || pg._carriedForward) anyCarried = true;
                     html += `
                         <tr>
                             <td>${store.name}</td>
@@ -8052,6 +8106,28 @@
                 document.getElementById('goalsBody').innerHTML = html;
                 const partsBody = document.getElementById('partsGoalsBody');
                 if (partsBody) partsBody.innerHTML = partsHtml;
+
+                // Surface a small banner when values were carried forward from a prior
+                // month so Jay knows they're inherited but not yet committed to the
+                // current month. Clicking Save will write them as the current month's
+                // row of record.
+                let banner = document.getElementById('goalsCarryNotice');
+                if (!banner) {
+                    banner = document.createElement('div');
+                    banner.id = 'goalsCarryNotice';
+                    banner.style.cssText = 'margin:8px 0 12px 0;padding:8px 12px;background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;font-size:12px;color:#78350f;';
+                    const goalsBody = document.getElementById('goalsBody');
+                    const tbl = goalsBody && goalsBody.closest('table');
+                    if (tbl && tbl.parentNode) tbl.parentNode.insertBefore(banner, tbl);
+                }
+                if (anyCarried) {
+                    const now = new Date();
+                    const monthName = now.toLocaleString('default', { month: 'long' });
+                    banner.style.display = '';
+                    banner.innerHTML = `<strong>Showing carried-forward goals.</strong> No goals have been saved yet for ${monthName} ${year} for one or more stores — values shown are from the most recent prior month. Click <em>Save Goals</em> to lock them in for ${monthName}, or edit first.`;
+                } else {
+                    banner.style.display = 'none';
+                }
             } catch (error) {
                 console.error('Goals load error:', error);
             }
@@ -8929,7 +9005,9 @@
             try {
                 const allGoalsUnfiltered = await LS.getGoals();
                 const scopedGoals = allMode ? allGoalsUnfiltered : allGoalsUnfiltered.filter(g => g.store_id === storeId);
-                const allGoals = scopedGoals.filter(g => g.month === currentMonth && g.year === currentYear);
+                // Carry-forward: use most recent prior month's goals if none for the requested month.
+                const effective = LS._carryForwardGoals(scopedGoals, currentMonth, currentYear);
+                const allGoals = allMode ? effective : effective.filter(g => g.store_id === storeId);
                 const relevantGoals = allGoals;
 
                 // If no goals set for the current month, surface whatever month DOES have goals so Jay
