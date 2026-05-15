@@ -2396,6 +2396,27 @@
             return d;
         }
 
+        // Today as a local YYYY-MM-DD string (avoid the toISOString UTC drift).
+        function todayLocalString() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
+
+        // Resolve the dashboard's "as-of" Date object given the most recent
+        // entry_date string for the scope being shown. If today's data has
+        // already been saved, the as-of flips forward to today; otherwise it
+        // stays on yesterday/last Friday (per Jay: "if the day I entered is
+        // the same as the day of month, it should flip once they hit save").
+        function resolveDashboardAsOf(latestEntryDateStr) {
+            const todayStr = todayLocalString();
+            if (latestEntryDateStr && latestEntryDateStr >= todayStr) {
+                const t = new Date();
+                t.setHours(0, 0, 0, 0);
+                return t;
+            }
+            return getEffectiveTrackingDate();
+        }
+
 
         // ============================================================================
         // AUTHENTICATION & USER MANAGEMENT
@@ -6397,13 +6418,14 @@
                 // Calculate working day number and total working days in month for tracking projection
                 const wd = getWorkingDaysInMonth(year, month);
                 const daysInMonth = wd.totalDays || new Date(year, month, 0).getDate();
-                // Use the *effective* working day number — yesterday's, since today's
-                // numbers aren't entered yet. Without this, the pace divisor includes
-                // a day with $0 of data and the projection collapses below pace.
-                const effectiveAsOf = getEffectiveTrackingDate();
+                // As-of date: defaults to yesterday (today's numbers aren't usually entered
+                // yet), but flips forward to today once today's entry has been saved. Without
+                // this, the pace divisor includes a day with $0 of data and projection drops.
+                const latestDailyDate = dailyData.reduce((m, d) => d.entry_date > m ? d.entry_date : m, '');
+                const effectiveAsOf = resolveDashboardAsOf(latestDailyDate);
                 let currentWorkingDay;
                 if (year === effectiveAsOf.getFullYear() && month === (effectiveAsOf.getMonth() + 1)) {
-                    // Effective date is in the displayed month — use its working day number
+                    // As-of date is in the displayed month — use its working day number
                     currentWorkingDay = getWorkingDayOfMonth(effectiveAsOf);
                 } else {
                     // Historical month (or month transition) — use total working days
@@ -7011,11 +7033,12 @@
                 // Back-compat alias for downstream code that still uses mtdTotal
                 const mtdTotal = mtdTotalSales || mtdTotalGross;
 
-                // Tracking — project MTD to month using the working day of the *effective*
-                // tracking date (yesterday — today's numbers aren't entered yet). Same
-                // pattern as Service Daily Entry tracking.
+                // Tracking — project MTD to month using the working day of the as-of
+                // date (yesterday by default, flips to today if today's parts entry has
+                // been saved). Same pattern as Service Daily Entry tracking.
                 const today = new Date();
-                const effPartsAsOf = getEffectiveTrackingDate();
+                const latestPartsDate = entries.reduce((m, e) => e.entry_date > m ? e.entry_date : m, '');
+                const effPartsAsOf = resolveDashboardAsOf(latestPartsDate);
                 const isCurrentMonth = effPartsAsOf.getFullYear() === year && (effPartsAsOf.getMonth() + 1) === month;
                 const refDate = isCurrentMonth ? effPartsAsOf : new Date(year, month - 1, Math.min(today.getDate(), 28));
                 const dayNum = getWorkingDayOfMonth(refDate);
@@ -7335,11 +7358,12 @@
                 return;
             }
 
-            // Working-day denominator: working days elapsed through the *effective*
-            // tracking date (yesterday — today's numbers aren't entered yet) for the
-            // current month, total working days for past months. Sundays + holidays excluded.
+            // Working-day denominator: working days elapsed through the as-of date
+            // (yesterday by default; flips to today once today's parts entry is saved)
+            // for the current month, total working days for past months.
             const wdMonth = getWorkingDaysInMonth(year, month);
-            const effCtr = getEffectiveTrackingDate();
+            const latestCtrDate = entries.reduce((m, e) => e.entry_date > m ? e.entry_date : m, '');
+            const effCtr = resolveDashboardAsOf(latestCtrDate);
             const isCurrentMonth = (year === effCtr.getFullYear() && month === (effCtr.getMonth() + 1));
             const workingDaysSoFar = isCurrentMonth ? getWorkingDayOfMonth(effCtr) : wdMonth.totalDays;
 
@@ -7460,11 +7484,12 @@
                     const goal = storeGoals?.total_gross_goal || 0;
 
                     // Calculate tracking (projected end-of-month) using working days.
-                    // Use the effective tracking date (yesterday) — today's numbers
-                    // aren't entered yet, so dividing by today's day# under-projects.
+                    // As-of date defaults to yesterday and flips to today once this store's
+                    // today entry has been saved.
                     const wd = getWorkingDaysInMonth(year, month);
                     const wdTotal = wd.totalDays || new Date(year, month, 0).getDate();
-                    const effAsOf = getEffectiveTrackingDate();
+                    const latestStoreDate = storeDaily.reduce((m, d) => d.entry_date > m ? d.entry_date : m, '');
+                    const effAsOf = resolveDashboardAsOf(latestStoreDate);
                     let wdCurrent;
                     if (year === effAsOf.getFullYear() && month === (effAsOf.getMonth() + 1)) {
                         wdCurrent = getWorkingDayOfMonth(effAsOf);
@@ -9140,11 +9165,12 @@
 
                 // Working-day math: how far into the month are we?
                 const monthWd = getWorkingDaysInMonth(currentYear, currentMonth);
-                // Count working days elapsed through the effective tracking date
-                // (yesterday — today's numbers aren't entered yet). For historical
-                // months treat all working days as elapsed.
+                // Count working days elapsed through the as-of tracking date
+                // (yesterday by default; flips to today once today's entry has been
+                // saved). For historical months treat all working days as elapsed.
                 let elapsedDays = 0;
-                const effectiveForElapsed = getEffectiveTrackingDate();
+                const latestForElapsed = daily.reduce((m, d) => d.entry_date > m ? d.entry_date : m, '');
+                const effectiveForElapsed = resolveDashboardAsOf(latestForElapsed);
                 const inDisplayedMonth = (currentYear === effectiveForElapsed.getFullYear()
                                           && currentMonth === effectiveForElapsed.getMonth() + 1);
                 const elapsedThrough = inDisplayedMonth
