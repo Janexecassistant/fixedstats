@@ -2378,6 +2378,24 @@
         let currentUser = null;
         let allUsers = [];
 
+        // === Effective tracking date ====================================
+        // Service managers enter yesterday's numbers when they come in this
+        // morning, so the dashboard's "as-of" day should be yesterday — not
+        // the day they're looking at the screen. Goes back one calendar day,
+        // then skips Sat/Sun back to Friday (shop closed weekends per Jay).
+        // Used for working-day pacing math, elapsed-day counts, and entry
+        // date picker defaults. NOT used for `updated_at` timestamps or for
+        // month-picker defaults (those still use real `new Date()`).
+        function getEffectiveTrackingDate(reference) {
+            const d = reference ? new Date(reference) : new Date();
+            d.setHours(0, 0, 0, 0);
+            d.setDate(d.getDate() - 1);
+            while (d.getDay() === 0 || d.getDay() === 6) {
+                d.setDate(d.getDate() - 1);
+            }
+            return d;
+        }
+
 
         // ============================================================================
         // AUTHENTICATION & USER MANAGEMENT
@@ -3944,11 +3962,14 @@
                 // Load tech weekly data from Supabase
                 techWeeklyData = await LS.getTechWeeklyEntries() || {};
 
-                // Set default date — restore last-used entry date if present, otherwise today.
-                // This fixes the "my data is gone" bug where a user enters data for a past date,
-                // reloads the page, and sees today's (blank) row instead of what they saved.
+                // Set default date — restore last-used entry date if present, otherwise
+                // default to the effective tracking date (yesterday / last Friday). Managers
+                // enter yesterday's numbers in the morning, so pre-filling yesterday matches
+                // how the form is actually used. The last-used restore still wins so users
+                // who were entering a past date don't lose their place on reload.
                 const today = new Date();
-                let pickerInitDate = today;
+                const effective = getEffectiveTrackingDate();
+                let pickerInitDate = effective;
                 try {
                     const savedDs = localStorage.getItem('dyer_last_entry_date');
                     if (savedDs && /^\d{4}-\d{2}-\d{2}$/.test(savedDs)) {
@@ -3966,7 +3987,10 @@
                 document.getElementById('dailyDatePicker').valueAsDate = utcInit;
                 const collisionPicker = document.getElementById('collisionDailyDatePicker');
                 if (collisionPicker) collisionPicker.valueAsDate = utcInit;
-                document.getElementById('rosterWeekPicker').valueAsDate = today;
+                // Roster week picker — use the week containing the effective tracking date,
+                // so on Monday morning it points to last week (Friday's week), not the new
+                // week that no one has worked yet.
+                document.getElementById('rosterWeekPicker').valueAsDate = new Date(Date.UTC(effective.getFullYear(), effective.getMonth(), effective.getDate()));
 
                 // Set working day # and working days in month (auto-calculated from picker date)
                 document.getElementById('dailyDayNumber').value = getWorkingDayOfMonth(pickerInitDate);
@@ -4014,7 +4038,7 @@
                 technicians = fbStaff.technicians;
                 apprentices = fbStaff.apprentices || [];
                 const fallbackToday = new Date();
-                let fbPickerDate = fallbackToday;
+                let fbPickerDate = getEffectiveTrackingDate();
                 try {
                     const savedDs = localStorage.getItem('dyer_last_entry_date');
                     if (savedDs && /^\d{4}-\d{2}-\d{2}$/.test(savedDs)) {
@@ -6373,14 +6397,16 @@
                 // Calculate working day number and total working days in month for tracking projection
                 const wd = getWorkingDaysInMonth(year, month);
                 const daysInMonth = wd.totalDays || new Date(year, month, 0).getDate();
-                // Use current working day number (not count of days with data)
-                const now = new Date();
+                // Use the *effective* working day number — yesterday's, since today's
+                // numbers aren't entered yet. Without this, the pace divisor includes
+                // a day with $0 of data and the projection collapses below pace.
+                const effectiveAsOf = getEffectiveTrackingDate();
                 let currentWorkingDay;
-                if (year === now.getFullYear() && month === (now.getMonth() + 1)) {
-                    // Current month — use today's working day number
-                    currentWorkingDay = getWorkingDayOfMonth(now);
+                if (year === effectiveAsOf.getFullYear() && month === (effectiveAsOf.getMonth() + 1)) {
+                    // Effective date is in the displayed month — use its working day number
+                    currentWorkingDay = getWorkingDayOfMonth(effectiveAsOf);
                 } else {
-                    // Historical month — use total working days (month is complete)
+                    // Historical month (or month transition) — use total working days
                     currentWorkingDay = daysInMonth;
                 }
                 const dayOfMonth = currentWorkingDay || 1; // avoid divide by zero
@@ -6985,11 +7011,13 @@
                 // Back-compat alias for downstream code that still uses mtdTotal
                 const mtdTotal = mtdTotalSales || mtdTotalGross;
 
-                // Tracking — project MTD to month using the working day of the most recent entry
-                // (or today if the month is current). Same pattern as Service Daily Entry tracking.
+                // Tracking — project MTD to month using the working day of the *effective*
+                // tracking date (yesterday — today's numbers aren't entered yet). Same
+                // pattern as Service Daily Entry tracking.
                 const today = new Date();
-                const isCurrentMonth = today.getFullYear() === year && (today.getMonth() + 1) === month;
-                const refDate = isCurrentMonth ? today : new Date(year, month - 1, Math.min(today.getDate(), 28));
+                const effPartsAsOf = getEffectiveTrackingDate();
+                const isCurrentMonth = effPartsAsOf.getFullYear() === year && (effPartsAsOf.getMonth() + 1) === month;
+                const refDate = isCurrentMonth ? effPartsAsOf : new Date(year, month - 1, Math.min(today.getDate(), 28));
                 const dayNum = getWorkingDayOfMonth(refDate);
                 const wd = getWorkingDaysInMonth(year, month);
                 const daysInMonth = wd.totalDays;
@@ -7307,11 +7335,13 @@
                 return;
             }
 
-            // Working-day denominator: working days elapsed for the current month,
-            // total working days for past months. Sundays + holidays excluded.
+            // Working-day denominator: working days elapsed through the *effective*
+            // tracking date (yesterday — today's numbers aren't entered yet) for the
+            // current month, total working days for past months. Sundays + holidays excluded.
             const wdMonth = getWorkingDaysInMonth(year, month);
-            const isCurrentMonth = (year === now.getFullYear() && month === (now.getMonth() + 1));
-            const workingDaysSoFar = isCurrentMonth ? getWorkingDayOfMonth(now) : wdMonth.totalDays;
+            const effCtr = getEffectiveTrackingDate();
+            const isCurrentMonth = (year === effCtr.getFullYear() && month === (effCtr.getMonth() + 1));
+            const workingDaysSoFar = isCurrentMonth ? getWorkingDayOfMonth(effCtr) : wdMonth.totalDays;
 
             // 7) Render rows — sort by MTD Sales desc so top performers float to the top
             const rows = counters.map(c => {
@@ -7429,13 +7459,15 @@
                     const avgCsi = csiCount > 0 ? csiSum / csiCount : 0;
                     const goal = storeGoals?.total_gross_goal || 0;
 
-                    // Calculate tracking (projected end-of-month) using working days
+                    // Calculate tracking (projected end-of-month) using working days.
+                    // Use the effective tracking date (yesterday) — today's numbers
+                    // aren't entered yet, so dividing by today's day# under-projects.
                     const wd = getWorkingDaysInMonth(year, month);
                     const wdTotal = wd.totalDays || new Date(year, month, 0).getDate();
-                    const now = new Date();
+                    const effAsOf = getEffectiveTrackingDate();
                     let wdCurrent;
-                    if (year === now.getFullYear() && month === (now.getMonth() + 1)) {
-                        wdCurrent = getWorkingDayOfMonth(now);
+                    if (year === effAsOf.getFullYear() && month === (effAsOf.getMonth() + 1)) {
+                        wdCurrent = getWorkingDayOfMonth(effAsOf);
                     } else {
                         wdCurrent = wdTotal;
                     }
@@ -9108,10 +9140,17 @@
 
                 // Working-day math: how far into the month are we?
                 const monthWd = getWorkingDaysInMonth(currentYear, currentMonth);
-                // Count working days elapsed including today
+                // Count working days elapsed through the effective tracking date
+                // (yesterday — today's numbers aren't entered yet). For historical
+                // months treat all working days as elapsed.
                 let elapsedDays = 0;
-                const todayDay = now.getDate();
-                for (let d = 1; d <= todayDay; d++) {
+                const effectiveForElapsed = getEffectiveTrackingDate();
+                const inDisplayedMonth = (currentYear === effectiveForElapsed.getFullYear()
+                                          && currentMonth === effectiveForElapsed.getMonth() + 1);
+                const elapsedThrough = inDisplayedMonth
+                    ? effectiveForElapsed.getDate()
+                    : new Date(currentYear, currentMonth, 0).getDate(); // last day of month
+                for (let d = 1; d <= elapsedThrough; d++) {
                     const dow = new Date(currentYear, currentMonth - 1, d).getDay();
                     if (dow >= 1 && dow <= 6) elapsedDays++; // Mon-Sat counts
                 }
