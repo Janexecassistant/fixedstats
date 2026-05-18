@@ -8850,9 +8850,14 @@
                 const techTotals = rollupRange('tech', storeTechs);
                 const lubeTotals = rollupRange('lube', storeLubes);
 
+                // Total labor gross across all advisors for the period — feeds
+                // the NCM "Labor Gross per Stall" KPI (stalls = bays in our config).
+                const periodLaborGross = Object.values(weeklyAdvAgg)
+                    .reduce((s, a) => s + (a.labor || 0), 0);
+
                 // Load tech perf MTD/YTD and capacity analysis
                 loadTechPerformance(storeId, fc);
-                loadCapacityAnalysis(storeId, fc, storeTechs, storeLubes, storeAdvisors, techTotals, lubeTotals, periodAvailPerTech, periodLabelTech, advPeriod);
+                loadCapacityAnalysis(storeId, fc, storeTechs, storeLubes, storeAdvisors, techTotals, lubeTotals, periodAvailPerTech, periodLabelTech, advPeriod, periodLaborGross);
                 loadGoalForecast(storeId, allMode, now, currentYear, currentMonth);
             } catch (error) {
                 console.error('Roster load error:', error);
@@ -9336,8 +9341,9 @@
             }
         }
 
-        function loadCapacityAnalysis(storeId, fc, storeTechs, storeLubes, storeAdvisors, techTotals, lubeTotals, periodAvailPerTech, periodLabel, advPeriod) {
+        function loadCapacityAnalysis(storeId, fc, storeTechs, storeLubes, storeAdvisors, techTotals, lubeTotals, periodAvailPerTech, periodLabel, advPeriod, periodLaborGross) {
             const bays = fc.bays || 0;
+            periodLaborGross = periodLaborGross || 0;
             const totalTechs = storeTechs.length + storeLubes.length;
             const totalAdvisors = storeAdvisors.length;
 
@@ -9521,7 +9527,9 @@
                 periodHrsTurned,
                 periodClockUsed,
                 activeTechs,
-                periodIsWeek
+                periodIsWeek,
+                bays,
+                periodLaborGross
             });
         }
 
@@ -9565,9 +9573,20 @@
             const totalDeptEmp = totalTechs + totalAdvisors;
             const techsPctOfDept = totalDeptEmp > 0 ? (totalTechs / totalDeptEmp * 100) : null;
 
+            // Labor gross per stall — NCM uses "stall" for what we call a service bay
+            // (one and the same). NCM publishes this as a MONTHLY figure, so we
+            // extrapolate weekly periods up to a month using the ~4.33 weeks/mo factor.
+            const bays = ctx.bays || 0;
+            const periodLaborGross = ctx.periodLaborGross || 0;
+            const laborGrossPerStall = (bays > 0 && periodLaborGross > 0)
+                ? (ctx.periodIsWeek
+                    ? (periodLaborGross / bays) * 4.33
+                    : (periodLaborGross / bays))
+                : null;
+
             // KPIs to display, in the order they appear in the NCM sheet.
             // The "actual" key is computed inline; some are intentionally null
-            // until we add the input (CP labor $, stall count, etc).
+            // until we add the input (CP labor $ split, RO counts per advisor, etc).
             const rows = [
                 { code: 'hours_billed_per_tech',           actual: hoursPerTech, unit: 'hours' },
                 { code: 'cp_hours_per_cp_ro',              actual: null,         unit: 'hours', note: 'Needs CP labor $ + ELR' },
@@ -9579,7 +9598,10 @@
                 { code: 'cp_parts_per_ro',                 actual: null,         unit: 'dollars', note: 'Needs CP parts $ per RO' },
                 { code: 'tech_proficiency',                actual: profPct,      unit: 'percent' },
                 { code: 'techs_to_total_employees_pct',    actual: techsPctOfDept, unit: 'percent', note: 'Excludes parts/managers for now' },
-                { code: 'labor_gross_per_stall',           actual: null,         unit: 'dollars', note: 'Needs stall count' }
+                { code: 'labor_gross_per_stall',           actual: laborGrossPerStall, unit: 'dollars',
+                    note: bays === 0
+                        ? 'Set Total Service Bays in Facility Config (stalls = bays)'
+                        : (periodLaborGross === 0 ? 'Needs labor gross in advisor entries' : null) }
             ];
 
             const fmtActual = (val, unit) => {
@@ -9626,7 +9648,7 @@
                         <tbody>${rowHtml}</tbody>
                     </table>
                     <div style="margin-top:10px;font-size:11px;color:#6b7280;line-height:1.5;">
-                        Rows marked with a gray tag need additional inputs before they auto-calculate. As more daily fields land (CP labor split, RO counts per advisor, stall count) the dashes turn into live values.
+                        Rows marked with a gray tag need additional inputs before they auto-calculate. As more daily fields land (CP labor split, RO counts per advisor) the dashes turn into live values. NCM's "stall" = our Total Service Bays — same metric, different label.
                     </div>
                 </div>
             `;
