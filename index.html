@@ -1958,6 +1958,8 @@
                 </div>
                 <div id="capacityRecommendations" style="margin-top:16px;">
                 </div>
+                <div id="ncmBenchmarkPanel" style="margin-top:18px;">
+                </div>
             </div>
 
             <!-- GOAL ATTAINMENT + MONTH-END FORECAST -->
@@ -3348,13 +3350,100 @@
         // FALLBACK DATA (used when Supabase is unreachable)
         // ============================================================================
         const FALLBACK_STORES = [
-            { id: 'dcvb', name: 'Dyer Chevrolet Vero Beach', code: 'DCVB' },
-            { id: 'dcfp', name: 'Dyer Chevrolet Fort Pierce', code: 'DCFP' },
-            { id: 'kia', name: 'Dyer Kia Lake Wales', code: 'KIA' },
-            { id: 'dclw', name: 'Dyer Chevrolet Lake Wales', code: 'DCLW' },
-            { id: 'subaru', name: 'Dyer Subaru', code: 'Subaru' },
-            { id: 'mazda', name: 'Dyer Mazda', code: 'Mazda' }
+            { id: 'dcvb', name: 'Dyer Chevrolet Vero Beach', code: 'DCVB', franchise_type: 'domestic' },
+            { id: 'dcfp', name: 'Dyer Chevrolet Fort Pierce', code: 'DCFP', franchise_type: 'domestic' },
+            { id: 'kia', name: 'Dyer Kia Lake Wales', code: 'KIA', franchise_type: 'volume_import' },
+            { id: 'dclw', name: 'Dyer Chevrolet Lake Wales', code: 'DCLW', franchise_type: 'domestic' },
+            { id: 'subaru', name: 'Dyer Subaru', code: 'Subaru', franchise_type: 'volume_import' },
+            { id: 'mazda', name: 'Dyer Mazda', code: 'Mazda', franchise_type: 'volume_import' }
         ];
+
+        // NCM 2026 benchmark cache — populated by loadBenchmarks() from Supabase.
+        // Shape: BENCHMARKS[kpi_code][franchise_type] = { value_low, value_high, unit, label, direction, source, notes }
+        let BENCHMARKS = {};
+
+        // Resolve a store id → franchise_type ('domestic' | 'volume_import' | 'luxury')
+        function getStoreFranchise(storeId) {
+            if (!storeId) return null;
+            const store = (Array.isArray(stores) ? stores : FALLBACK_STORES).find(s => s.id === storeId);
+            return store && store.franchise_type ? store.franchise_type : null;
+        }
+
+        // Pull the right NCM row for a given KPI + store. Returns null when we don't
+        // know the franchise type or have no benchmark for that KPI.
+        function getBenchmark(kpiCode, storeId) {
+            const franchise = getStoreFranchise(storeId);
+            if (!franchise) return null;
+            const row = BENCHMARKS[kpiCode] && BENCHMARKS[kpiCode][franchise];
+            return row || null;
+        }
+
+        // Format a benchmark value into a short display string ("$11,243", "152 hrs", "55.5%", "12–14")
+        function formatBenchmarkValue(bm) {
+            if (!bm) return '—';
+            const lo = parseFloat(bm.value_low);
+            const hi = bm.value_high != null ? parseFloat(bm.value_high) : null;
+            const fmt = (n) => {
+                if (bm.unit === 'dollars') return formatCurrency(n);
+                if (bm.unit === 'percent') return n.toFixed(1) + '%';
+                if (bm.unit === 'hours')   return n.toFixed(n >= 100 ? 0 : 2) + 'h';
+                if (bm.unit === 'ratio')   return n.toFixed(2) + ':1';
+                return n.toFixed(n % 1 === 0 ? 0 : 2);
+            };
+            return hi != null ? `${fmt(lo)}–${fmt(hi)}` : fmt(lo);
+        }
+
+        // Variance chip — returns {color, label, pct} or null if we can't grade.
+        // For range benchmarks (low–high) we grade "in range" / "below" / "above".
+        // For single targets we use the direction (higher_better / lower_better).
+        function gradeAgainstBenchmark(actual, bm) {
+            if (!bm || actual == null || !Number.isFinite(actual)) return null;
+            const lo = parseFloat(bm.value_low);
+            const hi = bm.value_high != null ? parseFloat(bm.value_high) : null;
+
+            if (bm.direction === 'range' && hi != null) {
+                if (actual >= lo && actual <= hi) return { color: '#10b981', label: 'in range', pct: null };
+                if (actual < lo) return { color: '#f97316', label: 'below', pct: ((actual - lo) / lo) * 100 };
+                return { color: '#facc15', label: 'above', pct: ((actual - hi) / hi) * 100 };
+            }
+
+            const target = lo;
+            const pct = ((actual - target) / target) * 100;
+            const higherBetter = bm.direction !== 'lower_better';
+            const aligned = higherBetter ? pct : -pct;
+            if (aligned >= 0)   return { color: '#10b981', label: 'at/above NCM', pct };
+            if (aligned >= -10) return { color: '#facc15', label: 'within 10%',   pct };
+            return { color: '#f97316', label: 'below NCM', pct };
+        }
+
+        // Renders the small benchmark line + variance chip used under a KPI value.
+        // Pass actual=null to just show the benchmark as a static reference.
+        function renderBenchmarkChip(actual, kpiCode, storeId) {
+            const bm = getBenchmark(kpiCode, storeId);
+            if (!bm) return '';
+            const valStr = formatBenchmarkValue(bm);
+            const grade = gradeAgainstBenchmark(actual, bm);
+            const chip = grade
+                ? `<span style="display:inline-block;margin-left:6px;padding:1px 6px;border-radius:8px;background:${grade.color};color:#fff;font-size:9px;font-weight:600;letter-spacing:0.3px;">${grade.label}${grade.pct != null ? ' ' + (grade.pct >= 0 ? '+' : '') + grade.pct.toFixed(0) + '%' : ''}</span>`
+                : '';
+            return `<div style="font-size:10px;color:#666;margin-top:2px;">NCM ${valStr}${chip}</div>`;
+        }
+
+        async function loadBenchmarks() {
+            try {
+                if (!db) return;
+                const { data, error } = await db.from('benchmarks').select('*');
+                if (error || !data) return;
+                const next = {};
+                data.forEach(r => {
+                    if (!next[r.kpi_code]) next[r.kpi_code] = {};
+                    next[r.kpi_code][r.franchise_type] = r;
+                });
+                BENCHMARKS = next;
+            } catch (e) {
+                console.warn('loadBenchmarks failed', e);
+            }
+        }
         const FALLBACK_ADVISORS = [
             { id: 1, store_id: 'dcvb', name: 'Tyler Swesey', employee_id: null, is_active: true },
             { id: 2, store_id: 'dcvb', name: 'Laura Gomez', employee_id: null, is_active: true },
@@ -3982,6 +4071,9 @@
 
                 // Load tech weekly data from Supabase
                 techWeeklyData = await LS.getTechWeeklyEntries() || {};
+
+                // Load NCM 2026 reference benchmarks (best-effort, doesn't block init).
+                await loadBenchmarks();
 
                 // Set default date — restore last-used entry date if present, otherwise
                 // default to the effective tracking date (yesterday / last Friday). Managers
@@ -8421,6 +8513,8 @@
                 document.getElementById('techPerfBody').innerHTML = '';
                 document.getElementById('capacityAnalysisCards').innerHTML = '';
                 document.getElementById('capacityRecommendations').innerHTML = '';
+                const _ncmPanel = document.getElementById('ncmBenchmarkPanel');
+                if (_ncmPanel) _ncmPanel.innerHTML = '';
                 document.getElementById('facilityAutoCalc').innerHTML = '';
                 const gfc = document.getElementById('goalForecastCard');
                 if (gfc) gfc.style.display = 'none';
@@ -9328,11 +9422,26 @@
             };
             const driverLabel = driverLabelMap[staffingDriver];
 
+            // NCM 2026 reference values for this store's franchise type (when known).
+            const techRatio = totalAdvisors > 0 ? (totalTechs / totalAdvisors) : 0;
+            const techProfPct = periodClockUsed > 0 ? (periodHrsTurned / periodClockUsed * 100) : 0;
+            const bmTechRatio = getBenchmark('techs_per_advisor', storeId);
+            const bmTechProf  = getBenchmark('tech_proficiency', storeId);
+            const ratioGrade = bmTechRatio && techRatio > 0 ? gradeAgainstBenchmark(techRatio, bmTechRatio) : null;
+            const profGrade  = bmTechProf  && techProfPct > 0 ? gradeAgainstBenchmark(techProfPct, bmTechProf) : null;
+            const ratioColor = ratioGrade ? ratioGrade.color : (techRatio >= 2.5 ? '#4ade80' : '#facc15');
+            const profColorVal = profGrade ? profGrade.color : (techProfPct >= 85 ? '#4ade80' : techProfPct >= 70 ? '#facc15' : '#f97316');
+
             document.getElementById('capacityAnalysisCards').innerHTML = `
                 <div class="capacity-kpi-card">
                     <div class="kpi-label">Tech Utilization <span style="font-weight:400;font-size:10px;color:#666;">(${periodIsWeek ? 'weekly' : periodLabel})</span></div>
                     <div class="kpi-value" style="color:${utilizationPct >= 80 ? '#4ade80' : utilizationPct >= 60 ? '#facc15' : '#f97316'}">${utilizationPct > 0 ? utilizationPct.toFixed(0) + '%' : '—'}</div>
                     <div class="kpi-subtext">${periodClockUsed > 0 ? periodClockUsed.toFixed(0) + 'h clocked / ' + periodTechHrs.toFixed(0) + 'h available · ' + activeHeadcountLabel : 'No data ' + periodScopeLabel}</div>
+                </div>
+                <div class="capacity-kpi-card">
+                    <div class="kpi-label">Tech Proficiency <span style="font-weight:400;font-size:10px;color:#666;">(hrs turned / clocked)</span></div>
+                    <div class="kpi-value" style="color:${profColorVal}">${techProfPct > 0 ? techProfPct.toFixed(1) + '%' : '—'}</div>
+                    <div class="kpi-subtext">${periodHrsTurned > 0 ? periodHrsTurned.toFixed(0) + 'h turned / ' + periodClockUsed.toFixed(0) + 'h clocked' : 'No tech hours ' + periodScopeLabel}${techProfPct > 0 ? renderBenchmarkChip(techProfPct, 'tech_proficiency', storeId) : ''}</div>
                 </div>
                 <div class="capacity-kpi-card">
                     <div class="kpi-label">Bay Utilization <span style="font-weight:400;font-size:10px;color:#666;">(${periodIsWeek ? 'weekly' : periodLabel})</span></div>
@@ -9341,8 +9450,8 @@
                 </div>
                 <div class="capacity-kpi-card">
                     <div class="kpi-label">Tech:Advisor Ratio</div>
-                    <div class="kpi-value" style="color:${totalAdvisors > 0 && (totalTechs / totalAdvisors) >= 2.5 ? '#4ade80' : '#facc15'}">${totalAdvisors > 0 ? (totalTechs / totalAdvisors).toFixed(1) : '—'}:1</div>
-                    <div class="kpi-subtext">Target: ${idealTechsPerAdvisor}:1</div>
+                    <div class="kpi-value" style="color:${ratioColor}">${techRatio > 0 ? techRatio.toFixed(1) : '—'}:1</div>
+                    <div class="kpi-subtext">${bmTechRatio ? '' : 'Target: ' + idealTechsPerAdvisor + ':1'}${techRatio > 0 ? renderBenchmarkChip(techRatio, 'techs_per_advisor', storeId) : ''}</div>
                 </div>
                 <div class="capacity-kpi-card">
                     <div class="kpi-label">Staffing Need <span style="font-weight:400;font-size:10px;color:#666;">(${driverLabel})</span></div>
@@ -9396,6 +9505,131 @@
                     <strong>Healthy capacity.</strong> Staffing levels and utilization are in a good range for ${periodScopeLabel}. Continue monitoring to catch shifts early.</div>`);
             }
             document.getElementById('capacityRecommendations').innerHTML = recs.join('');
+
+            // ============================================================
+            // NCM 2026 Reference Panel — side-by-side of every benchmark we
+            // have vs the store's computed actual where available. Reads
+            // the franchise_type from the store and pulls the matching
+            // NCM column. Renders even when "All stores" is selected, in
+            // which case the actuals are blanked (no single franchise).
+            // ============================================================
+            renderNcmBenchmarkPanel(storeId, {
+                techRatio,
+                techProfPct,
+                totalTechs,
+                totalAdvisors,
+                periodHrsTurned,
+                periodClockUsed,
+                activeTechs,
+                periodIsWeek
+            });
+        }
+
+        // Renders the "NCM 2026 Reference" panel under the capacity
+        // analysis cards. Each row = one NCM KPI for this store's
+        // franchise type, with the store's computed value where we can
+        // calculate it and a variance chip. Cells with "—" mean we
+        // don't yet ingest the inputs needed for that calculation.
+        function renderNcmBenchmarkPanel(storeId, ctx) {
+            const panel = document.getElementById('ncmBenchmarkPanel');
+            if (!panel) return;
+            const franchise = getStoreFranchise(storeId);
+            if (!franchise) {
+                panel.innerHTML = `<div style="padding:12px;background:#f9fafb;border:1px dashed #d1d5db;border-radius:8px;color:#6b7280;font-size:12px;">
+                    Select a single store to see the NCM 2026 benchmark comparison for that franchise type.
+                </div>`;
+                return;
+            }
+
+            const labelMap = {
+                domestic: 'Domestic',
+                volume_import: 'Volume Import',
+                luxury: 'Luxury'
+            };
+            const franchiseLabel = labelMap[franchise] || franchise;
+
+            // Compute store-level actuals for each KPI we can derive right now.
+            const totalTechs = ctx.totalTechs || 0;
+            const totalAdvisors = ctx.totalAdvisors || 0;
+            const ratio = totalAdvisors > 0 ? (totalTechs / totalAdvisors) : null;
+            const profPct = (ctx.periodClockUsed > 0)
+                ? (ctx.periodHrsTurned / ctx.periodClockUsed * 100)
+                : null;
+            // Hours per tech / month — extrapolated when in weekly view.
+            const hoursPerTech = (ctx.activeTechs > 0 && ctx.periodHrsTurned > 0)
+                ? (ctx.periodIsWeek
+                    ? (ctx.periodHrsTurned / ctx.activeTechs) * 4.33  // ~weeks per month
+                    : ctx.periodHrsTurned / ctx.activeTechs)
+                : null;
+            // % Techs to total dept employees — uses techs + advisors + lubes (anything we render here)
+            const totalDeptEmp = totalTechs + totalAdvisors;
+            const techsPctOfDept = totalDeptEmp > 0 ? (totalTechs / totalDeptEmp * 100) : null;
+
+            // KPIs to display, in the order they appear in the NCM sheet.
+            // The "actual" key is computed inline; some are intentionally null
+            // until we add the input (CP labor $, stall count, etc).
+            const rows = [
+                { code: 'hours_billed_per_tech',           actual: hoursPerTech, unit: 'hours' },
+                { code: 'cp_hours_per_cp_ro',              actual: null,         unit: 'hours', note: 'Needs CP labor $ + ELR' },
+                { code: 'techs_per_advisor',               actual: ratio,        unit: 'ratio' },
+                { code: 'daily_ros_per_advisor',           actual: null,         unit: 'count', note: 'Needs daily RO count by advisor' },
+                { code: 'daily_customers_per_advisor',     actual: null,         unit: 'count', note: 'From route sheet' },
+                { code: 'monthly_labor_hours_per_advisor', actual: null,         unit: 'hours', note: 'Needs monthly advisor hours' },
+                { code: 'cp_labor_per_ro',                 actual: null,         unit: 'dollars', note: 'Needs CP labor $ per RO' },
+                { code: 'cp_parts_per_ro',                 actual: null,         unit: 'dollars', note: 'Needs CP parts $ per RO' },
+                { code: 'tech_proficiency',                actual: profPct,      unit: 'percent' },
+                { code: 'techs_to_total_employees_pct',    actual: techsPctOfDept, unit: 'percent', note: 'Excludes parts/managers for now' },
+                { code: 'labor_gross_per_stall',           actual: null,         unit: 'dollars', note: 'Needs stall count' }
+            ];
+
+            const fmtActual = (val, unit) => {
+                if (val == null || !Number.isFinite(val)) return '<span style="color:#9ca3af;">—</span>';
+                if (unit === 'dollars') return formatCurrency(val);
+                if (unit === 'percent') return val.toFixed(1) + '%';
+                if (unit === 'hours')   return val.toFixed(val >= 100 ? 0 : 1) + 'h';
+                if (unit === 'ratio')   return val.toFixed(2) + ':1';
+                return val.toFixed(val % 1 === 0 ? 0 : 2);
+            };
+
+            const rowHtml = rows.map(r => {
+                const bm = getBenchmark(r.code, storeId);
+                if (!bm) return '';
+                const grade = gradeAgainstBenchmark(r.actual, bm);
+                const chip = grade
+                    ? `<span style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:8px;background:${grade.color};color:#fff;font-size:10px;font-weight:600;letter-spacing:0.3px;">${grade.label}${grade.pct != null ? ' ' + (grade.pct >= 0 ? '+' : '') + grade.pct.toFixed(0) + '%' : ''}</span>`
+                    : (r.note ? `<span style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:8px;background:#e5e7eb;color:#4b5563;font-size:10px;font-weight:500;">${r.note}</span>` : '');
+                return `
+                    <tr>
+                        <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;font-size:13px;">${bm.label}</td>
+                        <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;font-size:13px;font-weight:600;text-align:right;">${formatBenchmarkValue(bm)}</td>
+                        <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;font-size:13px;font-weight:700;text-align:right;">${fmtActual(r.actual, r.unit)}</td>
+                        <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;font-size:13px;">${chip}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            panel.innerHTML = `
+                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 16px;">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+                        <h4 style="margin:0;font-size:14px;font-weight:700;color:#1a1a1a;text-transform:uppercase;letter-spacing:0.5px;">NCM 2026 Reference — ${franchiseLabel}</h4>
+                        <span style="font-size:11px;color:#6b7280;">Source: NCM Associates 2026 KPI Report</span>
+                    </div>
+                    <table style="width:100%;border-collapse:collapse;">
+                        <thead>
+                            <tr style="background:#fff;">
+                                <th style="text-align:left;padding:6px 8px;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;border-bottom:1px solid #e5e7eb;">KPI</th>
+                                <th style="text-align:right;padding:6px 8px;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;border-bottom:1px solid #e5e7eb;">NCM</th>
+                                <th style="text-align:right;padding:6px 8px;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;border-bottom:1px solid #e5e7eb;">Your Store</th>
+                                <th style="text-align:left;padding:6px 8px;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;border-bottom:1px solid #e5e7eb;">Variance</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowHtml}</tbody>
+                    </table>
+                    <div style="margin-top:10px;font-size:11px;color:#6b7280;line-height:1.5;">
+                        Rows marked with a gray tag need additional inputs before they auto-calculate. As more daily fields land (CP labor split, RO counts per advisor, stall count) the dashes turn into live values.
+                    </div>
+                </div>
+            `;
         }
 
         async function saveRoster() {
