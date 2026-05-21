@@ -1095,6 +1095,14 @@
                             <td class="input-gray" id="dailyTrackingRos">0</td>
                         </tr>
                         <tr>
+                            <td style="font-weight: 600;">ROs Closed</td>
+                            <td><input type="number" id="dailyRosClosed" class="input-yellow" placeholder="0"></td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 600;">Alignments Sold</td>
+                            <td><input type="number" id="dailyAlignments" class="input-yellow" placeholder="0"></td>
+                        </tr>
+                        <tr>
                             <td style="font-weight: 600;">Total Hours</td>
                             <td><input type="number" step="0.1" id="dailyTotalHours" class="input-yellow" placeholder="0"></td>
                         </tr>
@@ -1187,10 +1195,12 @@
             </div>
 
             <div class="card">
-                <div class="btn-group" style="display:flex;align-items:center;gap:12px;">
+                <div class="btn-group" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                     <button class="btn" id="saveDailyBtn">Save Service Daily Entry</button>
+                    <button class="btn" id="whatsappDailyBtn" style="background:#25D366;border-color:#25D366;color:#ffffff;">Send Recap to WhatsApp</button>
                     <span class="unsaved-badge" data-section="daily" style="display:none;">● Unsaved changes</span>
                 </div>
+                <p style="font-size:12px;color:#666;margin:10px 0 0 0;">Opens WhatsApp with the day's recap pre-filled — pick your group chat and press Send.</p>
             </div>
         </div>
 
@@ -3579,6 +3589,8 @@
                             labor_day: entry.labor_day ?? entry.total_labor ?? 0,
                             parts_day: entry.parts_day ?? entry.total_parts ?? 0,
                             total_ros: entry.total_ros ?? 0,
+                            ros_closed: entry.ros_closed ?? 0,
+                            alignments_sold: entry.alignments_sold ?? 0,
                             total_hours: entry.total_hours ?? 0,
                             store_nps: (entry.store_nps === undefined || entry.store_nps === '' ? null : entry.store_nps),
                             region_nps: (entry.region_nps === undefined || entry.region_nps === '' ? null : entry.region_nps),
@@ -4335,10 +4347,11 @@
             document.getElementById('laborDay').addEventListener('input', updateDailyCalculations);
             document.getElementById('partsDay').addEventListener('input', updateDailyCalculations);
             document.getElementById('saveDailyBtn').addEventListener('click', saveDailyEntry);
+            document.getElementById('whatsappDailyBtn').addEventListener('click', sendDailyWhatsApp);
 
             // Service Daily Entry dirty tracking — any input/change in the daily form marks it dirty.
             // The advisor body is rendered later, so use event delegation on the container.
-            ['laborDay', 'partsDay', 'dailyTotalRos', 'dailyTotalHours', 'dailyStoreNps', 'dailyRegionNps'].forEach(id => {
+            ['laborDay', 'partsDay', 'dailyTotalRos', 'dailyRosClosed', 'dailyAlignments', 'dailyTotalHours', 'dailyStoreNps', 'dailyRegionNps'].forEach(id => {
                 const el = document.getElementById(id);
                 if (!el) return;
                 el.addEventListener('input', () => markDirty('daily'));
@@ -4702,7 +4715,7 @@
             }
 
             // Restore editable state (in case switching from All Stores)
-            ['laborDay', 'partsDay', 'dailyTotalRos', 'dailyTotalHours', 'dailyStoreNps', 'dailyRegionNps'].forEach(id => {
+            ['laborDay', 'partsDay', 'dailyTotalRos', 'dailyRosClosed', 'dailyAlignments', 'dailyTotalHours', 'dailyStoreNps', 'dailyRegionNps'].forEach(id => {
                 const el = document.getElementById(id);
                 if (!el) return;
                 el.readOnly = false;
@@ -4711,6 +4724,8 @@
                 el.style.backgroundColor = '';
             });
             document.getElementById('saveDailyBtn').style.display = '';
+            const waBtnShow = document.getElementById('whatsappDailyBtn');
+            if (waBtnShow) waBtnShow.style.display = '';
 
             try {
                 const ds = dateToString(date);
@@ -4722,6 +4737,8 @@
                     document.getElementById('laborDay').value = dailyData.labor_day ?? '';
                     document.getElementById('partsDay').value = dailyData.parts_day ?? '';
                     document.getElementById('dailyTotalRos').value = dailyData.total_ros ?? '';
+                    document.getElementById('dailyRosClosed').value = dailyData.ros_closed ?? '';
+                    document.getElementById('dailyAlignments').value = dailyData.alignments_sold ?? '';
                     document.getElementById('dailyTotalHours').value = dailyData.total_hours ?? '';
                     document.getElementById('dailyStoreNps').value = dailyData.store_nps ?? '';
                     document.getElementById('dailyRegionNps').value = dailyData.region_nps ?? '';
@@ -4729,6 +4746,8 @@
                     document.getElementById('laborDay').value = '';
                     document.getElementById('partsDay').value = '';
                     document.getElementById('dailyTotalRos').value = '';
+                    document.getElementById('dailyRosClosed').value = '';
+                    document.getElementById('dailyAlignments').value = '';
                     document.getElementById('dailyTotalHours').value = '';
                     document.getElementById('dailyStoreNps').value = '';
                     document.getElementById('dailyRegionNps').value = '';
@@ -4849,12 +4868,15 @@
                 // Aggregate department totals across all stores for this date
                 const dayEntries = allDaily.filter(d => d.entry_date === ds);
                 let totalLabor = 0, totalParts = 0, totalRos = 0, totalHours = 0;
+                let totalRosClosed = 0, totalAlignments = 0;
                 let npsCount = 0, npsSum = 0, regionNpsCount = 0, regionNpsSum = 0;
 
                 dayEntries.forEach(d => {
                     totalLabor += parseFloat(d.labor_day) || 0;
                     totalParts += parseFloat(d.parts_day) || 0;
                     totalRos += parseInt(d.total_ros) || 0;
+                    totalRosClosed += parseInt(d.ros_closed) || 0;
+                    totalAlignments += parseInt(d.alignments_sold) || 0;
                     totalHours += parseFloat(d.total_hours) || 0;
                     if (d.store_nps) { npsSum += parseFloat(d.store_nps); npsCount++; }
                     if (d.region_nps) { regionNpsSum += parseFloat(d.region_nps); regionNpsCount++; }
@@ -4864,6 +4886,8 @@
                 const laborEl = document.getElementById('laborDay');
                 const partsEl = document.getElementById('partsDay');
                 const rosEl = document.getElementById('dailyTotalRos');
+                const rosClosedEl = document.getElementById('dailyRosClosed');
+                const alignmentsEl = document.getElementById('dailyAlignments');
                 const hoursEl = document.getElementById('dailyTotalHours');
                 const storeNpsEl = document.getElementById('dailyStoreNps');
                 const regionNpsEl = document.getElementById('dailyRegionNps');
@@ -4873,12 +4897,14 @@
                 laborEl.value = fmtAmt(totalLabor);
                 partsEl.value = fmtAmt(totalParts);
                 rosEl.value = totalRos || ''; // RO count is always an integer
+                if (rosClosedEl) rosClosedEl.value = totalRosClosed || '';
+                if (alignmentsEl) alignmentsEl.value = totalAlignments || '';
                 if (hoursEl) hoursEl.value = fmtHours(totalHours);
                 storeNpsEl.value = npsCount > 0 ? (npsSum / npsCount).toFixed(1) : '';
                 regionNpsEl.value = regionNpsCount > 0 ? (regionNpsSum / regionNpsCount).toFixed(1) : '';
 
                 // Make department inputs read-only
-                [laborEl, partsEl, rosEl, hoursEl, storeNpsEl, regionNpsEl].filter(Boolean).forEach(el => {
+                [laborEl, partsEl, rosEl, rosClosedEl, alignmentsEl, hoursEl, storeNpsEl, regionNpsEl].filter(Boolean).forEach(el => {
                     el.readOnly = true;
                     el.classList.remove('input-yellow');
                     el.classList.add('input-gray');
@@ -4946,6 +4972,8 @@
 
                 // Hide save button for All Stores
                 document.getElementById('saveDailyBtn').style.display = 'none';
+                const waBtnHide = document.getElementById('whatsappDailyBtn');
+                if (waBtnHide) waBtnHide.style.display = 'none';
 
                 // Update MTD calculations
                 updateDailyCalculationsAllStores(date);
@@ -6299,6 +6327,46 @@
             }
         }
 
+        // Build a daily-recap message and hand it off to WhatsApp. No phone number is
+        // attached, so wa.me opens WhatsApp with the text pre-filled and lets the user
+        // pick any chat — including a group — then press Send themselves.
+        function sendDailyWhatsApp() {
+            const storeId = getSelectedStore();
+            if (isAllStores() || !storeId) {
+                showToast('Select a specific store before sending a WhatsApp recap', 'error');
+                return;
+            }
+            const store = stores.find(s => s.id === storeId)
+                || (typeof FALLBACK_STORES !== 'undefined' ? FALLBACK_STORES.find(s => s.id === storeId) : null);
+            const storeName = store ? (store.name || store.code || storeId) : storeId;
+
+            const dateEl = document.getElementById('dailyDatePicker');
+            const dateObj = pickerDate(dateEl ? dateEl.valueAsDate : null);
+            const dateStr = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+            const numVal = id => {
+                const el = document.getElementById(id);
+                return el ? (parseFloat(el.value) || 0) : 0;
+            };
+            const rosClosed = numVal('dailyRosClosed');
+            const alignments = numVal('dailyAlignments');
+            const laborGross = numVal('laborDay');
+            const partsGross = numVal('partsDay');
+            const totalPaceEl = document.getElementById('totalPace');
+            const totalPaceText = totalPaceEl ? (totalPaceEl.textContent || '$0') : '$0';
+
+            const msg =
+                storeName + ' — Daily Recap, ' + dateStr + '\n' +
+                'Repair Orders Closed: ' + rosClosed + '\n' +
+                'Alignments Sold: ' + alignments + '\n' +
+                'Labor Gross: ' + formatCurrency(laborGross) + '\n' +
+                'Parts Gross: ' + formatCurrency(partsGross) + '\n' +
+                'Total Pace (Month): ' + totalPaceText;
+
+            window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+            showToast('Opening WhatsApp — pick your group chat and press Send', 'success');
+        }
+
         async function saveDailyEntry() {
             const storeId = getSelectedStore();
             const date = pickerDate(document.getElementById('dailyDatePicker').valueAsDate);
@@ -6320,10 +6388,14 @@
 
                 // Save daily department entry to localStorage
                 const totalRosEl = document.getElementById('dailyTotalRos');
+                const rosClosedEl = document.getElementById('dailyRosClosed');
+                const alignmentsEl = document.getElementById('dailyAlignments');
                 const totalHoursEl = document.getElementById('dailyTotalHours');
                 const storeNpsEl = document.getElementById('dailyStoreNps');
                 const regionNpsEl = document.getElementById('dailyRegionNps');
                 const totalRos = totalRosEl.value === '' ? 0 : (parseFloat(totalRosEl.value) || 0);
+                const rosClosed = (!rosClosedEl || rosClosedEl.value === '') ? 0 : (parseFloat(rosClosedEl.value) || 0);
+                const alignmentsSold = (!alignmentsEl || alignmentsEl.value === '') ? 0 : (parseFloat(alignmentsEl.value) || 0);
                 const totalHours = (!totalHoursEl || totalHoursEl.value === '') ? 0 : (parseFloat(totalHoursEl.value) || 0);
                 const storeNps = storeNpsEl.value === '' ? null : parseFloat(storeNpsEl.value);
                 const regionNps = regionNpsEl.value === '' ? null : parseFloat(regionNpsEl.value);
@@ -6337,6 +6409,8 @@
                     labor_day: laborDay,
                     parts_day: partsDay,
                     total_ros: totalRos,
+                    ros_closed: rosClosed,
+                    alignments_sold: alignmentsSold,
                     total_hours: totalHours,
                     store_nps: storeNps,
                     region_nps: regionNps
