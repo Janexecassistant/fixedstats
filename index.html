@@ -1912,6 +1912,7 @@
                     <select id="rosterPeriod">
                         <option value="week">This Week</option>
                         <option value="mtd">Month to Date</option>
+                        <option value="lastmonth">Last Month</option>
                         <option value="ytd">Year to Date</option>
                         <option value="custom">Custom Range</option>
                     </select>
@@ -1975,21 +1976,21 @@
                     <table id="rosterTable">
                         <thead>
                             <tr>
-                                <th>Advisor</th>
-                                <th>Training Status</th>
-                                <th>MPVI %</th>
-                                <th>Labor ($)</th>
-                                <th>Parts ($)</th>
-                                <th>Total Gross ($)</th>
-                                <th>RO Count</th>
-                                <th>CP ROs</th>
-                                <th>Hours</th>
-                                <th style="background:#1a1a1a;color:#cc0000;">Gross/RO</th>
-                                <th style="background:#1a1a1a;color:#cc0000;">ELR</th>
-                                <th style="background:#1a1a1a;color:#cc0000;">HRO</th>
-                                <th style="background:#1a1a1a;color:#cc0000;">Rank</th>
-                                <th>CSI</th>
-                                <th>CSI Region</th>
+                                <th data-sort="name" style="cursor:pointer;user-select:none;">Advisor <span class="sort-arrow"></span></th>
+                                <th data-sort="training" style="cursor:pointer;user-select:none;">Training Status <span class="sort-arrow"></span></th>
+                                <th data-sort="mpvi" style="cursor:pointer;user-select:none;">MPVI % <span class="sort-arrow"></span></th>
+                                <th data-sort="labor" style="cursor:pointer;user-select:none;">Labor ($) <span class="sort-arrow"></span></th>
+                                <th data-sort="parts" style="cursor:pointer;user-select:none;">Parts ($) <span class="sort-arrow"></span></th>
+                                <th data-sort="gross" style="cursor:pointer;user-select:none;">Total Gross ($) <span class="sort-arrow"></span></th>
+                                <th data-sort="ros" style="cursor:pointer;user-select:none;">RO Count <span class="sort-arrow"></span></th>
+                                <th data-sort="cpros" style="cursor:pointer;user-select:none;">CP ROs <span class="sort-arrow"></span></th>
+                                <th data-sort="hours" style="cursor:pointer;user-select:none;">Hours <span class="sort-arrow"></span></th>
+                                <th data-sort="grossro" style="background:#1a1a1a;color:#cc0000;cursor:pointer;user-select:none;">Gross/RO <span class="sort-arrow"></span></th>
+                                <th data-sort="elr" style="background:#1a1a1a;color:#cc0000;cursor:pointer;user-select:none;">ELR <span class="sort-arrow"></span></th>
+                                <th data-sort="hro" style="background:#1a1a1a;color:#cc0000;cursor:pointer;user-select:none;">HRO <span class="sort-arrow"></span></th>
+                                <th data-sort="rank" style="background:#1a1a1a;color:#cc0000;cursor:pointer;user-select:none;">Rank <span class="sort-arrow"></span></th>
+                                <th data-sort="csi" style="cursor:pointer;user-select:none;">CSI <span class="sort-arrow"></span></th>
+                                <th data-sort="csiregion" style="cursor:pointer;user-select:none;">CSI Region <span class="sort-arrow"></span></th>
                             </tr>
                         </thead>
                         <tbody id="rosterBody">
@@ -2009,18 +2010,18 @@
                     <table id="techPerfTable">
                         <thead>
                             <tr>
-                                <th>Name</th>
-                                <th>Type</th>
-                                <th>Specialty</th>
-                                <th>Training</th>
-                                <th>Total ROs</th>
-                                <th>Avg CSI</th>
-                                <th>Total Hrs Turned</th>
-                                <th>Total Clock Hrs</th>
-                                <th style="background:#1a1a1a;color:#cc0000;">Efficiency %</th>
-                                <th style="background:#1a1a1a;color:#cc0000;">Productivity %</th>
-                                <th style="background:#1a1a1a;color:#cc0000;">Proficiency %</th>
-                                <th>Trend</th>
+                                <th data-sort="name" style="cursor:pointer;user-select:none;">Name <span class="sort-arrow"></span></th>
+                                <th data-sort="type" style="cursor:pointer;user-select:none;">Type <span class="sort-arrow"></span></th>
+                                <th data-sort="specialty" style="cursor:pointer;user-select:none;">Specialty <span class="sort-arrow"></span></th>
+                                <th data-sort="training" style="cursor:pointer;user-select:none;">Training <span class="sort-arrow"></span></th>
+                                <th data-sort="ros" style="cursor:pointer;user-select:none;">Total ROs <span class="sort-arrow"></span></th>
+                                <th data-sort="csi" style="cursor:pointer;user-select:none;">Avg CSI <span class="sort-arrow"></span></th>
+                                <th data-sort="hrsturned" style="cursor:pointer;user-select:none;">Total Hrs Turned <span class="sort-arrow"></span></th>
+                                <th data-sort="clockhrs" style="cursor:pointer;user-select:none;">Total Clock Hrs <span class="sort-arrow"></span></th>
+                                <th data-sort="eff" style="background:#1a1a1a;color:#cc0000;cursor:pointer;user-select:none;">Efficiency % <span class="sort-arrow"></span></th>
+                                <th data-sort="prod" style="background:#1a1a1a;color:#cc0000;cursor:pointer;user-select:none;">Productivity % <span class="sort-arrow"></span></th>
+                                <th data-sort="prof" style="background:#1a1a1a;color:#cc0000;cursor:pointer;user-select:none;">Proficiency % <span class="sort-arrow"></span></th>
+                                <th data-sort="trend" style="cursor:pointer;user-select:none;">Trend <span class="sort-arrow"></span></th>
                             </tr>
                         </thead>
                         <tbody id="techPerfBody">
@@ -8122,6 +8123,110 @@
             setupAdvisorSortHandlers();
         }
 
+        // ===== Roster report sortable columns =====
+        // Mirrors the Advisor report's click-to-sort behavior, applied separately to
+        // the Advisor Roster table and the Technician Performance table. The tech
+        // table sorts WITHIN its Technicians / Lube Techs groups so the group
+        // headers and shop-total rows stay anchored.
+        window._rosterAdvSort = { field: null, dir: 'desc' };
+        window._rosterTechSort = { field: null, dir: 'desc' };
+        const ROSTER_TEXT_FIELDS = ['name', 'training', 'type', 'specialty'];
+
+        function updateRosterSortArrows(tableId, st) {
+            document.querySelectorAll('#' + tableId + ' th[data-sort]').forEach(th => {
+                const arrow = th.querySelector('.sort-arrow');
+                if (!arrow) return;
+                arrow.textContent = (th.getAttribute('data-sort') === st.field)
+                    ? (st.dir === 'desc' ? '▼' : '▲')
+                    : '';
+            });
+        }
+
+        function rosterRowCompare(a, b, st) {
+            const isText = ROSTER_TEXT_FIELDS.includes(st.field);
+            let av = a.getAttribute('data-sv-' + st.field);
+            let bv = b.getAttribute('data-sv-' + st.field);
+            if (isText) {
+                av = (av || '').toLowerCase();
+                bv = (bv || '').toLowerCase();
+                if (av < bv) return st.dir === 'asc' ? -1 : 1;
+                if (av > bv) return st.dir === 'asc' ? 1 : -1;
+                return 0;
+            }
+            let an = parseFloat(av), bn = parseFloat(bv);
+            if (!isFinite(an)) an = -Infinity;
+            if (!isFinite(bn)) bn = -Infinity;
+            return st.dir === 'desc' ? bn - an : an - bn;
+        }
+
+        function applyRosterAdvSort() {
+            const st = window._rosterAdvSort;
+            updateRosterSortArrows('rosterTable', st);
+            if (!st.field) return;
+            const body = document.getElementById('rosterBody');
+            if (!body) return;
+            const rows = Array.from(body.querySelectorAll('tr')).filter(r => r.hasAttribute('data-advisor'));
+            if (rows.length < 2) return;
+            rows.sort((a, b) => rosterRowCompare(a, b, st));
+            rows.forEach(r => body.appendChild(r));
+        }
+
+        function applyRosterTechSort() {
+            const st = window._rosterTechSort;
+            updateRosterSortArrows('techPerfTable', st);
+            if (!st.field) return;
+            const body = document.getElementById('techPerfBody');
+            if (!body) return;
+            // Partition the body into groups: each header → its tech rows → its shop total.
+            const segments = [];
+            let cur = null;
+            Array.from(body.children).forEach(tr => {
+                if (tr.classList.contains('tp-group-header')) {
+                    cur = { header: tr, techRows: [], total: null };
+                    segments.push(cur);
+                } else if (tr.classList.contains('tp-shop-total')) {
+                    if (cur) cur.total = tr;
+                } else if (tr.classList.contains('tp-tech-row')) {
+                    if (cur) cur.techRows.push(tr);
+                }
+            });
+            if (!segments.length) return;
+            segments.forEach(seg => {
+                seg.techRows.sort((a, b) => rosterRowCompare(a, b, st));
+                body.appendChild(seg.header);
+                seg.techRows.forEach(r => body.appendChild(r));
+                if (seg.total) body.appendChild(seg.total);
+            });
+        }
+
+        function wireRosterSort(tableId, state, applyFn) {
+            const table = document.getElementById(tableId);
+            if (!table || table.dataset.sortWired === '1') return;
+            table.dataset.sortWired = '1';
+            table.querySelectorAll('th[data-sort]').forEach(th => {
+                th.addEventListener('click', function() {
+                    const field = this.getAttribute('data-sort');
+                    if (state.field === field) {
+                        state.dir = state.dir === 'desc' ? 'asc' : 'desc';
+                    } else {
+                        state.field = field;
+                        state.dir = ROSTER_TEXT_FIELDS.includes(field) ? 'asc' : 'desc';
+                    }
+                    applyFn();
+                });
+            });
+        }
+
+        function setupRosterSortHandlers() {
+            wireRosterSort('rosterTable', window._rosterAdvSort, applyRosterAdvSort);
+            wireRosterSort('techPerfTable', window._rosterTechSort, applyRosterTechSort);
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupRosterSortHandlers);
+        } else {
+            setupRosterSortHandlers();
+        }
+
         async function loadAdvisorDrillDown(startDate, endDate) {
             const advisorId = document.getElementById('advisorSelect').value;
             if (!advisorId) {
@@ -8617,6 +8722,11 @@
                     aggStart = new Date(currentYear, currentMonth - 1, 1);
                     aggEnd = new Date(now);
                     advPeriodLabel = `${now.toLocaleString('default',{month:'long'})} ${currentYear} MTD`;
+                } else if (advPeriod === 'lastmonth') {
+                    // Full prior calendar month (1st through last day)
+                    aggStart = new Date(currentYear, currentMonth - 2, 1);
+                    aggEnd = new Date(currentYear, currentMonth - 1, 0);
+                    advPeriodLabel = `${aggStart.toLocaleString('default',{month:'long'})} ${aggStart.getFullYear()}`;
                 } else if (advPeriod === 'ytd') {
                     aggStart = new Date(currentYear, 0, 1);
                     aggEnd = new Date(now);
@@ -8691,6 +8801,11 @@
                     if (advPeriod === 'mtd') {
                         fbStart = new Date(currentYear, currentMonth - 2, 1);
                         fbEnd = new Date(currentYear, currentMonth - 1, 0); // last day of prior month
+                        fbLabel = `${fbStart.toLocaleString('default',{month:'long'})} ${fbStart.getFullYear()}`;
+                    } else if (advPeriod === 'lastmonth') {
+                        // Compare last month against the month before it
+                        fbStart = new Date(currentYear, currentMonth - 3, 1);
+                        fbEnd = new Date(currentYear, currentMonth - 2, 0);
                         fbLabel = `${fbStart.toLocaleString('default',{month:'long'})} ${fbStart.getFullYear()}`;
                     } else if (advPeriod === 'ytd') {
                         fbStart = new Date(currentYear - 1, 0, 1);
@@ -8791,8 +8906,24 @@
                         grossPerRoTrend = '';
                     }
 
+                    const _svRank = (rank === '—' || rank === undefined) ? 99999 : rank;
                     advHtml += `
-                        <tr data-advisor="${advisor.id}">
+                        <tr data-advisor="${advisor.id}"
+                            data-sv-name="${(advisor.name || '').replace(/"/g, '&quot;')}"
+                            data-sv-training="${entry.training_status || ''}"
+                            data-sv-mpvi="${mpviAvg || 0}"
+                            data-sv-labor="${labor || 0}"
+                            data-sv-parts="${parts || 0}"
+                            data-sv-gross="${gross || 0}"
+                            data-sv-ros="${roCount || 0}"
+                            data-sv-cpros="${cpRos || 0}"
+                            data-sv-hours="${hours || 0}"
+                            data-sv-grossro="${grossPerRo || 0}"
+                            data-sv-elr="${elr || 0}"
+                            data-sv-hro="${hro || 0}"
+                            data-sv-rank="${_svRank}"
+                            data-sv-csi="${csiAvg || 0}"
+                            data-sv-csiregion="${avgRegionNps != null ? avgRegionNps : 0}">
                             <td style="font-weight:600">${advisor.name}${allMode ? ' <span style="color:#888;font-weight:400;font-size:12px">(' + (stores.find(s=>s.id===advisor.store_id)?.name||'') + ')</span>' : ''}${autoTag}</td>
                             <td><select class="roster-training" data-advisor="${advisor.id}">
                                 <option value="">-</option>
@@ -8817,6 +8948,8 @@
                     `;
                 });
                 document.getElementById('rosterBody').innerHTML = advHtml;
+                // Re-apply any active column sort the user picked
+                if (typeof applyRosterAdvSort === 'function') applyRosterAdvSort();
 
                 // ----- Tech/Lube roll-up for Capacity Analysis -----
                 // Tech entry lives on the Daily Entry tab (one row per tech per day). To feed
@@ -8908,6 +9041,10 @@
                 rangeStart = new Date(currentYear, currentMonth - 1, 1);
                 rangeEnd = now;
                 periodLabel = `${now.toLocaleString('default',{month:'long'})} ${currentYear} MTD`;
+            } else if (period === 'lastmonth') {
+                rangeStart = new Date(currentYear, currentMonth - 2, 1);
+                rangeEnd = new Date(currentYear, currentMonth - 1, 0);
+                periodLabel = `${rangeStart.toLocaleString('default',{month:'long'})} ${rangeStart.getFullYear()}`;
             } else if (period === 'ytd') {
                 rangeStart = new Date(currentYear, 0, 1);
                 rangeEnd = now;
@@ -9008,6 +9145,10 @@
                     fbStart = new Date(currentYear, currentMonth - 2, 1);
                     fbEnd = new Date(currentYear, currentMonth - 1, 0);
                     fbLabel = `${fbStart.toLocaleString('default',{month:'long'})} ${fbStart.getFullYear()}`;
+                } else if (period === 'lastmonth') {
+                    fbStart = new Date(currentYear, currentMonth - 3, 1);
+                    fbEnd = new Date(currentYear, currentMonth - 2, 0);
+                    fbLabel = `${fbStart.toLocaleString('default',{month:'long'})} ${fbStart.getFullYear()}`;
                 } else if (period === 'ytd') {
                     fbStart = new Date(currentYear - 1, 0, 1);
                     fbEnd = new Date(currentYear - 1, 11, 31);
@@ -9102,7 +9243,7 @@
                     : `${techsWithData}/${staff.length} w/ hours`;
                 // Group header row — shows headcount and available capacity so the math is inspectable
                 let block = `
-                    <tr style="background:#1a1a1a;color:#fff;">
+                    <tr class="tp-group-header" style="background:#1a1a1a;color:#fff;">
                         <td colspan="12" style="font-weight:700;letter-spacing:0.5px;padding:10px 12px;">
                             ${groupLabel}
                             <span style="font-weight:400;font-size:12px;color:#aaa;margin-left:10px;letter-spacing:0;">
@@ -9124,10 +9265,24 @@
                         attendanceBadge = ` <span style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;cursor:help;" title="Overtime: clocked ${attendancePct.toFixed(0)}% of scheduled (${(p.clockHrs || 0).toFixed(0)}h of ${attendanceDenom}h)">OT ${attendancePct.toFixed(0)}%</span>`;
                     }
 
+                    const _tpType = s.staffType === 'tech' ? 'Technician' : 'Lube Tech';
+                    const _tpTrendVal = trend === '▲' ? 1 : trend === '→' ? 0 : trend === '▼' ? -1 : -2;
                     block += `
-                        <tr>
+                        <tr class="tp-tech-row"
+                            data-sv-name="${(s.name || '').replace(/"/g, '&quot;')}"
+                            data-sv-type="${_tpType}"
+                            data-sv-specialty="${(s.specialty || '').replace(/"/g, '&quot;')}"
+                            data-sv-training="${(p.training || '').replace(/"/g, '&quot;')}"
+                            data-sv-ros="${p.ros || 0}"
+                            data-sv-csi="${avgCsi || 0}"
+                            data-sv-hrsturned="${p.hrsTurned || 0}"
+                            data-sv-clockhrs="${p.clockHrs || 0}"
+                            data-sv-eff="${eff || 0}"
+                            data-sv-prod="${prod || 0}"
+                            data-sv-prof="${prof || 0}"
+                            data-sv-trend="${_tpTrendVal}">
                             <td style="font-weight:600">${s.name}${allMode ? ' <span style="color:#888;font-weight:400;font-size:12px">(' + (stores.find(st=>st.id===s.store_id)?.name||'') + ')</span>' : ''}${attendanceBadge}</td>
-                            <td>${s.staffType === 'tech' ? 'Technician' : 'Lube Tech'}</td>
+                            <td>${_tpType}</td>
                             <td>${s.specialty || '—'}</td>
                             <td>${p.training || '—'}</td>
                             <td>${p.ros || 0}</td>
@@ -9152,7 +9307,7 @@
                 const shopProf = groupShopAvail > 0 ? (clockHrsSum / groupShopAvail * 100) : 0;
                 const avgCsiGroup = csiCount > 0 ? csiSum / csiCount : 0;
                 block += `
-                    <tr style="background:#f3f4f6;font-weight:700;border-top:2px solid #1a1a1a;">
+                    <tr class="tp-shop-total" style="background:#f3f4f6;font-weight:700;border-top:2px solid #1a1a1a;">
                         <td colspan="4" style="text-align:right;text-transform:uppercase;letter-spacing:0.5px;">
                             ${groupLabel} Shop Total
                             <span style="font-weight:400;text-transform:none;color:#666;font-size:11px;letter-spacing:0;"> (${groupHeadcountLabel} · ${groupShopAvail}h avail through as-of)</span>
@@ -9175,6 +9330,8 @@
             html += renderGroup(lubeList, 'Lube Techs');
 
             document.getElementById('techPerfBody').innerHTML = html || '<tr><td colspan="12" class="empty-state">No data for this period. Enter tech weekly data above — it compiles automatically into monthly and YTD views.</td></tr>';
+            // Re-apply any active column sort the user picked
+            if (typeof applyRosterTechSort === 'function') applyRosterTechSort();
         }
 
         // Goal attainment + month-end forecast card
