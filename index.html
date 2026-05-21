@@ -4724,8 +4724,6 @@
                 el.style.backgroundColor = '';
             });
             document.getElementById('saveDailyBtn').style.display = '';
-            const waBtnShow = document.getElementById('whatsappDailyBtn');
-            if (waBtnShow) waBtnShow.style.display = '';
 
             try {
                 const ds = dateToString(date);
@@ -4970,10 +4968,10 @@
 
                 document.getElementById('dailyAdvisorBody').innerHTML = html;
 
-                // Hide save button for All Stores
+                // Hide save button for All Stores (the WhatsApp recap button stays
+                // visible — clicking it without a single store selected just shows a
+                // toast telling the user to pick a store).
                 document.getElementById('saveDailyBtn').style.display = 'none';
-                const waBtnHide = document.getElementById('whatsappDailyBtn');
-                if (waBtnHide) waBtnHide.style.display = 'none';
 
                 // Update MTD calculations
                 updateDailyCalculationsAllStores(date);
