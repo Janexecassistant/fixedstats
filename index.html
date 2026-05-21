@@ -1078,6 +1078,10 @@
                             <td style="font-weight: 600;">Parts Pace</td>
                             <td class="input-gray" id="partsPace">$0</td>
                         </tr>
+                        <tr style="background-color: #f3f4f6;">
+                            <td style="font-weight: 600;">Total Pace</td>
+                            <td class="input-gray" id="totalPace">$0</td>
+                        </tr>
                     </tbody>
                 </table>
                 <table style="flex:1;">
@@ -4982,6 +4986,7 @@
                 const partsPace = (mtdParts / dayNum) * daysInMonth;
                 document.getElementById('laborPace').textContent = formatCurrency(laborPace);
                 document.getElementById('partsPace').textContent = formatCurrency(partsPace);
+                document.getElementById('totalPace').textContent = formatCurrency(laborPace + partsPace);
             }
 
             // Tracking RO Count + Tracking Hours
@@ -5094,6 +5099,7 @@
                 const partsPace = (partsMtd / dayNum) * daysInMonth;
                 document.getElementById('laborPace').textContent = formatCurrency(laborPace);
                 document.getElementById('partsPace').textContent = formatCurrency(partsPace);
+                document.getElementById('totalPace').textContent = formatCurrency(laborPace + partsPace);
             }
 
             // Tracking RO Count — sum total_ros MTD, then project to month
