@@ -1151,9 +1151,17 @@
                 </div>
             </div>
 
-            <!-- Technician Daily Entry -->
+            <!-- Monthly tech-entry note — shown on every day except the last working day -->
+            <div class="card" id="techMonthlyNote" style="display:none;">
+                <h3 class="card-title">Technician &amp; Lube Tech Performance</h3>
+                <p class="tech-monthly-note-text" style="font-size:14px;color:#555;margin:0;">
+                    Technician and Lube Tech numbers are entered once a month.
+                </p>
+            </div>
+
+            <!-- Technician Monthly Entry (shown only on the last working day of the month) -->
             <div class="card" id="dailyTechCard">
-                <h3 class="card-title">Technician Performance</h3>
+                <h3 class="card-title">Technician Performance — Month Total</h3>
                 <div style="overflow-x: auto;">
                     <table id="dailyTechTable">
                         <thead>
@@ -1173,9 +1181,9 @@
                 </div>
             </div>
 
-            <!-- Lube Tech Daily Entry -->
+            <!-- Lube Tech Monthly Entry (shown only on the last working day of the month) -->
             <div class="card" id="dailyLubeCard">
-                <h3 class="card-title">Lube Tech Performance</h3>
+                <h3 class="card-title">Lube Tech Performance — Month Total</h3>
                 <div style="overflow-x: auto;">
                     <table id="dailyLubeTable">
                         <thead>
@@ -4783,14 +4791,53 @@
                 });
                 document.getElementById('dailyAdvisorBody').innerHTML = html;
 
-                // Load tech/lube daily entries for this date (stored in dyer_tech_weekly
-                // keyed on week_start which we now treat as entry_date, one row per day).
-                const allTechDaily = Object.values(await LS.getTechWeeklyEntries());
-                const techDailyEntries = allTechDaily.filter(d =>
-                    d.store_id === storeId && d.week_start === ds
-                );
-                buildDailyTechRows('dailyTechBody', storeId, ds, 'tech', techDailyEntries);
-                buildDailyTechRows('dailyLubeBody', storeId, ds, 'lube', techDailyEntries);
+                // Technician / Lube Tech entry is monthly — the tables only appear on
+                // the last working day of the month and capture the whole month's
+                // totals (prefilled from any existing monthly row, otherwise from the
+                // month's daily rows). On other days they're replaced by a short note.
+                techWeeklyData = await LS.getTechWeeklyEntries() || {};
+                const _techCard = document.getElementById('dailyTechCard');
+                const _lubeCard = document.getElementById('dailyLubeCard');
+                const _techNote = document.getElementById('techMonthlyNote');
+                if (isLastWorkingDayOfMonth(date)) {
+                    const _mFirst = dateToString(new Date(date.getFullYear(), date.getMonth(), 1));
+                    const _mLast = dateToString(new Date(date.getFullYear(), date.getMonth() + 1, 0));
+                    const _monthAgg = aggregateTechData(techWeeklyData, false, storeId, _mFirst, _mLast);
+                    const _prefill = Object.keys(_monthAgg).map(k => {
+                        const us = k.indexOf('_');
+                        const a = _monthAgg[k];
+                        return {
+                            tech_type: k.substring(0, us),
+                            tech_id: k.substring(us + 1),
+                            ros_worked: a.ros || '',
+                            csi_score: a.csiCount > 0 ? Math.round(a.csiSum / a.csiCount * 10) / 10 : '',
+                            hours_turned: a.hrsTurned || '',
+                            clock_hours: a.clockHrs || ''
+                        };
+                    });
+                    buildDailyTechRows('dailyTechBody', storeId, ds, 'tech', _prefill);
+                    buildDailyTechRows('dailyLubeBody', storeId, ds, 'lube', _prefill);
+                    if (_techCard) _techCard.style.display = '';
+                    if (_lubeCard) _lubeCard.style.display = '';
+                    if (_techNote) _techNote.style.display = 'none';
+                } else {
+                    if (_techCard) _techCard.style.display = 'none';
+                    if (_lubeCard) _lubeCard.style.display = 'none';
+                    const _tb = document.getElementById('dailyTechBody');
+                    const _lb = document.getElementById('dailyLubeBody');
+                    if (_tb) _tb.innerHTML = '';
+                    if (_lb) _lb.innerHTML = '';
+                    if (_techNote) {
+                        _techNote.style.display = '';
+                        const _lwd = lastWorkingDayOfMonth(date);
+                        const _noteEl = _techNote.querySelector('.tech-monthly-note-text');
+                        if (_noteEl) _noteEl.textContent =
+                            'Technician and Lube Tech numbers are entered once a month, as a single '
+                            + 'month-end total. Set the date to ' + dateToString(_lwd) + ' — the last working '
+                            + 'day of ' + date.toLocaleString('default', { month: 'long', year: 'numeric' })
+                            + ' — to enter this month’s totals.';
+                    }
+                }
 
                 // Add event listeners for calculations — scoped to the daily tab only,
                 // since parts inputs (also class .input-yellow) live on the partsDaily tab.
@@ -4813,7 +4860,7 @@
                 .filter(t => t.store_id === storeId && t.is_active !== false);
             let html = '';
             staffList.forEach(t => {
-                const entry = existingEntries.find(e => e.tech_type === techType && e.tech_id === t.id);
+                const entry = existingEntries.find(e => e.tech_type === techType && String(e.tech_id) === String(t.id));
                 const ros = entry?.ros_worked ?? '';
                 const csi = entry?.csi_score ?? '';
                 const hrs = entry?.hours_turned ?? '';
@@ -4972,6 +5019,16 @@
                 // visible — clicking it without a single store selected just shows a
                 // toast telling the user to pick a store).
                 document.getElementById('saveDailyBtn').style.display = 'none';
+                // Technician / Lube Tech entry is per-store and monthly — hide it
+                // entirely in the All Stores view.
+                ['dailyTechCard', 'dailyLubeCard', 'techMonthlyNote'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'none';
+                });
+                ['dailyTechBody', 'dailyLubeBody'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerHTML = '';
+                });
 
                 // Update MTD calculations
                 updateDailyCalculationsAllStores(date);
@@ -6325,6 +6382,73 @@
             }
         }
 
+        // Returns the last *working* day of dateObj's month as a Date. Dealerships are
+        // closed Sunday, so when the month's last calendar day is a Sunday the last
+        // working day is the Saturday immediately before it.
+        function lastWorkingDayOfMonth(dateObj) {
+            const d = new Date(dateObj.getFullYear(), dateObj.getMonth() + 1, 0);
+            if (d.getDay() === 0) d.setDate(d.getDate() - 1);
+            return d;
+        }
+        function isLastWorkingDayOfMonth(dateObj) {
+            const lwd = lastWorkingDayOfMonth(dateObj);
+            return dateObj.getDate() === lwd.getDate()
+                && dateObj.getMonth() === lwd.getMonth()
+                && dateObj.getFullYear() === lwd.getFullYear();
+        }
+
+        // Technician / Lube Tech numbers are entered once per month as a "monthly row"
+        // (week_start = 1st of month, period_end = last calendar day). Legacy per-day
+        // rows have week_start === period_end. aggregateTechData() returns per-tech
+        // totals for a date range: for each month a monthly row wins; months without
+        // one fall back to summing that month's daily rows — so pre-switch history
+        // stays visible until a monthly total replaces it. Result keyed
+        // `${tech_type}_${tech_id}` → {ros, hrsTurned, clockHrs, csiSum, csiCount, training, as_of}.
+        function aggregateTechData(techData, allMode, storeId, rangeStartStr, rangeEndStr) {
+            const result = {};
+            const monthlyCovered = {};
+            const startMonth = (rangeStartStr || '').substring(0, 7);
+            const endMonth = (rangeEndStr || '').substring(0, 7);
+            const ensure = key => {
+                if (!result[key]) result[key] = {
+                    ros: 0, hrsTurned: 0, clockHrs: 0, csiSum: 0, csiCount: 0, training: '', as_of: ''
+                };
+                return result[key];
+            };
+            const addRow = (r, d, asOf) => {
+                r.ros += d.ros_worked || 0;
+                r.hrsTurned += d.hours_turned || 0;
+                r.clockHrs += d.clock_hours || 0;
+                if (d.csi_score) { r.csiSum += d.csi_score; r.csiCount++; }
+                if (d.training) r.training = d.training;
+                if (asOf > r.as_of) r.as_of = asOf;
+            };
+            const rows = Object.values(techData || {});
+            // Pass 1 — monthly rows whose month falls within the requested range.
+            rows.forEach(d => {
+                if (!allMode && d.store_id !== storeId) return;
+                if (!d.week_start || !d.period_end) return;
+                if (d.week_start === d.period_end) return;        // legacy daily row
+                const mKey = d.week_start.substring(0, 7);
+                if (mKey < startMonth || mKey > endMonth) return;
+                const key = `${d.tech_type}_${d.tech_id}`;
+                addRow(ensure(key), d, d.period_end);
+                monthlyCovered[`${key}_${mKey}`] = true;
+            });
+            // Pass 2 — legacy daily rows, skipped for any tech-month already covered by
+            // a monthly row (prevents double counting once a month has been finalized).
+            rows.forEach(d => {
+                if (!allMode && d.store_id !== storeId) return;
+                if (!d.week_start || !d.period_end) return;
+                if (d.week_start !== d.period_end) return;        // monthly row
+                if (d.week_start < rangeStartStr || d.week_start > rangeEndStr) return;
+                const key = `${d.tech_type}_${d.tech_id}`;
+                if (monthlyCovered[`${key}_${d.week_start.substring(0, 7)}`]) return;
+                addRow(ensure(key), d, d.week_start);
+            });
+            return result;
+        }
+
         // Build a daily-recap message and hand it off to WhatsApp. No phone number is
         // attached, so wa.me opens WhatsApp with the text pre-filled and lets the user
         // pick any chat — including a group — then press Send themselves.
@@ -6350,16 +6474,31 @@
             const alignments = numVal('dailyAlignments');
             const laborGross = numVal('laborDay');
             const partsGross = numVal('partsDay');
-            const totalPaceEl = document.getElementById('totalPace');
-            const totalPaceText = totalPaceEl ? (totalPaceEl.textContent || '$0') : '$0';
+            // Reads the displayed text of a calculated field (e.g. "$8,450").
+            const txt = id => {
+                const el = document.getElementById(id);
+                return el ? (el.textContent || '$0') : '$0';
+            };
 
-            const msg =
-                storeName + ' — Daily Recap, ' + dateStr + '\n' +
+            // On the last working day of the month the recap also carries the actual
+            // month-to-date totals. (Save the day's entry first so the totals include it.)
+            const isMonthEnd = isLastWorkingDayOfMonth(dateObj);
+
+            let msg =
+                storeName + ' — ' + (isMonthEnd ? 'Month-End Recap' : 'Daily Recap') + ', ' + dateStr + '\n' +
                 'Repair Orders Closed: ' + rosClosed + '\n' +
                 'Alignments Sold: ' + alignments + '\n' +
                 'Labor Gross: ' + formatCurrency(laborGross) + '\n' +
                 'Parts Gross: ' + formatCurrency(partsGross) + '\n' +
-                'Total Pace (Month): ' + totalPaceText;
+                'Total Pace (Month): ' + txt('totalPace');
+
+            if (isMonthEnd) {
+                msg +=
+                    '\n\nMonth Totals' +
+                    '\nTotal Labor Gross: ' + txt('laborMtd') +
+                    '\nTotal Parts Gross: ' + txt('partsMtd') +
+                    '\nTotal Gross: ' + txt('totalGrossMtd');
+            }
 
             window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
             showToast('Opening WhatsApp — pick your group chat and press Send', 'success');
@@ -6457,44 +6596,48 @@
                     }
                 }
 
-                // Save tech and lube tech daily entries — one record per tech per day,
-                // storing today's ROs / Hrs Turned / Clock Hrs (NOT cumulative MTD).
-                // These feed the Roster tab's Technician Performance rollups by summing
-                // the daily entries over the chosen period.
-                const techRows = document.querySelectorAll('#dailyTechBody tr, #dailyLubeBody tr');
-                for (const row of techRows) {
-                    const techId = row.dataset.techId;
-                    const techType = row.dataset.techType;
-                    if (!techId || !techType) continue;
-                    const rosRaw = row.querySelector('.daily-tech-ros')?.value ?? '';
-                    const csiRaw = row.querySelector('.daily-tech-csi')?.value ?? '';
-                    const hrsRaw = row.querySelector('.daily-tech-hrs-turned')?.value ?? '';
-                    const clkRaw = row.querySelector('.daily-tech-clock-hrs')?.value ?? '';
-                    // Skip rows where every value is empty — no point saving a zero row
-                    if (rosRaw === '' && csiRaw === '' && hrsRaw === '' && clkRaw === '') continue;
-                    const rosWorked = rosRaw === '' ? 0 : (parseFloat(rosRaw) || 0);
-                    const csiScore = csiRaw === '' ? null : (parseFloat(csiRaw) || 0);
-                    const hoursTurned = hrsRaw === '' ? 0 : (parseFloat(hrsRaw) || 0);
-                    const clockHours = clkRaw === '' ? 0 : (parseFloat(clkRaw) || 0);
-                    const d = new Date(ds + 'T12:00:00');
-                    try {
-                        await LS.saveTechWeeklyEntry({
-                            store_id: storeId,
-                            tech_id: parseInt(techId),
-                            tech_type: techType,
-                            week_start: ds,                 // now functions as entry_date (one row per day)
-                            period_end: ds,                 // required NOT NULL in DB; same as week_start for 1-day rows
-                            month: d.getMonth() + 1,
-                            year: d.getFullYear(),
-                            training: null,
-                            ros_worked: rosWorked,
-                            csi_score: csiScore,
-                            hours_turned: hoursTurned,
-                            clock_hours: clockHours
-                        });
-                    } catch(e) {
-                        const techName = row.querySelector('td')?.textContent || `${techType} ${techId}`;
-                        failedSaves.push(techName);
+                // Technician / Lube Tech entry is monthly — saved as ONE row per tech
+                // per month (week_start = 1st, period_end = last calendar day). The
+                // tables are only shown on the last working day, so this captures the
+                // whole month's totals, not a single day's.
+                if (isLastWorkingDayOfMonth(date)) {
+                    const _entryD = new Date(ds + 'T12:00:00');
+                    const _mFirst = dateToString(new Date(_entryD.getFullYear(), _entryD.getMonth(), 1));
+                    const _mLast = dateToString(new Date(_entryD.getFullYear(), _entryD.getMonth() + 1, 0));
+                    const techRows = document.querySelectorAll('#dailyTechBody tr, #dailyLubeBody tr');
+                    for (const row of techRows) {
+                        const techId = row.dataset.techId;
+                        const techType = row.dataset.techType;
+                        if (!techId || !techType) continue;
+                        const rosRaw = row.querySelector('.daily-tech-ros')?.value ?? '';
+                        const csiRaw = row.querySelector('.daily-tech-csi')?.value ?? '';
+                        const hrsRaw = row.querySelector('.daily-tech-hrs-turned')?.value ?? '';
+                        const clkRaw = row.querySelector('.daily-tech-clock-hrs')?.value ?? '';
+                        // Skip rows where every value is empty — no point saving a zero row
+                        if (rosRaw === '' && csiRaw === '' && hrsRaw === '' && clkRaw === '') continue;
+                        const rosWorked = rosRaw === '' ? 0 : (parseFloat(rosRaw) || 0);
+                        const csiScore = csiRaw === '' ? null : (parseFloat(csiRaw) || 0);
+                        const hoursTurned = hrsRaw === '' ? 0 : (parseFloat(hrsRaw) || 0);
+                        const clockHours = clkRaw === '' ? 0 : (parseFloat(clkRaw) || 0);
+                        try {
+                            await LS.saveTechWeeklyEntry({
+                                store_id: storeId,
+                                tech_id: parseInt(techId),
+                                tech_type: techType,
+                                week_start: _mFirst,        // monthly row: 1st of month
+                                period_end: _mLast,         // monthly row: last calendar day
+                                month: _entryD.getMonth() + 1,
+                                year: _entryD.getFullYear(),
+                                training: null,
+                                ros_worked: rosWorked,
+                                csi_score: csiScore,
+                                hours_turned: hoursTurned,
+                                clock_hours: clockHours
+                            });
+                        } catch(e) {
+                            const techName = row.querySelector('td')?.textContent || `${techType} ${techId}`;
+                            failedSaves.push(techName);
+                        }
                     }
                 }
 
@@ -9030,31 +9173,24 @@
                 if (typeof applyRosterAdvSort === 'function') applyRosterAdvSort();
 
                 // ----- Tech/Lube roll-up for Capacity Analysis -----
-                // Tech entry lives on the Daily Entry tab (one row per tech per day). To feed
-                // the capacity card with the current period's totals, we sum daily entries in
-                // the selected range. Numerator = Σ turned/clock hours. Denominator for shop
+                // Tech numbers are entered once a month (last working day). aggregateTechData
+                // returns the period totals — monthly row per month, with a fallback to legacy
+                // per-day rows. Numerator = Σ turned/clock hours. Denominator for shop
                 // utilization = active headcount × range-avail-per-tech (calculated inside
                 // loadCapacityAnalysis).
                 const periodAvailPerTech = getAvailableHoursInRange(aggStart, aggEnd).hours;
                 const periodLabelTech = advPeriodLabel;
                 const rollupRange = (techType, staffList) => {
                     const totals = { ros: 0, hrsTurned: 0, clockHrs: 0, activeTechCount: 0 };
+                    // Monthly-row-wins / daily-fallback, same as the Technician table.
+                    const agg = aggregateTechData(techWeeklyData, allMode, storeId, aggStartKey, aggEndKey);
                     staffList.forEach(tech => {
-                        let ros = 0, hrsTurned = 0, clockHrs = 0;
-                        Object.values(techWeeklyData).forEach(e => {
-                            if (e.tech_type !== techType) return;
-                            if (e.tech_id !== tech.id) return;
-                            if (!allMode && e.store_id !== storeId) return;
-                            if (!e.week_start) return;
-                            if (e.week_start < aggStartKey || e.week_start > aggEndKey) return;
-                            ros += (e.ros_worked || 0);
-                            hrsTurned += (e.hours_turned || 0);
-                            clockHrs += (e.clock_hours || 0);
-                        });
-                        totals.ros += ros;
-                        totals.hrsTurned += hrsTurned;
-                        totals.clockHrs += clockHrs;
-                        if (hrsTurned > 0 || clockHrs > 0) totals.activeTechCount++;
+                        const a = agg[`${techType}_${tech.id}`];
+                        if (!a) return;
+                        totals.ros += a.ros;
+                        totals.hrsTurned += a.hrsTurned;
+                        totals.clockHrs += a.clockHrs;
+                        if (a.hrsTurned > 0 || a.clockHrs > 0) totals.activeTechCount++;
                     });
                     return totals;
                 };
@@ -9142,10 +9278,10 @@
             const rangeInfo = getAvailableHoursInRange(rangeStart, rangeEnd);
             const periodAvailPerTech = rangeInfo.hours;
 
-            // Daily-entry model: each entry is ONE day's work for ONE tech. For any period
-            // we SUM the daily entries in range (and average CSI across the days it was scored).
-            // (Previously this was cumulative-MTD snapshots — latest wins. Now Tech entry lives
-            // on the Daily Entry tab and is per-day, mirroring advisor entries.)
+            // Monthly tech-entry model: each tech's numbers are entered once a month
+            // (on the last working day) as a single monthly row. aggregateTechData()
+            // returns the period totals — a monthly row wins for its month, with a
+            // fallback to summing legacy per-day rows for months without one.
             const allMode = isAllStores();
             const perfMap = {};
             // Use ISO-string comparison to avoid timezone shifts —
@@ -9153,36 +9289,24 @@
             // previous day at 20:00 local, so April-1 entries fell out of April MTD.
             const rangeStartStr = dateToString(rangeStart);
             const rangeEndStr = dateToString(rangeEnd);
-            Object.values(techWeeklyData).forEach(d => {
-                if (!allMode && d.store_id !== storeId) return;
-                if (!d.week_start) return;
-                if (d.week_start < rangeStartStr || d.week_start > rangeEndStr) return;
-
-                const key = `${d.tech_type}_${d.tech_id}`;
-                if (!perfMap[key]) {
-                    perfMap[key] = {
-                        ros: 0,
-                        csiSum: 0,
-                        csiCount: 0,
-                        hrsTurned: 0,
-                        clockHrs: 0,
-                        weeks: 0, // kept for field-compat with older render code
-                        type: d.tech_type,
-                        id: d.tech_id,
-                        training: d.training || '',
-                        as_of: d.week_start
-                    };
-                }
-                const p = perfMap[key];
-                p.ros += (d.ros_worked || 0);
-                p.hrsTurned += (d.hours_turned || 0);
-                p.clockHrs += (d.clock_hours || 0);
-                if (d.csi_score) { p.csiSum += d.csi_score; p.csiCount++; }
-                p.weeks++;
-                // Track the latest entry date in the range so the denominator helpers can
-                // still use it if needed — but for summing, denominator = range avail, not per-snapshot.
-                if (d.week_start > p.as_of) p.as_of = d.week_start;
-                if (d.training) p.training = d.training;
+            // Monthly tech-entry model: for each month a monthly row wins, otherwise
+            // that month's daily rows are summed (see aggregateTechData).
+            const techAgg = aggregateTechData(techWeeklyData, allMode, storeId, rangeStartStr, rangeEndStr);
+            Object.keys(techAgg).forEach(key => {
+                const a = techAgg[key];
+                const us = key.indexOf('_');
+                perfMap[key] = {
+                    ros: a.ros,
+                    csiSum: a.csiSum,
+                    csiCount: a.csiCount,
+                    hrsTurned: a.hrsTurned,
+                    clockHrs: a.clockHrs,
+                    weeks: 0, // kept for field-compat with older render code
+                    type: key.substring(0, us),
+                    id: key.substring(us + 1),
+                    training: a.training || '',
+                    as_of: a.as_of
+                };
             });
 
             // Real trend: compare each tech's productivity to the immediately-preceding equal-length period.
@@ -9198,17 +9322,11 @@
             let priorLabel = 'prior equal-length period';
 
             const scanPrior = (startStr, endStr) => {
+                // Same monthly-row-wins / daily-fallback rule as the current period.
+                const agg = aggregateTechData(techWeeklyData, allMode, storeId, startStr, endStr);
                 const map = {};
-                Object.values(techWeeklyData).forEach(d => {
-                    if (!allMode && d.store_id !== storeId) return;
-                    if (!d.week_start) return;
-                    if (d.week_start < startStr || d.week_start > endStr) return;
-                    const key = `${d.tech_type}_${d.tech_id}`;
-                    // Daily entries — SUM across the prior range so trend delta compares like-for-like totals.
-                    if (!map[key]) map[key] = { hrsTurned: 0, clockHrs: 0, as_of: d.week_start };
-                    map[key].hrsTurned += (d.hours_turned || 0);
-                    map[key].clockHrs += (d.clock_hours || 0);
-                    if (d.week_start > map[key].as_of) map[key].as_of = d.week_start;
+                Object.keys(agg).forEach(key => {
+                    map[key] = { hrsTurned: agg[key].hrsTurned, clockHrs: agg[key].clockHrs, as_of: agg[key].as_of };
                 });
                 return map;
             };
