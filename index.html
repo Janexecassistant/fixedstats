@@ -15,10 +15,13 @@
 
         body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background-color: #c8c8c8;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='120' viewBox='0 0 340 120'%3E%3Cg opacity='0.22'%3E%3C!-- Track 1: herringbone/V tread --%3E%3Crect x='18' y='0' width='3' height='120' fill='%23666'/%3E%3Crect x='79' y='0' width='3' height='120' fill='%23666'/%3E%3Crect x='20' y='0' width='60' height='120' fill='%23aaa' opacity='0.12'/%3E%3Cpath d='M21,2 L50,8 M50,8 L79,2' stroke='%23555' stroke-width='3.5' fill='none'/%3E%3Cpath d='M21,14 L50,20 M50,20 L79,14' stroke='%23555' stroke-width='3.5' fill='none'/%3E%3Cpath d='M21,26 L50,32 M50,32 L79,26' stroke='%23555' stroke-width='3.5' fill='none'/%3E%3Cpath d='M21,38 L50,44 M50,44 L79,38' stroke='%23555' stroke-width='3.5' fill='none'/%3E%3Cpath d='M21,50 L50,56 M50,56 L79,50' stroke='%23555' stroke-width='3.5' fill='none'/%3E%3Cpath d='M21,62 L50,68 M50,68 L79,62' stroke='%23555' stroke-width='3.5' fill='none'/%3E%3Cpath d='M21,74 L50,80 M50,80 L79,74' stroke='%23555' stroke-width='3.5' fill='none'/%3E%3Cpath d='M21,86 L50,92 M50,92 L79,86' stroke='%23555' stroke-width='3.5' fill='none'/%3E%3Cpath d='M21,98 L50,104 M50,104 L79,98' stroke='%23555' stroke-width='3.5' fill='none'/%3E%3Cpath d='M21,110 L50,116 M50,116 L79,110' stroke='%23555' stroke-width='3.5' fill='none'/%3E%3C!-- Track 2: herringbone tread (offset) --%3E%3Crect x='128' y='0' width='3' height='120' fill='%23666'/%3E%3Crect x='192' y='0' width='3' height='120' fill='%23666'/%3E%3Crect x='130' y='0' width='63' height='120' fill='%23aaa' opacity='0.1'/%3E%3Cpath d='M131,5 L161,11 M161,11 L192,5' stroke='%23555' stroke-width='3' fill='none'/%3E%3Cpath d='M131,17 L161,23 M161,23 L192,17' stroke='%23555' stroke-width='3' fill='none'/%3E%3Cpath d='M131,29 L161,35 M161,35 L192,29' stroke='%23555' stroke-width='3' fill='none'/%3E%3Cpath d='M131,41 L161,47 M161,47 L192,41' stroke='%23555' stroke-width='3' fill='none'/%3E%3Cpath d='M131,53 L161,59 M161,59 L192,53' stroke='%23555' stroke-width='3' fill='none'/%3E%3Cpath d='M131,65 L161,71 M161,71 L192,65' stroke='%23555' stroke-width='3' fill='none'/%3E%3Cpath d='M131,77 L161,83 M161,83 L192,77' stroke='%23555' stroke-width='3' fill='none'/%3E%3Cpath d='M131,89 L161,95 M161,95 L192,89' stroke='%23555' stroke-width='3' fill='none'/%3E%3Cpath d='M131,101 L161,107 M161,107 L192,101' stroke='%23555' stroke-width='3' fill='none'/%3E%3Cpath d='M131,113 L161,119 M161,119 L192,113' stroke='%23555' stroke-width='3' fill='none'/%3E%3C!-- Track 3: wider herringbone --%3E%3Crect x='248' y='0' width='3' height='120' fill='%23666'/%3E%3Crect x='318' y='0' width='3' height='120' fill='%23666'/%3E%3Crect x='250' y='0' width='69' height='120' fill='%23aaa' opacity='0.08'/%3E%3Cpath d='M251,3 L284,10 M284,10 L318,3' stroke='%23555' stroke-width='4' fill='none'/%3E%3Cpath d='M251,16 L284,23 M284,23 L318,16' stroke='%23555' stroke-width='4' fill='none'/%3E%3Cpath d='M251,29 L284,36 M284,36 L318,29' stroke='%23555' stroke-width='4' fill='none'/%3E%3Cpath d='M251,42 L284,49 M284,49 L318,42' stroke='%23555' stroke-width='4' fill='none'/%3E%3Cpath d='M251,55 L284,62 M284,62 L318,55' stroke='%23555' stroke-width='4' fill='none'/%3E%3Cpath d='M251,68 L284,75 M284,75 L318,68' stroke='%23555' stroke-width='4' fill='none'/%3E%3Cpath d='M251,81 L284,88 M284,88 L318,81' stroke='%23555' stroke-width='4' fill='none'/%3E%3Cpath d='M251,94 L284,101 M284,101 L318,94' stroke='%23555' stroke-width='4' fill='none'/%3E%3Cpath d='M251,107 L284,114 M284,114 L318,107' stroke='%23555' stroke-width='4' fill='none'/%3E%3C/g%3E%3C/svg%3E");
-            background-size: 340px 120px;
+            /* Tire background image (fixed) with a light overlay so dashboard cards stay readable */
+            background:
+                linear-gradient(rgba(234,234,234,0.92), rgba(234,234,234,0.92)),
+                url('/assets/tire-background.png') center center / cover no-repeat fixed;
+            background-color: #eaeaea; /* fallback while image loads */
             color: #1a1a1a;
+            min-height: 100vh;
         }
 
         /* Navigation */
@@ -966,8 +969,6 @@
 
         /* Hide the old horizontal navbar wrapper if present */
         .navbar { display: none !important; }
-
-        body { background-color: #eaeaea; }
 
         /* Sidebar shell */
         .sidebar {
