@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dyer Automotive Fixed Operations Training</title>
+<link rel="stylesheet" href="walkaround/assets/styles.css">
+<style>
+  .module-card {
+    background: #fff;
+    border: 1px solid var(--dyer-border);
+    border-radius: var(--radius);
+    padding: 28px;
+    text-decoration: none;
+    color: var(--dyer-text);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .module-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--dyer-navy);
+    text-decoration: none;
+  }
+  .module-card .module-num {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    color: var(--dyer-red);
+    text-transform: uppercase;
+  }
+  .module-card h3 {
+    font-size: 22px;
+    margin: 0;
+    color: var(--dyer-navy);
+  }
+  .module-card .audience {
+    display: inline-block;
+    background: var(--dyer-gray-soft);
+    color: var(--dyer-text-muted);
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    align-self: flex-start;
+  }
+  .module-card .audience.tech { background: #fff4e5; color: #8a4a00; }
+  .module-card .audience.advisor { background: #fdecea; color: var(--dyer-red-dark); }
+  .module-card .lessons-count {
+    font-size: 13px;
+    color: var(--dyer-text-muted);
+    margin-top: auto;
+    padding-top: 8px;
+  }
+  .module-card .status-pill {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: var(--dyer-green-soft);
+    color: var(--dyer-green);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+  }
+  .module-card .status-pill.coming { background: var(--dyer-gray-soft); color: var(--dyer-text-muted); }
+  .module-card.coming-soon { cursor: not-allowed; pointer-events: none; opacity: 0.65; }
+  .modules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 18px;
+    margin: 30px 0;
+  }
+  .roadmap {
+    background: #fff;
+    border: 1px solid var(--dyer-border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-top: 30px;
+  }
+  .roadmap ul { margin: 12px 0 0; padding-left: 20px; }
+  .roadmap li { margin-bottom: 6px; color: var(--dyer-text-muted); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <div class="brand">
+      <div class="brand-mark">D</div>
+      <div>
+        <div class="brand-name">Dyer Automotive</div>
+        <div class="brand-sub">Fixed Operations Training</div>
+      </div>
+    </div>
+    <div class="module-tag">Training Library</div>
+  </div>
+</header>
+
+<main class="page">
+
+  <div class="eyebrow">Training Library</div>
+  <h1>Fixed Operations Training</h1>
+  <p class="lead">Practical, dealership-ready training built for the people doing the work. Each module takes 30–60 minutes to complete and ends with a knowledge check, real-world roleplays, and a manager scorecard for ride-along coaching.</p>
+
+  <h2 style="margin-top:40px;">Available Modules</h2>
+
+  <div class="modules-grid">
+
+    <a href="walkaround/" class="module-card">
+      <span class="status-pill">Live</span>
+      <span class="module-num">Module 01</span>
+      <h3>Professional Service Walk-Around</h3>
+      <span class="audience advisor">For Service Advisors</span>
+      <p style="margin:0; color:var(--dyer-text-muted); font-size:14px;">The 90-second walk-around that builds trust, drives hours per RO, and sets up the technician video. Greeting, inspection, documentation, MPVI handoff, expectations.</p>
+      <div class="lessons-count">7 lessons · Quiz · 3 roleplays · Manager scorecard</div>
+    </a>
+
+    <a href="mpvi/" class="module-card">
+      <span class="status-pill">Live</span>
+      <span class="module-num">Module 02</span>
+      <h3>Technician Video MPVI</h3>
+      <span class="audience tech">For Technicians</span>
+      <p style="margin:0; color:var(--dyer-text-muted); font-size:14px;">The video your advisor sells with. How to record, what to say, how to show findings, and how to close the loop back to the advisor — without sounding robotic, negative, or rushed.</p>
+      <div class="lessons-count">7 lessons · Quiz · 3 video critiques · Manager scorecard</div>
+    </a>
+
+    <div class="module-card coming-soon">
+      <span class="status-pill coming">Coming Soon</span>
+      <span class="module-num">Module 03</span>
+      <h3>Overcoming Customer Objections</h3>
+      <span class="audience advisor">For Service Advisors</span>
+      <p style="margin:0; color:var(--dyer-text-muted); font-size:14px;">Word tracks and coaching for the top 10 objections: "too expensive," "I need to talk to my spouse," "I can get it cheaper elsewhere," and more.</p>
+      <div class="lessons-count">Targeted for next release</div>
+    </div>
+
+    <div class="module-card coming-soon">
+      <span class="status-pill coming">Coming Soon</span>
+      <span class="module-num">Module 04</span>
+      <h3>Menu Sales</h3>
+      <span class="audience advisor">For Service Advisors</span>
+      <p style="margin:0; color:var(--dyer-text-muted); font-size:14px;">Presenting maintenance menus naturally. Good/better/best framing. Building preventive maintenance buy-in without sounding scripted.</p>
+      <div class="lessons-count">Targeted for next release</div>
+    </div>
+
+    <div class="module-card coming-soon">
+      <span class="status-pill coming">Coming Soon</span>
+      <span class="module-num">Module 05</span>
+      <h3>Phone Skills</h3>
+      <span class="audience advisor">For Service Advisors</span>
+      <p style="margin:0; color:var(--dyer-text-muted); font-size:14px;">Converting appointment calls. Handling status calls without losing your day. Protecting advisor productivity while still taking care of the customer.</p>
+      <div class="lessons-count">Targeted for next release</div>
+    </div>
+
+    <div class="module-card coming-soon">
+      <span class="status-pill coming">Coming Soon</span>
+      <span class="module-num">Module 06</span>
+      <h3>Customer Communication</h3>
+      <span class="audience advisor">For Service Advisors</span>
+      <p style="margin:0; color:var(--dyer-text-muted); font-size:14px;">Proactive updates. Explaining delays. Apologizing without taking blame. Setting realistic expectations that protect CSI/NPS.</p>
+      <div class="lessons-count">Targeted for next release</div>
+    </div>
+
+  </div>
+
+  <div class="roadmap">
+    <h3 style="margin:0 0 8px;">Core Principles Across Every Module</h3>
+    <ul>
+      <li>Trust sells more than pressure.</li>
+      <li>Customers buy what they understand.</li>
+      <li>Process discipline creates profit.</li>
+      <li>The advisor, the technician, and the parts team are one team.</li>
+      <li>Declined work is not failure if the customer clearly understood the recommendation.</li>
+    </ul>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  Dyer Automotive · Fixed Operations Training · Built for the team, by the team.
+</footer>
+
+</body>
+</html>

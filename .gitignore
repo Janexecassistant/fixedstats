@@ -16,3 +16,7 @@
 .env
 .env.local
 .env.*.local
+
+# Backup files (from sed -i, editors, etc.)
+*.bak
+*.orig

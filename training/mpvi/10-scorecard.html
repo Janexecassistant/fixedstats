@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manager Scorecard | Dyer Automotive MPVI Training</title>
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <div class="brand">
+      <div class="brand-mark">D</div>
+      <div>
+        <div class="brand-name">Dyer Automotive</div>
+        <div class="brand-sub">Fixed Operations Training</div>
+      </div>
+    </div>
+    <div class="module-tag">Module 02 · Video Quality Scorecard</div>
+  </div>
+</header>
+
+<div class="progress-wrap">
+  <div class="progress-inner">
+    <span class="progress-label">Your Progress</span>
+    <div class="progress-bar"><div class="progress-fill"></div></div>
+    <span class="progress-text">0 of 7 lessons complete (0%)</span>
+  </div>
+</div>
+
+<main class="page page-narrow">
+
+  <div class="eyebrow">Coaching Tool · Video Quality Review</div>
+  <h1>MPVI Video Quality Scorecard</h1>
+  <p class="lead">Use this when reviewing a technician's MPVI video. Score each behavior 1–5. Total updates automatically. Print clean copies for documented coaching. Designed for weekly video reviews — one per tech per week is the minimum to drive improvement.</p>
+
+  <div class="card no-print" style="margin-bottom:20px;">
+    <strong>How to use:</strong> Watch one video start to finish. Score each category. Use notes for specific coaching. Review with the tech within 48 hours — videos a week old don't coach well.
+  </div>
+
+  <div id="scorecard" class="scorecard">
+
+    <div class="scorecard-meta">
+      <div class="scorecard-field">
+        <label for="tech-name">Technician</label>
+        <input type="text" id="tech-name" name="tech" placeholder="Technician name">
+      </div>
+      <div class="scorecard-field">
+        <label for="manager-name">Reviewed By</label>
+        <input type="text" id="manager-name" name="manager" placeholder="Manager name">
+      </div>
+      <div class="scorecard-field">
+        <label for="obs-date">Date</label>
+        <input type="date" id="obs-date" name="date">
+      </div>
+      <div class="scorecard-field">
+        <label for="ro-number">RO #</label>
+        <input type="text" id="ro-number" name="ro" placeholder="RO number">
+      </div>
+    </div>
+
+    <h2 style="margin-top:0;">Video Quality Behaviors</h2>
+
+    <div class="score-row">
+      <div class="score-cat">1. Pre-Recording Setup
+        <small>Car at right height, area wiped, lighting positioned, background clean</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s1" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s1" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s1" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s1" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s1" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">2. Opening Structure
+        <small>Four-part opening: name, vehicle, finding, bridge — clear in first 10 seconds</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s2" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s2" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s2" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s2" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s2" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">3. Camera Technique
+        <small>Steady shot, landscape orientation, close enough to see, slow movements</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s3" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s3" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s3" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s3" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s3" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">4. Show, Don't Tell
+        <small>Hand on the finding, part fills frame, customer can clearly see what's being described</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s4" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s4" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s4" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s4" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s4" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">5. Lighting
+        <small>Subject well-lit, no dark voids, customer can see surface detail clearly</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s5" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s5" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s5" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s5" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s5" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">6. Audio Quality
+        <small>Clear narration, no background drama, no mumbling, speaking volume audible</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s6" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s6" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s6" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s6" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s6" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">7. Language &amp; Tone
+        <small>Plain English, no jargon, calm not pushy, no fear language</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s7" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s7" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s7" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s7" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s7" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">8. Green / Yellow / Red Categorization
+        <small>Findings clearly categorized; greens included where applicable; appropriate urgency</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s8" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s8" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s8" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s8" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s8" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">9. Focus &amp; Length
+        <small>3 or fewer findings, 90 seconds or under, stays on subject throughout</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s9" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s9" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s9" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s9" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s9" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">10. Closing &amp; Handoff
+        <small>Recap, names the advisor, calm confidence close, no pricing, notes to advisor sent</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s10" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s10" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s10" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s10" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s10" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-total">
+      <div>
+        <div class="total-label">Total Score</div>
+        <div id="score-rating" class="score-rating">—</div>
+      </div>
+      <div id="score-total-num" class="total-num">0 / 50</div>
+    </div>
+
+    <h3>Coaching Notes</h3>
+    <textarea class="notes" name="notes-strengths" placeholder="What did the tech do well? Be specific — call out exact moments in the video."></textarea>
+    <textarea class="notes" name="notes-improve" placeholder="Top 1–2 coaching points. Don't list everything — pick the highest-leverage."></textarea>
+    <textarea class="notes" name="notes-followup" placeholder="Follow-up: when will you review next video? What should they focus on?"></textarea>
+
+    <div style="font-size:12px; color:var(--dyer-text-muted); margin-top:18px;">
+      <strong>Scoring guide:</strong> 5 = excellent, video could be used as training example · 4 = strong, minor coaching ·
+      3 = meets standard · 2 = below standard, needs coaching · 1 = not meeting expectations, retraining needed
+    </div>
+  </div>
+
+  <div class="lesson-nav no-print">
+    <div class="nav-side">
+      <a href="09-video-critique.html" class="btn btn-secondary">← Video Critiques</a>
+      <a href="index.html" class="btn btn-secondary">Module Map</a>
+    </div>
+    <div class="nav-side">
+      <button id="score-clear" class="btn btn-secondary">Clear Scorecard</button>
+      <button id="score-print" class="btn">Print Scorecard</button>
+    </div>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  Dyer Automotive · Fixed Operations Training · Built for the team, by the team.
+</footer>
+
+<script src="assets/script.js"></script>
+</body>
+</html>
