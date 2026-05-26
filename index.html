@@ -360,41 +360,45 @@
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
         }
 
-        /* External link tab (Training, etc.) — sits inline with other tabs */
-        .nav-tab.nav-tab-external a {
+        /* Training button — lives in navbar-right, always visible, distinct from SPA tabs */
+        .nav-training-btn {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            background: none;
-            color: rgba(255, 255, 255, 0.7);
-            padding: 16px 20px;
-            font-size: 14px;
-            font-weight: 500;
-            border-bottom: 3px solid transparent;
-            transition: all 0.2s ease;
+            gap: 8px;
+            background: rgba(204, 0, 0, 0.12);
+            color: #ffffff;
+            border: 1px solid rgba(204, 0, 0, 0.55);
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            border-radius: 8px;
             text-decoration: none;
+            transition: all 0.15s ease;
             white-space: nowrap;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
-
-        .nav-tab.nav-tab-external a:hover {
-            color: white;
-            background-color: rgba(255, 255, 255, 0.05);
-            border-bottom-color: #cc0000;
+        .nav-training-btn:hover {
+            background: #cc0000;
+            border-color: #cc0000;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(204, 0, 0, 0.35);
         }
-
-        .nav-tab.nav-tab-external a .ext-icon {
+        .nav-training-btn:active {
+            transform: translateY(0);
+        }
+        .nav-training-btn .training-icon {
+            opacity: 0.9;
+        }
+        .nav-training-btn .ext-icon {
             font-size: 11px;
-            opacity: 0.6;
+            opacity: 0.7;
+            margin-left: 2px;
         }
-
-        /* Let the nav-tabs scroll horizontally if cumulative width exceeds container */
-        .nav-tabs {
-            overflow-x: auto;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
+        /* Hide the icon-only label on narrow screens; keep the word visible */
+        @media (max-width: 900px) {
+            .nav-training-btn { padding: 7px 10px; }
         }
-        .nav-tabs::-webkit-scrollbar { display: none; }
-        .nav-tab { flex-shrink: 0; }
 
         /* Main Content */
         .container {
@@ -1036,9 +1040,13 @@
                 </li>
                 <li class="nav-tab"><button class="nav-btn" id="goalsTab" data-tab="goals" style="display:none;">Goals</button></li>
                 <li class="nav-tab"><button class="nav-btn" id="adminConsoleTab" data-tab="admin" style="display:none;">Admin Console</button></li>
-                <li class="nav-tab nav-tab-external"><a href="/training/" target="_blank" rel="noopener">Training <span class="ext-icon">↗</span></a></li>
             </ul>
             <div class="navbar-right">
+                <a href="/training/" target="_blank" rel="noopener" class="nav-training-btn" title="Open the Dyer Training Library in a new tab">
+                    <svg class="training-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                    <span>Training</span>
+                    <span class="ext-icon" aria-hidden="true">↗</span>
+                </a>
                 <div class="user-info">
                     <span id="navbarUserName">User</span>
                     <span class="role-badge" id="navbarUserRole">user</span>
