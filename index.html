@@ -360,6 +360,37 @@
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
         }
 
+        /* External link tab (Training, etc.) */
+        .nav-tab.nav-tab-external {
+            margin-left: auto;
+            border-left: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .nav-tab.nav-tab-external a {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: none;
+            color: rgba(255, 255, 255, 0.7);
+            padding: 16px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .nav-tab.nav-tab-external a:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-bottom-color: #cc0000;
+        }
+
+        .nav-tab.nav-tab-external a .ext-icon {
+            font-size: 11px;
+            opacity: 0.6;
+        }
+
         /* Main Content */
         .container {
             max-width: 1600px;
@@ -1000,6 +1031,7 @@
                 </li>
                 <li class="nav-tab"><button class="nav-btn" id="goalsTab" data-tab="goals" style="display:none;">Goals</button></li>
                 <li class="nav-tab"><button class="nav-btn" id="adminConsoleTab" data-tab="admin" style="display:none;">Admin Console</button></li>
+                <li class="nav-tab nav-tab-external"><a href="/training/walkaround/" target="_blank" rel="noopener">Training <span class="ext-icon">↗</span></a></li>
             </ul>
             <div class="navbar-right">
                 <div class="user-info">
