@@ -23,11 +23,17 @@
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   // ---- Session lookup ----------------------------------------------------
+  // fixedstats writes the session to BOTH localStorage (shared across tabs)
+  // and sessionStorage (legacy). Read localStorage first so cross-tab pages
+  // like /training/ see the logged-in user without re-login.
   let currentUser = null;
   try {
-    const sessionJson = sessionStorage.getItem("dyer_session");
+    let sessionJson = localStorage.getItem("dyer_session");
+    if (!sessionJson) sessionJson = sessionStorage.getItem("dyer_session");
     if (sessionJson) {
       currentUser = JSON.parse(sessionJson);
+      // Mirror into sessionStorage so the rest of the page can use either
+      try { sessionStorage.setItem("dyer_session", sessionJson); } catch (_) {}
     }
   } catch (_) {
     /* fall through to redirect */
