@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manager Scorecard | Customer Communication</title>
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <div class="brand">
+      <div class="brand-mark">D</div>
+      <div>
+        <div class="brand-name">Dyer Automotive</div>
+        <div class="brand-sub">Fixed Operations Training</div>
+      </div>
+    </div>
+    <div class="module-tag">Module 06 · Comms Scorecard</div>
+  </div>
+</header>
+
+<div class="progress-wrap">
+  <div class="progress-inner">
+    <span class="progress-label">Your Progress</span>
+    <div class="progress-bar"><div class="progress-fill"></div></div>
+    <span class="progress-text">0 of 7 lessons complete (0%)</span>
+  </div>
+</div>
+
+<main class="page page-narrow">
+
+  <div class="eyebrow">Coaching Tool · Numa Thread + RO Comms Review</div>
+  <h1>Customer Communication Scorecard</h1>
+  <p class="lead">Use this when auditing one of an advisor's completed ROs end-to-end. Pull the Numa thread, check the DMS status history, and look at the timing of every touch. 1–5 scale across the full comms workflow — from drop-off through the pickup CSI text. Total updates automatically.</p>
+
+  <div class="card no-print" style="margin-bottom:20px;">
+    <strong>How to use:</strong> Pick one completed RO per advisor per week. Pull the Numa Smart Inbox thread and the CDK / DMS status log. Score each category against the comms standard. Use notes for direct quotes from the thread. Review with the advisor within 48 hours.
+  </div>
+
+  <div id="scorecard" class="scorecard">
+
+    <div class="scorecard-meta">
+      <div class="scorecard-field">
+        <label for="advisor-name">Advisor</label>
+        <input type="text" id="advisor-name" name="advisor" placeholder="Advisor name">
+      </div>
+      <div class="scorecard-field">
+        <label for="manager-name">Reviewed By</label>
+        <input type="text" id="manager-name" name="manager" placeholder="Manager name">
+      </div>
+      <div class="scorecard-field">
+        <label for="obs-date">Date</label>
+        <input type="date" id="obs-date" name="date">
+      </div>
+      <div class="scorecard-field">
+        <label for="ro-number">RO # / Numa Thread</label>
+        <input type="text" id="ro-number" name="ro" placeholder="Reference">
+      </div>
+    </div>
+
+    <h2 style="margin-top:0;">Communication Categories</h2>
+
+    <div class="score-row">
+      <div class="score-cat">1. DMS Status Discipline
+        <small>CDK / DMS status moved promptly at every stage so Numa could auto-text accurately</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s1" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s1" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s1" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s1" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s1" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">2. Touch 1 — MPI Send
+        <small>MPI video + quote + clear ask sent via Numa within 15 min of tech finishing inspection</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s2" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s2" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s2" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s2" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s2" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">3. Touch 2 — In-Shop Updates
+        <small>Status touches at least every 2 hours while in shop — auto or manual, but consistent</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s3" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s3" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s3" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s3" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s3" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">4. Touch 3 — Delay Handling (if applicable)
+        <small>Any delay communicated BEFORE original ETA passed, with specific new ETA + ownership language, no excuses</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s4" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s4" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s4" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s4" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s4" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">5. Channel Choice
+        <small>Text for approvals / ETAs / confirmations · Call for bad news, complex repairs, upset customers</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s5" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s5" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s5" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s5" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s5" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">6. Click-to-Call Discipline
+        <small>All outbound calls initiated through Numa app — dealership caller ID + auto-logged in thread</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s6" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s6" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s6" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s6" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s6" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">7. Tone &amp; Personalization
+        <small>Texts used customer name, warm tone, personal touches — not just bot-template auto-text</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s7" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s7" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s7" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s7" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s7" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">8. Handoffs &amp; @ Tags
+        <small>Lunch / EOD / department crossovers handled via @ tags in Numa with one-line context, no dropped balls</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s8" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s8" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s8" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s8" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s8" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">9. Pickup Closeout
+        <small>Customer walked to car · next-visit set up · Numa thank-you + review-link text within 90 sec of pickup</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s9" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s9" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s9" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s9" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s9" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">10. Thread Hygiene &amp; SDL Notes
+        <small>Numa thread complete and chronological · SDL / 3Cs notes kept in sync · next advisor has full context</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s10" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s10" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s10" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s10" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s10" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-total">
+      <div>
+        <div class="total-label">Total Score</div>
+        <div id="score-rating" class="score-rating">—</div>
+      </div>
+      <div id="score-total-num" class="total-num">0 / 50</div>
+    </div>
+
+    <h3>Coaching Notes</h3>
+    <textarea class="notes" name="notes-strengths" placeholder="What did the advisor do well? Quote a specific text or moment from the thread."></textarea>
+    <textarea class="notes" name="notes-improve" placeholder="Top 1-2 comms-discipline coaching points. Pick the highest-leverage."></textarea>
+    <textarea class="notes" name="notes-followup" placeholder="Follow-up: when to audit again, what to focus on next?"></textarea>
+
+    <div style="font-size:12px; color:var(--dyer-text-muted); margin-top:18px;">
+      <strong>Scoring guide:</strong> 5 = excellent, coach others · 4 = strong, minor opportunities · 3 = meets standard ·
+      2 = below standard, needs coaching · 1 = not meeting expectations
+    </div>
+  </div>
+
+  <div class="lesson-nav no-print">
+    <div class="nav-side">
+      <a href="09-roleplays.html" class="btn btn-secondary">← Roleplays</a>
+      <a href="index.html" class="btn btn-secondary">Module Map</a>
+    </div>
+    <div class="nav-side">
+      <button id="score-clear" class="btn btn-secondary">Clear Scorecard</button>
+      <button id="score-print" class="btn">Print Scorecard</button>
+    </div>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  Dyer Automotive · Fixed Operations Training · Built for the team, by the team.
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/training/shared/training-auth.js"></script>
+<script src="assets/script.js"></script>
+</body>
+</html>
