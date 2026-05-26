@@ -83,7 +83,11 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, #111111 0%, #1a1a1a 50%, #2a2a2a 100%);
+            /* Brand collage as background with dark overlay so login card stays readable */
+            background:
+                linear-gradient(135deg, rgba(17,17,17,0.78) 0%, rgba(26,26,26,0.82) 50%, rgba(42,42,42,0.78) 100%),
+                url('/assets/dyer-brand-collage.png') center / cover no-repeat;
+            background-color: #111111; /* fallback while image loads */
             position: relative;
             overflow: hidden;
         }
