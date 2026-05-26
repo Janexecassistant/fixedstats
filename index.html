@@ -1125,21 +1125,23 @@
             border-color: #cc0000;
         }
 
-        /* Top bar — slim header above the content */
+        /* Top bar — slim header above the content (translucent so the .store-select glass can refract the tire bg behind it) */
         .topbar {
             position: sticky;
             top: 0;
             left: var(--sidebar-w);
             right: 0;
             height: var(--topbar-h);
-            background: #1a1a1a;
+            background: rgba(20, 20, 20, 0.82);
+            backdrop-filter: blur(18px) saturate(140%);
+            -webkit-backdrop-filter: blur(18px) saturate(140%);
             color: #fff;
             display: flex;
             align-items: center;
             padding: 0 24px;
             gap: 16px;
             margin-left: var(--sidebar-w);
-            border-bottom: 1px solid #2a2a2a;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             z-index: 90;
         }
         .topbar .hamburger {
@@ -1169,53 +1171,72 @@
             padding-right: 0;
         }
 
-        /* Store selector — accentuated frosted glass with a hint of brand red */
-        .store-select {
+        /* Store selector — wrapper provides the eccentric chrome ring; select inside is the frosted glass */
+        .store-select-wrap {
+            position: relative;
+            display: inline-block;
+            padding: 2px;
+            border-radius: 14px;
             background:
-                linear-gradient(135deg, rgba(204, 0, 0, 0.18) 0%, rgba(255, 255, 255, 0.06) 100%),
-                rgba(255, 255, 255, 0.04);
+                linear-gradient(135deg,
+                    rgba(255, 255, 255, 0.35) 0%,
+                    rgba(255, 90, 90, 0.55) 35%,
+                    rgba(204, 0, 0, 0.25) 70%,
+                    rgba(255, 255, 255, 0.18) 100%);
+            box-shadow:
+                0 6px 22px rgba(0, 0, 0, 0.45),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
+        }
+        .store-select-wrap::after {
+            /* glossy top highlight — sells the glass illusion */
+            content: '';
+            position: absolute;
+            top: 3px; left: 8px; right: 8px;
+            height: 12px;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.25), rgba(255,255,255,0));
+            border-radius: 12px 12px 4px 4px;
+            pointer-events: none;
+        }
+        .store-select {
+            display: block;
+            background-color: rgba(20, 20, 20, 0.45);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M0,1 L12,1 L6,8Z' fill='%23ff5555'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
             color: #ffffff;
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            border-radius: 10px;
+            border: none;
+            border-radius: 12px;
             padding: 10px 38px 10px 16px;
             font-size: 13px;
             font-weight: 700;
             letter-spacing: 0.4px;
             min-width: 220px;
             cursor: pointer;
-            backdrop-filter: blur(14px) saturate(140%);
-            -webkit-backdrop-filter: blur(14px) saturate(140%);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
             box-shadow:
-                0 4px 18px rgba(0, 0, 0, 0.35),
-                inset 0 1px 0 rgba(255, 255, 255, 0.18),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+                inset 0 1px 0 rgba(255, 255, 255, 0.22),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+                inset 0 0 30px rgba(255, 80, 80, 0.08);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
             appearance: none;
             -webkit-appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M0,1 L12,1 L6,8Z' fill='%23ff5050'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 14px center;
-            transition: all 0.2s ease;
+            transition: background-color 0.18s ease, box-shadow 0.18s ease;
         }
         .store-select:hover {
-            background:
-                linear-gradient(135deg, rgba(204, 0, 0, 0.28) 0%, rgba(255, 255, 255, 0.10) 100%),
-                rgba(255, 255, 255, 0.06);
-            border-color: rgba(255, 80, 80, 0.5);
+            background-color: rgba(40, 20, 20, 0.55);
             box-shadow:
-                0 6px 22px rgba(0, 0, 0, 0.45),
-                0 0 0 1px rgba(255, 80, 80, 0.25),
-                inset 0 1px 0 rgba(255, 255, 255, 0.22),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.25);
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M0,1 L12,1 L6,8Z' fill='%23ff5050'/%3E%3C/svg%3E");
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+                inset 0 0 35px rgba(255, 80, 80, 0.18);
         }
         .store-select:focus {
             outline: none;
-            border-color: rgba(255, 80, 80, 0.65);
+            background-color: rgba(40, 20, 20, 0.55);
             box-shadow:
-                0 0 0 3px rgba(204, 0, 0, 0.25),
-                0 6px 22px rgba(0, 0, 0, 0.5),
-                inset 0 1px 0 rgba(255, 255, 255, 0.22);
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+                inset 0 0 35px rgba(255, 80, 80, 0.22);
         }
         .store-select option {
             background-color: #1a1a1a;
@@ -1368,9 +1389,11 @@
         <button class="hamburger" id="hamburgerToggle" type="button" aria-label="Toggle menu">
             <span></span><span></span><span></span>
         </button>
-        <select id="globalStoreSelect" class="store-select">
-            <option value="all">All Stores</option>
-        </select>
+        <div class="store-select-wrap">
+            <select id="globalStoreSelect" class="store-select">
+                <option value="all">All Stores</option>
+            </select>
+        </div>
         <div class="navbar-right">
             <div class="user-info">
                 <span id="navbarUserName">User</span>
