@@ -88,6 +88,108 @@
   }
   .roadmap ul { margin: 12px 0 0; padding-left: 20px; }
   .roadmap li { margin-bottom: 6px; color: var(--dyer-text-muted); }
+
+  /* Core Values Banner */
+  .values-banner {
+    background: linear-gradient(135deg, #111111 0%, #1a1a1a 100%);
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 36px;
+    margin: 30px 0 40px;
+    border-left: 6px solid var(--dyer-red);
+  }
+  .values-banner .values-header {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 6px;
+  }
+  .values-banner .values-title {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    color: #fff;
+    margin: 0;
+  }
+  .values-banner .values-tag {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--dyer-red);
+    background: rgba(204, 0, 0, 0.12);
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+  .values-banner .values-lead {
+    color: #cccccc;
+    font-size: 14px;
+    margin: 0 0 20px;
+  }
+  .values-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+    margin-bottom: 24px;
+  }
+  .value-item {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 18px;
+  }
+  .value-item .value-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--dyer-red);
+    color: #fff;
+    font-weight: 800;
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+  .value-item h4 {
+    margin: 0 0 6px;
+    font-size: 15px;
+    color: #fff;
+    font-weight: 700;
+  }
+  .value-item p {
+    margin: 0;
+    color: #cccccc;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .values-passion-niche {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 20px;
+  }
+  .pn-block {
+    padding: 6px 0;
+  }
+  .pn-block .pn-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--dyer-red);
+    margin-bottom: 4px;
+  }
+  .pn-block .pn-text {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.2px;
+  }
+  @media (max-width: 600px) {
+    .values-passion-niche { grid-template-columns: 1fr; gap: 14px; }
+  }
 </style>
 </head>
 <body>
@@ -109,7 +211,53 @@
 
   <div class="eyebrow">Training Library</div>
   <h1>Fixed Operations Training</h1>
-  <p class="lead">Practical, dealership-ready training built for the people doing the work. Each module takes 30–60 minutes to complete and ends with a knowledge check, real-world roleplays, and a manager scorecard for ride-along coaching.</p>
+  <p class="lead">Practical, dealership-ready training built for the people doing the work. Every module is grounded in our core values, follows the Dyer SOP, and ends with a knowledge check, roleplays, and a manager scorecard.</p>
+
+  <div class="values-banner">
+    <div class="values-header">
+      <span class="values-tag">The Dyer Way</span>
+      <h2 class="values-title">Our Core Values</h2>
+    </div>
+    <p class="values-lead">Everything we do — every greeting, every video, every callback, every handoff — is filtered through these. Process gets you compliance. Values get you a great dealership.</p>
+
+    <div class="values-grid">
+      <div class="value-item">
+        <div class="value-num">1</div>
+        <h4>Positive &amp; Upbeat Attitude</h4>
+        <p>Attitude is everything. It sets the tone for how customers feel, how coworkers respond, and how we handle challenges.</p>
+      </div>
+      <div class="value-item">
+        <div class="value-num">2</div>
+        <h4>Respect Everyone</h4>
+        <p>Team members, customers, vendors, factory reps. True respect includes accountability — holding ourselves and others to high standards because we care.</p>
+      </div>
+      <div class="value-item">
+        <div class="value-num">3</div>
+        <h4>Treat Customers Like Family</h4>
+        <p>We don't just hand them keys; we hand them trust. We slow down, listen, and connect — because every customer deserves to feel cared for.</p>
+      </div>
+      <div class="value-item">
+        <div class="value-num">4</div>
+        <h4>Be Proud of the Job You Do</h4>
+        <p>Pride is the spark that turns effort into excellence. The standard is high because we choose to make it high.</p>
+      </div>
+    </div>
+
+    <div class="values-passion-niche">
+      <div class="pn-block">
+        <div class="pn-label">Our Passion</div>
+        <p class="pn-text">Helping people WIN TOGETHER.</p>
+      </div>
+      <div class="pn-block">
+        <div class="pn-label">Our Niche</div>
+        <p class="pn-text">Delivering an EXCELLENT and EASY customer experience.</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:right; margin-top:20px;">
+    <a href="my-training.html" class="btn btn-secondary">My Training Dashboard →</a>
+  </div>
 
   <h2 style="margin-top:40px;">Available Modules</h2>
 
@@ -172,13 +320,14 @@
   </div>
 
   <div class="roadmap">
-    <h3 style="margin:0 0 8px;">Core Principles Across Every Module</h3>
+    <h3 style="margin:0 0 8px;">How Every Module Lives the Values</h3>
     <ul>
-      <li>Trust sells more than pressure.</li>
-      <li>Customers buy what they understand.</li>
-      <li>Process discipline creates profit.</li>
-      <li>The advisor, the technician, and the parts team are one team.</li>
-      <li>Declined work is not failure if the customer clearly understood the recommendation.</li>
+      <li><strong>Positive attitude</strong> shows up in tone — calm, confident, never pushy or fear-based.</li>
+      <li><strong>Respect</strong> shows up in word tracks — plain English, no jargon, no talking down to customers or coworkers.</li>
+      <li><strong>Family treatment</strong> shows up in pacing — slow down at the drive, listen verbatim, follow through on what you said you'd do.</li>
+      <li><strong>Pride in the work</strong> shows up in process discipline — UVeye on every car, MPI on every visit, 15-minute callback every time.</li>
+      <li><strong>Win together</strong> shows up in advisor / tech / parts teamwork — no "us vs them" between departments.</li>
+      <li><strong>Excellent and easy</strong> means both — high standards delivered without friction for the customer.</li>
     </ul>
   </div>
 
@@ -188,5 +337,7 @@
   Dyer Automotive · Fixed Operations Training · Built for the team, by the team.
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/training/shared/training-auth.js"></script>
 </body>
 </html>

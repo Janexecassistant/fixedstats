@@ -35,6 +35,31 @@ function markComplete(lessonId) {
     saveProgress(p);
   }
   renderProgress();
+  // Persist to Supabase via the shared training-auth helper
+  if (window.dyerTraining && window.dyerTraining.recordLessonComplete) {
+    window.dyerTraining
+      .recordLessonComplete("walkaround", lessonId)
+      .catch(e => console.warn("[walkaround] recordLessonComplete failed:", e));
+  }
+}
+
+async function hydrateProgressFromDb() {
+  // After the page loads, pull this user's lesson completions from Supabase
+  // and merge into local state. Server is the source of truth.
+  if (!window.dyerTraining || !window.dyerTraining.fetchMyProgress) return;
+  try {
+    const res = await window.dyerTraining.fetchMyProgress("walkaround");
+    if (res && res.ok && Array.isArray(res.data)) {
+      const p = loadProgress();
+      const serverLessons = res.data.map(r => r.lesson_id);
+      const merged = Array.from(new Set([...(p.completed || []), ...serverLessons]));
+      if (merged.length !== (p.completed || []).length) {
+        p.completed = merged;
+        saveProgress(p);
+        renderProgress();
+      }
+    }
+  } catch (e) { /* ignore */ }
 }
 function resetProgress() {
   if (confirm("Reset all module progress, quiz scores, and checklists? This cannot be undone.")) {
@@ -145,6 +170,18 @@ function initQuiz() {
     const p = loadProgress();
     p.quiz = { score: pct, right, total: totalQ, when: new Date().toISOString() };
     saveProgress(p);
+
+    // Persist quiz attempt to Supabase
+    if (window.dyerTraining && window.dyerTraining.recordQuizAttempt) {
+      window.dyerTraining
+        .recordQuizAttempt({
+          moduleId: "walkaround",
+          score: pct,
+          totalQuestions: totalQ,
+          correctAnswers: right
+        })
+        .catch(e => console.warn("[walkaround] recordQuizAttempt failed:", e));
+    }
 
     result.scrollIntoView({ behavior: "smooth", block: "start" });
   });
@@ -257,4 +294,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initLessonComplete();
   const resetBtn = document.getElementById("reset-progress");
   if (resetBtn) resetBtn.addEventListener("click", resetProgress);
+  // Pull progress from Supabase and merge with local state
+  hydrateProgressFromDb();
 });

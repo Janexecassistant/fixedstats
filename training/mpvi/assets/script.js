@@ -26,6 +26,28 @@ function markComplete(lessonId) {
     saveProgress(p);
   }
   renderProgress();
+  if (window.dyerTraining && window.dyerTraining.recordLessonComplete) {
+    window.dyerTraining
+      .recordLessonComplete("mpvi", lessonId)
+      .catch(e => console.warn("[mpvi] recordLessonComplete failed:", e));
+  }
+}
+
+async function hydrateProgressFromDb() {
+  if (!window.dyerTraining || !window.dyerTraining.fetchMyProgress) return;
+  try {
+    const res = await window.dyerTraining.fetchMyProgress("mpvi");
+    if (res && res.ok && Array.isArray(res.data)) {
+      const p = loadProgress();
+      const serverLessons = res.data.map(r => r.lesson_id);
+      const merged = Array.from(new Set([...(p.completed || []), ...serverLessons]));
+      if (merged.length !== (p.completed || []).length) {
+        p.completed = merged;
+        saveProgress(p);
+        renderProgress();
+      }
+    }
+  } catch (e) { /* ignore */ }
 }
 function resetProgress() {
   if (confirm("Reset all module progress, quiz scores, and checklists? This cannot be undone.")) {
@@ -134,6 +156,17 @@ function initQuiz() {
     const p = loadProgress();
     p.quiz = { score: pct, right, total: totalQ, when: new Date().toISOString() };
     saveProgress(p);
+
+    if (window.dyerTraining && window.dyerTraining.recordQuizAttempt) {
+      window.dyerTraining
+        .recordQuizAttempt({
+          moduleId: "mpvi",
+          score: pct,
+          totalQuestions: totalQ,
+          correctAnswers: right
+        })
+        .catch(e => console.warn("[mpvi] recordQuizAttempt failed:", e));
+    }
 
     result.scrollIntoView({ behavior: "smooth", block: "start" });
   });
@@ -244,4 +277,5 @@ document.addEventListener("DOMContentLoaded", () => {
   initLessonComplete();
   const resetBtn = document.getElementById("reset-progress");
   if (resetBtn) resetBtn.addEventListener("click", resetProgress);
+  hydrateProgressFromDb();
 });

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Training | Dyer Automotive Fixed Operations</title>
+<link rel="stylesheet" href="walkaround/assets/styles.css">
+<style>
+  .dash-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 18px;
+    margin: 28px 0 40px;
+  }
+  .module-status {
+    background: #fff;
+    border: 1px solid var(--dyer-border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .module-status .module-tag-line {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 800;
+    color: var(--dyer-red);
+  }
+  .module-status h3 {
+    margin: 0;
+    color: var(--dyer-navy);
+    font-size: 19px;
+  }
+  .progress-bar-static {
+    height: 10px;
+    background: var(--dyer-gray-soft);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .progress-bar-static > span {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, var(--dyer-red), #ff5a4a);
+  }
+  .module-status .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .module-status .stat-num {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--dyer-navy);
+    line-height: 1.1;
+  }
+  .module-status .stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--dyer-text-muted);
+    margin-top: 2px;
+  }
+  .module-status .status-line {
+    font-size: 13px;
+    color: var(--dyer-text-muted);
+  }
+  .module-status .status-line strong { color: var(--dyer-text); }
+  .pass-pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+  }
+  .pass-pill.pass { background: var(--dyer-green-soft); color: var(--dyer-green); }
+  .pass-pill.fail { background: var(--dyer-red-soft); color: var(--dyer-red-dark); }
+  .pass-pill.none { background: var(--dyer-gray-soft); color: var(--dyer-text-muted); }
+  .empty-state {
+    background: #fff;
+    border: 1px dashed var(--dyer-border);
+    border-radius: var(--radius);
+    padding: 40px 24px;
+    text-align: center;
+    color: var(--dyer-text-muted);
+  }
+  table.history {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border: 1px solid var(--dyer-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  table.history th, table.history td {
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--dyer-border);
+    font-size: 13px;
+  }
+  table.history th {
+    background: var(--dyer-navy);
+    color: #fff;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.6px;
+  }
+  table.history tr:last-child td { border-bottom: none; }
+  table.history tr:nth-child(even) td { background: #fafafa; }
+  .loading { color: var(--dyer-text-muted); font-style: italic; padding: 14px 0; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <div class="brand">
+      <div class="brand-mark">D</div>
+      <div>
+        <div class="brand-name">Dyer Automotive</div>
+        <div class="brand-sub">Fixed Operations Training</div>
+      </div>
+    </div>
+    <div class="module-tag">My Training</div>
+  </div>
+</header>
+
+<main class="page">
+
+  <div class="eyebrow">Personal Dashboard</div>
+  <h1>My Training</h1>
+  <p class="lead" id="welcome-line">Loading your training record...</p>
+
+  <h2 style="margin-top:36px;">Module Status</h2>
+  <div class="dash-grid" id="module-status-grid">
+    <div class="loading">Loading…</div>
+  </div>
+
+  <h2>Recent Quiz Attempts</h2>
+  <div id="quiz-history-wrap">
+    <div class="loading">Loading…</div>
+  </div>
+
+  <div style="margin-top:40px; text-align:center;">
+    <a href="/training/" class="btn">← Back to Training Library</a>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  Dyer Automotive · Fixed Operations Training · Built for the team, by the team.
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/training/shared/training-auth.js"></script>
+<script>
+  // Module metadata — keep in sync with module folders
+  const MODULES = [
+    {
+      id: "walkaround",
+      name: "Service Drive Customer Flow",
+      audience: "Service Advisor",
+      totalLessons: 7,
+      url: "/training/walkaround/"
+    },
+    {
+      id: "mpvi",
+      name: "Technician Video MPVI",
+      audience: "Technician",
+      totalLessons: 7,
+      url: "/training/mpvi/"
+    }
+  ];
+
+  document.addEventListener("DOMContentLoaded", async function () {
+    const dt = window.dyerTraining;
+    if (!dt || !dt.currentUser) {
+      // training-auth will have redirected already if no session
+      return;
+    }
+
+    // Personalized welcome line
+    const name = dt.currentUser.display_name || dt.currentUser.username || "there";
+    document.getElementById("welcome-line").textContent =
+      "Welcome back, " + name + ". Here's where you stand on the modules.";
+
+    // Pull progress and quiz history in parallel
+    const [progressRes, quizRes] = await Promise.all([
+      dt.fetchMyProgress(),
+      dt.fetchMyQuizAttempts()
+    ]);
+
+    renderModuleStatus(progressRes, quizRes);
+    renderQuizHistory(quizRes);
+  });
+
+  function renderModuleStatus(progressRes, quizRes) {
+    const grid = document.getElementById("module-status-grid");
+    grid.innerHTML = "";
+
+    const progressByModule = {};
+    if (progressRes && progressRes.ok) {
+      progressRes.data.forEach(r => {
+        progressByModule[r.module_id] = progressByModule[r.module_id] || [];
+        progressByModule[r.module_id].push(r);
+      });
+    }
+
+    // Latest quiz per module
+    const latestQuizByModule = {};
+    if (quizRes && quizRes.ok) {
+      quizRes.data.forEach(r => {
+        if (!latestQuizByModule[r.module_id]) {
+          latestQuizByModule[r.module_id] = r;
+        }
+      });
+    }
+
+    MODULES.forEach(m => {
+      const completedLessons = progressByModule[m.id] || [];
+      const completedCount = completedLessons.length;
+      const pct = Math.round((completedCount / m.totalLessons) * 100);
+      const lastLessonAt = completedLessons.length
+        ? completedLessons.reduce((a, b) =>
+            new Date(a.completed_at) > new Date(b.completed_at) ? a : b
+          ).completed_at
+        : null;
+
+      const latestQuiz = latestQuizByModule[m.id];
+      let quizPill = '<span class="pass-pill none">Not taken</span>';
+      if (latestQuiz) {
+        const cls = latestQuiz.passed ? "pass" : "fail";
+        quizPill = '<span class="pass-pill ' + cls + '">' +
+          latestQuiz.score + '% · ' + (latestQuiz.passed ? 'Passed' : 'Below 80%') +
+          '</span>';
+      }
+
+      const card = document.createElement("div");
+      card.className = "module-status";
+      card.innerHTML =
+        '<div class="module-tag-line">' + escapeHtml(m.audience) + '</div>' +
+        '<h3>' + escapeHtml(m.name) + '</h3>' +
+        '<div class="progress-bar-static"><span style="width:' + pct + '%"></span></div>' +
+        '<div class="stats">' +
+          '<div><div class="stat-num">' + completedCount + ' / ' + m.totalLessons + '</div>' +
+          '<div class="stat-label">Lessons</div></div>' +
+          '<div><div class="stat-num">' + pct + '%</div>' +
+          '<div class="stat-label">Complete</div></div>' +
+        '</div>' +
+        '<div class="status-line"><strong>Knowledge Check:</strong> ' + quizPill + '</div>' +
+        (lastLessonAt
+          ? '<div class="status-line">Last lesson completed: ' + formatDate(lastLessonAt) + '</div>'
+          : '<div class="status-line">Not started yet.</div>') +
+        '<a href="' + m.url + '" class="btn" style="margin-top:6px;">' +
+          (completedCount === 0 ? 'Start Module' : 'Continue →') + '</a>';
+      grid.appendChild(card);
+    });
+  }
+
+  function renderQuizHistory(quizRes) {
+    const wrap = document.getElementById("quiz-history-wrap");
+    if (!quizRes || !quizRes.ok || quizRes.data.length === 0) {
+      wrap.innerHTML =
+        '<div class="empty-state">No quiz attempts yet. Once you finish a module knowledge check, your score will appear here.</div>';
+      return;
+    }
+    const moduleNameById = {};
+    MODULES.forEach(m => { moduleNameById[m.id] = m.name; });
+
+    let html = '<table class="history"><thead><tr>' +
+      '<th>Module</th><th>Score</th><th>Result</th><th>Correct</th><th>Date</th>' +
+      '</tr></thead><tbody>';
+    quizRes.data.forEach(r => {
+      const cls = r.passed ? "pass" : "fail";
+      html += '<tr>' +
+        '<td>' + escapeHtml(moduleNameById[r.module_id] || r.module_id) + '</td>' +
+        '<td><strong>' + r.score + '%</strong></td>' +
+        '<td><span class="pass-pill ' + cls + '">' + (r.passed ? 'Passed' : 'Below 80%') + '</span></td>' +
+        '<td>' + (r.correct_answers || '-') + ' / ' + (r.total_questions || '-') + '</td>' +
+        '<td>' + formatDate(r.attempted_at) + '</td>' +
+        '</tr>';
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+  }
+
+  function escapeHtml(s) {
+    return String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function formatDate(iso) {
+    if (!iso) return "—";
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+      }) + " · " + d.toLocaleTimeString(undefined, {
+        hour: "numeric",
+        minute: "2-digit"
+      });
+    } catch (_) {
+      return iso;
+    }
+  }
+</script>
+</body>
+</html>
