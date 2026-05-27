@@ -7991,12 +7991,11 @@
                     // Iterate working days only (Mon-Sat) — same convention as the Service Daily table
                     const monthIdx = month - 1;
                     let html = '';
-                    // Each row's columns are already CUMULATIVE MTD as-of that date (carried
-                    // forward from the prior entry when no new entry exists that day). The old
-                    // "running" accumulator is gone — adding running on top would double-count.
+                    // Only show numbers on days that actually have an entry. Days without an
+                    // entry stay blank (no carry-forward) — otherwise every day after the first
+                    // entry shows the same MTD value, which reads as "the dashboard has numbers
+                    // on every single day of the month" (Jay 2026-05-27).
                     let workingDay = 0;
-                    let carry = { svc: 0, whs: 0, ctr: 0, obso: 0, total: 0 };
-                    let hadAnyEntry = false;
                     const lastDate = new Date(year, monthIdx + 1, 0).getDate();
                     for (let d = 1; d <= lastDate; d++) {
                         const dt = new Date(year, monthIdx, d);
@@ -8005,25 +8004,26 @@
                         workingDay++;
                         const ds = dateToString(dt);
                         const row = byDate[ds];
-                        if (row) { carry = row; hadAnyEntry = true; }
-                        const showBlank = !hadAnyEntry;
-                        const svc = carry.svc, whs = carry.whs, ctr = carry.ctr, obso = carry.obso;
-                        const tot = carry.total || (svc + whs);
-                        const tracking = (!showBlank && workingDay > 0 && daysInMonth > 0)
+                        const hasEntry = !!row;
+                        const svc = hasEntry ? row.svc  : 0;
+                        const whs = hasEntry ? row.whs  : 0;
+                        const ctr = hasEntry ? row.ctr  : 0;
+                        const obso = hasEntry ? row.obso : 0;
+                        const tot = hasEntry ? (row.total || (svc + whs)) : 0;
+                        const tracking = (hasEntry && workingDay > 0 && daysInMonth > 0)
                             ? (tot / workingDay) * daysInMonth : 0;
                         const labelDate = `${monthIdx + 1}/${d}`;
-                        const dim = !row && !showBlank;
                         html += `
-                            <tr ${dim ? 'style="opacity:0.55;"' : (showBlank ? 'style="opacity:0.35;"' : '')}>
+                            <tr ${hasEntry ? '' : 'style="opacity:0.35;"'}>
                                 <td style="background:#1a1a1a;color:#fff;font-weight:700;text-align:center;">${workingDay}</td>
                                 <td>${labelDate}</td>
-                                <td>${showBlank ? '—' : formatCurrency(svc)}</td>
-                                <td>${showBlank ? '—' : formatCurrency(whs)}</td>
-                                <td>${showBlank ? '—' : formatCurrency(ctr)}</td>
-                                <td>${showBlank ? '—' : formatCurrency(obso)}</td>
-                                <td style="font-weight:700;">${showBlank ? '—' : formatCurrency(tot)}</td>
-                                <td>${showBlank ? '—' : formatCurrency(tot)}</td>
-                                <td style="background:#1a1a1a;color:#facc15;font-weight:700;">${showBlank ? '—' : formatCurrency(tracking)}</td>
+                                <td>${hasEntry ? formatCurrency(svc) : '—'}</td>
+                                <td>${hasEntry ? formatCurrency(whs) : '—'}</td>
+                                <td>${hasEntry ? formatCurrency(ctr) : '—'}</td>
+                                <td>${hasEntry ? formatCurrency(obso) : '—'}</td>
+                                <td style="font-weight:700;">${hasEntry ? formatCurrency(tot) : '—'}</td>
+                                <td>${hasEntry ? formatCurrency(tot) : '—'}</td>
+                                <td style="background:#1a1a1a;color:#facc15;font-weight:700;">${hasEntry ? formatCurrency(tracking) : '—'}</td>
                             </tr>
                         `;
                     }
