@@ -4159,15 +4159,41 @@
             // Keyed identically to goals: store_id + month + year, but lives in its own bucket
             // so parts_total_goal / parts_wholesale_goal / parts_counter_goal / parts_obso_goal
             // are not blown away when getGoals overwrites the goals cache from Supabase.
-            getPartsGoals() {
+            async getPartsGoals() {
+                if (useSupabase) {
+                    try {
+                        const { data, error } = await db.from('parts_goals').select('*');
+                        if (!error && data) { this._set('dyer_parts_goals', data); return data; }
+                    } catch(e) { console.warn('Supabase getPartsGoals failed, using cache', e); }
+                }
                 return this._get('dyer_parts_goals');
             },
-            savePartsGoal(goal) {
-                // goal: { store_id, month, year, parts_total_goal, parts_wholesale_goal, parts_counter_goal, parts_obso_goal }
+            async savePartsGoal(goal) {
+                // goal: { store_id, month, year, parts_total_goal, parts_wholesale_goal,
+                //         parts_counter_goal, parts_counter_gp_goal, parts_obso_pct_goal }
                 const all = this._get('dyer_parts_goals');
                 const idx = all.findIndex(g => g.store_id === goal.store_id && g.month === goal.month && g.year === goal.year);
                 if (idx >= 0) all[idx] = goal; else all.push(goal);
                 this._set('dyer_parts_goals', all);
+                if (useSupabase) {
+                    try {
+                        const row = {
+                            store_id: goal.store_id,
+                            month: goal.month,
+                            year: goal.year,
+                            parts_total_goal:      goal.parts_total_goal      || 0,
+                            parts_wholesale_goal:  goal.parts_wholesale_goal  || 0,
+                            parts_counter_goal:    goal.parts_counter_goal    || 0,
+                            parts_obso_goal:       goal.parts_obso_goal       || 0,
+                            parts_counter_gp_goal: (goal.parts_counter_gp_goal != null) ? goal.parts_counter_gp_goal : 42,
+                            parts_obso_pct_goal:   (goal.parts_obso_pct_goal   != null) ? goal.parts_obso_pct_goal   : 9,
+                            updated_at: new Date().toISOString(),
+                            updated_by: currentUser ? currentUser.id : null
+                        };
+                        const { error } = await db.from('parts_goals').upsert(row, { onConflict: 'store_id,month,year' });
+                        if (error) { console.warn('Supabase savePartsGoal failed', error); return { ok: false, error }; }
+                    } catch(e) { console.warn('Supabase savePartsGoal threw', e); return { ok: false, error: e }; }
+                }
                 return { ok: true };
             },
 
@@ -4233,8 +4259,8 @@
                 const all = await this.getGoals();
                 return this._carryForwardGoals(all, month, year);
             },
-            getEffectivePartsGoals(month, year) {
-                const all = this.getPartsGoals() || [];
+            async getEffectivePartsGoals(month, year) {
+                const all = (await this.getPartsGoals()) || [];
                 return this._carryForwardGoals(all, month, year);
             },
 
@@ -7733,7 +7759,7 @@
 
                 // Goals — parts goals are stored in their own LS bucket so the Supabase
                 // goals refresh doesn't blow them away. Carry-forward if no current-month row.
-                const allPartsGoals = LS.getEffectivePartsGoals(month, year);
+                const allPartsGoals = await LS.getEffectivePartsGoals(month, year);
                 let pGoals = null;
                 if (allMode) {
                     if (allPartsGoals.length > 0) {
@@ -9042,7 +9068,7 @@
                 // form pre-fills (clicking Save then writes those values into the
                 // current month).
                 const goalsData = await LS.getEffectiveGoals(month, year);
-                const partsGoalsData = LS.getEffectivePartsGoals(month, year);
+                const partsGoalsData = await LS.getEffectivePartsGoals(month, year);
 
                 let html = '';
                 let partsHtml = '';
@@ -9136,21 +9162,21 @@
                     });
                 }
 
-                // Save Parts Department goals to their own bucket (LS-only). Note the % goals
-                // (counter gross %, obso %) are stored as raw percentage values, not ratios —
-                // 42 means "42%", not "0.42".
+                // Save Parts Department goals — now persisted to Supabase (parts_goals table)
+                // with localStorage as a cache fallback. Note the % goals (counter gross %,
+                // obso %) are stored as raw percentage values, not ratios — 42 means "42%".
                 const partsRows = document.querySelectorAll('#partsGoalsBody tr');
                 for (const row of partsRows) {
                     const storeId = row.querySelector('.goal-parts-total')?.dataset.store;
                     if (!storeId) continue;
-                    LS.savePartsGoal({
+                    await LS.savePartsGoal({
                         store_id: storeId,
                         month,
                         year,
                         parts_total_goal: parseFloat(row.querySelector('.goal-parts-total').value) || 0,
                         parts_wholesale_goal: parseFloat(row.querySelector('.goal-parts-wholesale').value) || 0,
                         parts_counter_goal: parseFloat(row.querySelector('.goal-parts-counter').value) || 0,
-                        // New % goals — Counter Gross % (≥42) and Obso % (≤9)
+                        // % goals — Counter Gross % (≥42) and Obso % (≤9)
                         parts_counter_gp_goal: parseFloat(row.querySelector('.goal-parts-counter-gp').value) || 42,
                         parts_obso_pct_goal:   parseFloat(row.querySelector('.goal-parts-obso-pct').value)   || 9
                     });
