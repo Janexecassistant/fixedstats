@@ -7879,10 +7879,13 @@
                     const obsoSub    = avgInventory > 0
                         ? `${formatCurrency(mtdObso)} obso of ${formatCurrency(avgInventory)} inventory`
                         : 'Awaiting inventory data';
+                    // Pace ring = projected end-of-month vs goal (matches the Service dashboard
+                    // behavior). Previously this used actual MTD vs goal, which always read low
+                    // because we're not at month-end yet.
                     partsKpis.innerHTML =
-                        createGoalPieCard('Total Parts', mtdTotalSales,    trackTotal,     totalGoal, pct(mtdTotalSales, totalGoal),    []) +
-                        createGoalPieCard('Wholesale',   mtdWhs,           trackWholesale, whsGoal,   pct(mtdWhs, whsGoal),             []) +
-                        createGoalPieCard('Counter',     mtdCounterTotal,  trackCounter,   ctrGoal,   pct(mtdCounterTotal, ctrGoal),    []) +
+                        createGoalPieCard('Total Parts', mtdTotalSales,    trackTotal,     totalGoal, pct(trackTotal,     totalGoal), []) +
+                        createGoalPieCard('Wholesale',   mtdWhs,           trackWholesale, whsGoal,   pct(trackWholesale, whsGoal),   []) +
+                        createGoalPieCard('Counter',     mtdCounterTotal,  trackCounter,   ctrGoal,   pct(trackCounter,   ctrGoal),   []) +
                         pctThresholdCard('Counter Gross %', counterGpPct, counterGpGoal, 'up',   counterSub) +
                         pctThresholdCard('Obsolescence %',  obsoPct,      obsoPctGoal,   'down', obsoSub);
                 }
