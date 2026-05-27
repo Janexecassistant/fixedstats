@@ -7945,17 +7945,24 @@
                 const dailyBody = document.getElementById('partsDailyBody');
                 const dailyFooter = document.getElementById('partsDailyFooter');
                 if (dailyBody) {
-                    // Build a per-date roll-up across the entries (single store or all stores)
+                    // Build a per-date roll-up across the entries (single store or all stores).
+                    // "Total Parts ($)" = Total Parts row + Wholesale row (sales). Counter rows
+                    // are a BREAKDOWN of the Total Parts row (counter people's individual contributions),
+                    // NOT an additional channel — adding them again would double-count. Obso is not
+                    // revenue, so it's never part of the headline total either.
                     const byDate = {};
                     entries.forEach(p => {
                         const d = byDate[p.entry_date] || (byDate[p.entry_date] = { svc: 0, whs: 0, ctr: 0, obso: 0, total: 0 });
-                        d.svc   += parseFloat(p.service_parts)   || 0;
-                        d.whs   += parseFloat(p.wholesale)       || 0;
+                        const pSvc = parseFloat(p.service_parts) || 0;
+                        const pWhs = parseFloat(p.wholesale)     || 0;
+                        d.svc   += pSvc;
+                        d.whs   += pWhs;
                         const bd = counterBreakdownForEntry(p) || {};
                         Object.values(bd).forEach(v => { d.ctr += parseFloat(v.sales) || 0; });
                         d.obso  += parseFloat(p.obso)            || 0;
-                        d.total += parseFloat(p.total_parts_gross)
-                                || (d.svc + d.whs + d.ctr + d.obso) - (d.total || 0); // safe fallback
+                        // Total Parts $ = saved total_parts_sales (Total Parts row + Wholesale row),
+                        // falling back to svc + whs only if a legacy entry didn't save it.
+                        d.total += parseFloat(p.total_parts_sales) || (pSvc + pWhs);
                     });
                     // Iterate working days only (Mon-Sat) — same convention as the Service Daily table
                     const monthIdx = month - 1;
@@ -7971,7 +7978,9 @@
                         const ds = dateToString(dt);
                         const row = byDate[ds];
                         const svc = row?.svc || 0, whs = row?.whs || 0, ctr = row?.ctr || 0, obso = row?.obso || 0;
-                        const tot = (row?.total || (svc + whs + ctr + obso)) || 0;
+                        // Total Parts $ on the row = Total Parts row + Wholesale row (sales).
+                        // Counter is a subset of svc (don't re-add); obso isn't revenue.
+                        const tot = (row?.total || (svc + whs)) || 0;
                         running += tot;
                         const tracking = (workingDay > 0 && daysInMonth > 0) ? (running / workingDay) * daysInMonth : 0;
                         const labelDate = `${monthIdx + 1}/${d}`;
@@ -7992,7 +8001,10 @@
                     }
                     dailyBody.innerHTML = html || `<tr><td colspan="9" class="empty-state">No parts entries yet for this month.</td></tr>`;
                     if (dailyFooter) {
-                        const finalTracking = (workingDay > 0 && daysInMonth > 0) ? (mtdTotal / workingDay) * daysInMonth : 0;
+                        // Project MTD forward using the dashboard's effective as-of working day
+                        // (the `dayNum` resolved up top), NOT the loop counter — that counter
+                        // ended at total working days, which would make tracking == MTD.
+                        const finalTracking = (dayNum > 0 && daysInMonth > 0) ? (mtdTotal / dayNum) * daysInMonth : 0;
                         dailyFooter.innerHTML = `
                             <tr style="background:#0f172a;color:#fff;font-weight:700;">
                                 <td colspan="2" style="background:#0f172a;color:#fff;">MTD</td>
