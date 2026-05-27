@@ -15,13 +15,10 @@
 
         body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            /* Tire background image (fixed) — lighter overlay so the tread shows through dark and crisp */
-            background:
-                linear-gradient(rgba(234,234,234,0.60), rgba(234,234,234,0.60)),
-                url('/assets/tire-background.png') center center / cover no-repeat fixed;
-            background-color: #eaeaea; /* fallback while image loads */
+            background-color: #c8c8c8;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='120' viewBox='0 0 340 120'%3E%3Cg opacity='0.22'%3E%3C!-- Track 1: herringbone/V tread --%3E%3Crect x='18' y='0' width='3' height='120' fill='%23666'/%3E%3Crect x='79' y='0' width='3' height='120' fill='%23666'/%3E%3Crect x='20' y='0' width='60' height='120' fill='%23aaa' opacity='0.12'/%3E%3Cpath d='M21,2 L50,8 M50,8 L79,2' stroke='%23555' stroke-width='3.5' fill='none'/%3E%3Cpath d='M21,14 L50,20 M50,20 L79,14' stroke='%23555' stroke-width='3.5' fill='none'/%3E%3Cpath d='M21,26 L50,32 M50,32 L79,26' stroke='%23555' stroke-width='3.5' fill='none'/%3E%3Cpath d='M21,38 L50,44 M50,44 L79,38' stroke='%23555' stroke-width='3.5' fill='none'/%3E%3Cpath d='M21,50 L50,56 M50,56 L79,50' stroke='%23555' stroke-width='3.5' fill='none'/%3E%3Cpath d='M21,62 L50,68 M50,68 L79,62' stroke='%23555' stroke-width='3.5' fill='none'/%3E%3Cpath d='M21,74 L50,80 M50,80 L79,74' stroke='%23555' stroke-width='3.5' fill='none'/%3E%3Cpath d='M21,86 L50,92 M50,92 L79,86' stroke='%23555' stroke-width='3.5' fill='none'/%3E%3Cpath d='M21,98 L50,104 M50,104 L79,98' stroke='%23555' stroke-width='3.5' fill='none'/%3E%3Cpath d='M21,110 L50,116 M50,116 L79,110' stroke='%23555' stroke-width='3.5' fill='none'/%3E%3C!-- Track 2: herringbone tread (offset) --%3E%3Crect x='128' y='0' width='3' height='120' fill='%23666'/%3E%3Crect x='192' y='0' width='3' height='120' fill='%23666'/%3E%3Crect x='130' y='0' width='63' height='120' fill='%23aaa' opacity='0.1'/%3E%3Cpath d='M131,5 L161,11 M161,11 L192,5' stroke='%23555' stroke-width='3' fill='none'/%3E%3Cpath d='M131,17 L161,23 M161,23 L192,17' stroke='%23555' stroke-width='3' fill='none'/%3E%3Cpath d='M131,29 L161,35 M161,35 L192,29' stroke='%23555' stroke-width='3' fill='none'/%3E%3Cpath d='M131,41 L161,47 M161,47 L192,41' stroke='%23555' stroke-width='3' fill='none'/%3E%3Cpath d='M131,53 L161,59 M161,59 L192,53' stroke='%23555' stroke-width='3' fill='none'/%3E%3Cpath d='M131,65 L161,71 M161,71 L192,65' stroke='%23555' stroke-width='3' fill='none'/%3E%3Cpath d='M131,77 L161,83 M161,83 L192,77' stroke='%23555' stroke-width='3' fill='none'/%3E%3Cpath d='M131,89 L161,95 M161,95 L192,89' stroke='%23555' stroke-width='3' fill='none'/%3E%3Cpath d='M131,101 L161,107 M161,107 L192,101' stroke='%23555' stroke-width='3' fill='none'/%3E%3Cpath d='M131,113 L161,119 M161,119 L192,113' stroke='%23555' stroke-width='3' fill='none'/%3E%3C!-- Track 3: wider herringbone --%3E%3Crect x='248' y='0' width='3' height='120' fill='%23666'/%3E%3Crect x='318' y='0' width='3' height='120' fill='%23666'/%3E%3Crect x='250' y='0' width='69' height='120' fill='%23aaa' opacity='0.08'/%3E%3Cpath d='M251,3 L284,10 M284,10 L318,3' stroke='%23555' stroke-width='4' fill='none'/%3E%3Cpath d='M251,16 L284,23 M284,23 L318,16' stroke='%23555' stroke-width='4' fill='none'/%3E%3Cpath d='M251,29 L284,36 M284,36 L318,29' stroke='%23555' stroke-width='4' fill='none'/%3E%3Cpath d='M251,42 L284,49 M284,49 L318,42' stroke='%23555' stroke-width='4' fill='none'/%3E%3Cpath d='M251,55 L284,62 M284,62 L318,55' stroke='%23555' stroke-width='4' fill='none'/%3E%3Cpath d='M251,68 L284,75 M284,75 L318,68' stroke='%23555' stroke-width='4' fill='none'/%3E%3Cpath d='M251,81 L284,88 M284,88 L318,81' stroke='%23555' stroke-width='4' fill='none'/%3E%3Cpath d='M251,94 L284,101 M284,101 L318,94' stroke='%23555' stroke-width='4' fill='none'/%3E%3Cpath d='M251,107 L284,114 M284,114 L318,107' stroke='%23555' stroke-width='4' fill='none'/%3E%3C/g%3E%3C/svg%3E");
+            background-size: 340px 120px;
             color: #1a1a1a;
-            min-height: 100vh;
         }
 
         /* Navigation */
@@ -86,11 +83,7 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            /* Brand collage as background with dark overlay so login card stays readable */
-            background:
-                linear-gradient(135deg, rgba(17,17,17,0.78) 0%, rgba(26,26,26,0.82) 50%, rgba(42,42,42,0.78) 100%),
-                url('/assets/dyer-brand-collage.png') center / cover no-repeat;
-            background-color: #111111; /* fallback while image loads */
+            background: linear-gradient(135deg, #111111 0%, #1a1a1a 50%, #2a2a2a 100%);
             position: relative;
             overflow: hidden;
         }
@@ -365,46 +358,6 @@
             background: linear-gradient(135deg, rgba(204,0,0,0.45), rgba(160,0,0,0.3));
             color: white;
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
-        }
-
-        /* Training button — lives in navbar-right, always visible, distinct from SPA tabs */
-        .nav-training-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(204, 0, 0, 0.12);
-            color: #ffffff;
-            border: 1px solid rgba(204, 0, 0, 0.55);
-            padding: 8px 14px;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 0.3px;
-            border-radius: 8px;
-            text-decoration: none;
-            transition: all 0.15s ease;
-            white-space: nowrap;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-        }
-        .nav-training-btn:hover {
-            background: #cc0000;
-            border-color: #cc0000;
-            transform: translateY(-1px);
-            box-shadow: 0 3px 8px rgba(204, 0, 0, 0.35);
-        }
-        .nav-training-btn:active {
-            transform: translateY(0);
-        }
-        .nav-training-btn .training-icon {
-            opacity: 0.9;
-        }
-        .nav-training-btn .ext-icon {
-            font-size: 11px;
-            opacity: 0.7;
-            margin-left: 2px;
-        }
-        /* Hide the icon-only label on narrow screens; keep the word visible */
-        @media (max-width: 900px) {
-            .nav-training-btn { padding: 7px 10px; }
         }
 
         /* Main Content */
@@ -956,332 +909,6 @@
             background-color: #1e293b;
             color: #ffffff;
         }
-
-        /* ============================================================
-           SIDEBAR LAYOUT — replaces horizontal navbar
-           Keeps existing classnames (.nav-tabs, .nav-tab, .nav-btn,
-           .nav-dropdown-item, .nav-dropdown) so existing tab JS works.
-           ============================================================ */
-        :root {
-            --sidebar-w: 240px;
-            --topbar-h: 64px;
-        }
-
-        /* Hide the old horizontal navbar wrapper if present */
-        .navbar { display: none !important; }
-
-        /* Sidebar shell */
-        .sidebar {
-            position: fixed;
-            top: 0; left: 0; bottom: 0;
-            width: var(--sidebar-w);
-            background: #0e0e0e;
-            color: #fff;
-            display: flex;
-            flex-direction: column;
-            z-index: 200;
-            box-shadow: 2px 0 12px rgba(0,0,0,0.25);
-            transition: transform 0.25s ease;
-        }
-        .sidebar-brand {
-            padding: 18px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-            display: flex; align-items: center;
-        }
-        .sidebar-brand img { height: 45px; display: block; }
-
-        .sidebar-scroll {
-            flex: 1;
-            overflow-y: auto;
-            padding: 8px 0;
-        }
-        .sidebar-scroll::-webkit-scrollbar { width: 6px; }
-        .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
-
-        /* Override nav-tabs flex behavior inside sidebar */
-        .sidebar .nav-tabs {
-            display: block;
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
-        .sidebar .nav-tab {
-            display: block;
-            margin: 0;
-            border: 0;
-        }
-        .sidebar .nav-tab.nav-tab-external { display: none; } /* legacy */
-
-        /* Top-level button (whether dropdown toggle or standalone) */
-        .sidebar .nav-tab > .nav-btn {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            width: 100%;
-            background: none;
-            border: none;
-            color: rgba(255,255,255,0.78);
-            padding: 11px 18px;
-            font-size: 14px;
-            font-weight: 600;
-            letter-spacing: 0.2px;
-            cursor: pointer;
-            border-left: 3px solid transparent;
-            text-align: left;
-            transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-        }
-        .sidebar .nav-tab > .nav-btn:hover {
-            color: #fff;
-            background: rgba(255,255,255,0.04);
-        }
-        .sidebar .nav-tab > .nav-btn.active {
-            color: #fff;
-            background: linear-gradient(90deg, rgba(204,0,0,0.25), rgba(204,0,0,0.05));
-            border-left-color: #cc0000;
-        }
-
-        /* Dropdown toggle layout in sidebar */
-        .sidebar .nav-dropdown .nav-dropdown-toggle {
-            justify-content: space-between;
-        }
-        .sidebar .nav-dropdown .nav-dropdown-toggle .nav-label {
-            font-weight: 700;
-        }
-        .sidebar .nav-dropdown .nav-dropdown-toggle .nav-sub {
-            display: none;            /* hide the inline sub-label; sub is selected in the expanded list */
-        }
-        .sidebar .nav-dropdown .nav-dropdown-toggle .nav-caret {
-            font-size: 11px;
-            opacity: 0.65;
-            transition: transform 0.2s ease;
-        }
-        .sidebar .nav-dropdown.open .nav-dropdown-toggle .nav-caret {
-            transform: rotate(180deg);
-        }
-
-        /* Dropdown menu (sub-items) — stacked, not absolute, only visible when group is open */
-        .sidebar .nav-dropdown-menu {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            background: rgba(0,0,0,0.25);
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.25s ease;
-        }
-        .sidebar .nav-dropdown.open .nav-dropdown-menu {
-            max-height: 400px;
-        }
-        .sidebar .nav-dropdown-menu > li { margin: 0; }
-        .sidebar .nav-dropdown-item {
-            display: block;
-            width: 100%;
-            background: none;
-            border: none;
-            color: rgba(255,255,255,0.6);
-            padding: 9px 18px 9px 38px;
-            font-size: 13px;
-            font-weight: 500;
-            text-align: left;
-            cursor: pointer;
-            transition: background 0.15s ease, color 0.15s ease;
-            border-left: 3px solid transparent;
-        }
-        .sidebar .nav-dropdown-item:hover {
-            background: rgba(255,255,255,0.04);
-            color: #fff;
-        }
-        .sidebar .nav-dropdown-item.active {
-            color: #fff;
-            background: rgba(204,0,0,0.18);
-            border-left-color: #cc0000;
-        }
-
-        /* Bottom area — Training button */
-        .sidebar-bottom {
-            padding: 12px 16px 18px;
-            border-top: 1px solid rgba(255,255,255,0.08);
-        }
-        .sidebar-bottom .nav-training-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-            background: rgba(204, 0, 0, 0.15);
-            color: #fff;
-            border: 1px solid rgba(204, 0, 0, 0.55);
-            padding: 10px 14px;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 0.3px;
-            border-radius: 8px;
-            text-decoration: none;
-            transition: all 0.15s ease;
-        }
-        .sidebar-bottom .nav-training-btn:hover {
-            background: #cc0000;
-            border-color: #cc0000;
-        }
-
-        /* Top bar — slim header above the content (translucent so the .store-select glass can refract the tire bg behind it) */
-        .topbar {
-            position: sticky;
-            top: 0;
-            left: var(--sidebar-w);
-            right: 0;
-            height: var(--topbar-h);
-            background: rgba(20, 20, 20, 0.82);
-            backdrop-filter: blur(18px) saturate(140%);
-            -webkit-backdrop-filter: blur(18px) saturate(140%);
-            color: #fff;
-            display: flex;
-            align-items: center;
-            padding: 0 24px;
-            gap: 16px;
-            margin-left: var(--sidebar-w);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            z-index: 90;
-        }
-        .topbar .hamburger {
-            display: none;
-            background: none;
-            border: none;
-            color: #fff;
-            padding: 8px;
-            cursor: pointer;
-        }
-        .topbar .hamburger span {
-            display: block;
-            width: 22px; height: 2px;
-            background: #fff;
-            margin: 4px 0;
-            border-radius: 2px;
-        }
-        .topbar .navbar-right {
-            margin-left: auto;
-        }
-
-        /* Override the navbar-right styles bleeding through in the topbar */
-        .topbar .navbar-right {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            padding-right: 0;
-        }
-
-        /* Store selector — wrapper provides the eccentric chrome ring; select inside is the frosted glass */
-        .store-select-wrap {
-            position: relative;
-            display: inline-block;
-            padding: 2px;
-            border-radius: 14px;
-            background:
-                linear-gradient(135deg,
-                    rgba(255, 255, 255, 0.35) 0%,
-                    rgba(255, 90, 90, 0.55) 35%,
-                    rgba(204, 0, 0, 0.25) 70%,
-                    rgba(255, 255, 255, 0.18) 100%);
-            box-shadow:
-                0 6px 22px rgba(0, 0, 0, 0.45),
-                0 0 0 1px rgba(255, 255, 255, 0.05);
-        }
-        .store-select-wrap::after {
-            /* glossy top highlight — sells the glass illusion */
-            content: '';
-            position: absolute;
-            top: 3px; left: 8px; right: 8px;
-            height: 12px;
-            background: linear-gradient(to bottom, rgba(255,255,255,0.25), rgba(255,255,255,0));
-            border-radius: 12px 12px 4px 4px;
-            pointer-events: none;
-        }
-        .store-select {
-            display: block;
-            background-color: rgba(20, 20, 20, 0.45);
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M0,1 L12,1 L6,8Z' fill='%23ff5555'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 14px center;
-            color: #ffffff;
-            border: none;
-            border-radius: 12px;
-            padding: 10px 38px 10px 16px;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 0.4px;
-            min-width: 220px;
-            cursor: pointer;
-            backdrop-filter: blur(16px) saturate(180%);
-            -webkit-backdrop-filter: blur(16px) saturate(180%);
-            box-shadow:
-                inset 0 1px 0 rgba(255, 255, 255, 0.22),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-                inset 0 0 30px rgba(255, 80, 80, 0.08);
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
-            appearance: none;
-            -webkit-appearance: none;
-            transition: background-color 0.18s ease, box-shadow 0.18s ease;
-        }
-        .store-select:hover {
-            background-color: rgba(40, 20, 20, 0.55);
-            box-shadow:
-                inset 0 1px 0 rgba(255, 255, 255, 0.3),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.35),
-                inset 0 0 35px rgba(255, 80, 80, 0.18);
-        }
-        .store-select:focus {
-            outline: none;
-            background-color: rgba(40, 20, 20, 0.55);
-            box-shadow:
-                inset 0 1px 0 rgba(255, 255, 255, 0.3),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.35),
-                inset 0 0 35px rgba(255, 80, 80, 0.22);
-        }
-        .store-select option {
-            background-color: #1a1a1a;
-            color: #ffffff;
-            font-weight: 600;
-            padding: 8px;
-        }
-
-        /* Main content shifts right to make room for the sidebar */
-        .container {
-            margin-left: var(--sidebar-w);
-        }
-
-        /* Backdrop for mobile sidebar */
-        .sidebar-backdrop {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 150;
-        }
-        .sidebar-backdrop.show { display: block; }
-
-        /* ===== Responsive: hamburger sidebar on narrow screens ===== */
-        @media (max-width: 900px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            .sidebar.open {
-                transform: translateX(0);
-            }
-            .topbar {
-                margin-left: 0;
-                left: 0;
-            }
-            .topbar .hamburger { display: block; }
-            .container {
-                margin-left: 0;
-            }
-        }
-
-        /* Login screen full bleed even with sidebar present */
-        .login-screen { margin-left: 0 !important; }
-        body.is-login .sidebar,
-        body.is-login .topbar { display: none !important; }
     </style>
 </head>
 <body>
@@ -1308,16 +935,19 @@
     <!-- Main App (hidden until logged in) -->
     <div id="appContent" style="display: none;">
 
-    <!-- Sidebar Navigation -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-brand">
-            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNzAgNTUiIHdpZHRoPSIxNzAiIGhlaWdodD0iNTUiPjx0ZXh0IHg9IjUiIHk9IjQyIiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEltcGFjdCwgc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjkwMCIgZm9udC1zaXplPSI1MiIgZmlsbD0iI2ZmZmZmZiIgbGV0dGVyLXNwYWNpbmc9Ii0yIj5EeWVyPC90ZXh0Pjx0ZXh0IHg9IjEzMiIgeT0iNDIiIGZvbnQtZmFtaWx5PSJBcmlhbCBCbGFjaywgSW1wYWN0LCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjUyIiBmaWxsPSIjY2MwMDAwIj4hPC90ZXh0Pjwvc3ZnPg==" alt="Dyer Auto">
-        </div>
-        <div class="sidebar-scroll">
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <div class="navbar-title">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNzAgNTUiIHdpZHRoPSIxNzAiIGhlaWdodD0iNTUiPjx0ZXh0IHg9IjUiIHk9IjQyIiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEltcGFjdCwgc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjkwMCIgZm9udC1zaXplPSI1MiIgZmlsbD0iI2ZmZmZmZiIgbGV0dGVyLXNwYWNpbmc9Ii0yIj5EeWVyPC90ZXh0Pjx0ZXh0IHg9IjEzMiIgeT0iNDIiIGZvbnQtZmFtaWx5PSJBcmlhbCBCbGFjaywgSW1wYWN0LCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjUyIiBmaWxsPSIjY2MwMDAwIj4hPC90ZXh0Pjwvc3ZnPg==" alt="Dyer Auto" style="height:40px;vertical-align:middle;">
+            </div>
+            <select id="globalStoreSelect" style="background:linear-gradient(135deg, rgba(204,0,0,0.3), rgba(140,0,0,0.2));color:white;border:2px solid rgba(204,0,0,0.6);border-radius:8px;padding:10px 36px 10px 18px;font-size:13px;font-weight:600;margin:6px 3px;min-width:220px;cursor:pointer;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 4px 14px rgba(204,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.15);text-shadow:0 1px 2px rgba(0,0,0,0.4);letter-spacing:0.3px;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%278%27%3E%3Cpath d=%27M0,0 L12,0 L6,8Z%27 fill=%27%23ff3333%27/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 14px center;line-height:1.2;">
+                <option value="all">All Stores</option>
+            </select>
             <ul class="nav-tabs">
-                <!-- Daily Entry group -->
-                <li class="nav-tab nav-dropdown open" id="navGroupDaily" data-group="daily">
-                    <button class="nav-btn nav-dropdown-toggle active" type="button" aria-haspopup="true" aria-expanded="true">
+                <!-- Daily Entry dropdown (Service / Parts / Collision) -->
+                <li class="nav-tab nav-dropdown" id="navGroupDaily" data-group="daily">
+                    <button class="nav-btn nav-dropdown-toggle active" type="button" aria-haspopup="true" aria-expanded="false">
                         <span class="nav-label">Daily Entry</span>
                         <span class="nav-sub" id="navDailySub">Service</span>
                         <span class="nav-caret">▾</span>
@@ -1328,7 +958,7 @@
                         <li><button class="nav-dropdown-item" data-tab="collisionDaily" data-group="daily" data-sub="Collision">Collision</button></li>
                     </ul>
                 </li>
-                <!-- Dashboard group -->
+                <!-- Dashboard dropdown (Service / Parts / Collision / All) -->
                 <li class="nav-tab nav-dropdown" id="navGroupDashboard" data-group="dashboard">
                     <button class="nav-btn nav-dropdown-toggle" type="button" aria-haspopup="true" aria-expanded="false">
                         <span class="nav-label">Dashboard</span>
@@ -1342,7 +972,7 @@
                         <li><button class="nav-dropdown-item" data-tab="executive" data-group="dashboard" data-sub="All">All Departments</button></li>
                     </ul>
                 </li>
-                <!-- Advisors group -->
+                <!-- Advisors dropdown (Service / Parts / Collision) -->
                 <li class="nav-tab nav-dropdown" id="navGroupAdvisor" data-group="advisor">
                     <button class="nav-btn nav-dropdown-toggle" type="button" aria-haspopup="true" aria-expanded="false">
                         <span class="nav-label">Advisors</span>
@@ -1355,7 +985,7 @@
                         <li><button class="nav-dropdown-item" data-tab="collisionAdvisor" data-group="advisor" data-sub="Collision">Collision</button></li>
                     </ul>
                 </li>
-                <!-- Roster group -->
+                <!-- Roster dropdown (Service / Parts / Collision) -->
                 <li class="nav-tab nav-dropdown" id="navGroupRoster" data-group="roster">
                     <button class="nav-btn nav-dropdown-toggle" type="button" aria-haspopup="true" aria-expanded="false">
                         <span class="nav-label">Roster</span>
@@ -1371,37 +1001,15 @@
                 <li class="nav-tab"><button class="nav-btn" id="goalsTab" data-tab="goals" style="display:none;">Goals</button></li>
                 <li class="nav-tab"><button class="nav-btn" id="adminConsoleTab" data-tab="admin" style="display:none;">Admin Console</button></li>
             </ul>
-        </div>
-        <div class="sidebar-bottom">
-            <a href="/training/" target="_blank" rel="noopener" class="nav-training-btn" title="Open the Dyer Training Library in a new tab">
-                <svg class="training-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-                <span>Training</span>
-                <span class="ext-icon" aria-hidden="true">↗</span>
-            </a>
-        </div>
-    </aside>
-
-    <!-- Mobile backdrop -->
-    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-
-    <!-- Top bar -->
-    <header class="topbar">
-        <button class="hamburger" id="hamburgerToggle" type="button" aria-label="Toggle menu">
-            <span></span><span></span><span></span>
-        </button>
-        <div class="store-select-wrap">
-            <select id="globalStoreSelect" class="store-select">
-                <option value="all">All Stores</option>
-            </select>
-        </div>
-        <div class="navbar-right">
-            <div class="user-info">
-                <span id="navbarUserName">User</span>
-                <span class="role-badge" id="navbarUserRole">user</span>
+            <div class="navbar-right">
+                <div class="user-info">
+                    <span id="navbarUserName">User</span>
+                    <span class="role-badge" id="navbarUserRole">user</span>
+                </div>
+                <button class="btn btn-secondary" id="logoutBtn" style="padding: 8px 12px; font-size: 13px;">Logout</button>
             </div>
-            <button class="btn btn-secondary" id="logoutBtn" style="padding: 8px 12px; font-size: 13px;">Logout</button>
         </div>
-    </header>
+    </nav>
 
     <div class="container">
         <!-- TAB 1: SERVICE DAILY ENTRY (Service Manager) -->
@@ -2905,8 +2513,6 @@
                 }
 
                 sessionStorage.setItem('dyer_session', JSON.stringify(currentUser));
-                // Mirror to localStorage so cross-tab pages (e.g. training) can see the session
-                try { localStorage.setItem('dyer_session', JSON.stringify(currentUser)); } catch(_) {}
 
                 // Update UI
                 updateNavbarUser();
@@ -2941,7 +2547,6 @@
 
                 if (error || !data) {
                     sessionStorage.removeItem('dyer_session');
-                    try { localStorage.removeItem('dyer_session'); } catch(_) {}
                     currentUser = null;
                     showLoginScreen();
                     return false;
@@ -2959,8 +2564,6 @@
                     token: data.token
                 };
                 sessionStorage.setItem('dyer_session', JSON.stringify(currentUser));
-                // Mirror to localStorage so cross-tab pages (e.g. training) can see the session
-                try { localStorage.setItem('dyer_session', JSON.stringify(currentUser)); } catch(_) {}
 
                 updateNavbarUser();
                 applyRoleAccess();
@@ -2969,7 +2572,6 @@
             } catch (error) {
                 console.error('Session validation error:', error);
                 sessionStorage.removeItem('dyer_session');
-                try { localStorage.removeItem('dyer_session'); } catch(_) {}
                 currentUser = null;
                 showLoginScreen();
                 return false;
@@ -3225,7 +2827,6 @@
                 console.warn('Logout RPC error:', error);
             }
             sessionStorage.removeItem('dyer_session');
-            try { localStorage.removeItem('dyer_session'); } catch(_) {}
             currentUser = null;
             location.reload();
         }
@@ -3268,7 +2869,7 @@
                 // Default store option
                 const opt = document.createElement('option');
                 opt.value = store.id;
-                opt.textContent = store.name;
+                opt.textContent = `${store.code} - ${store.name}`;
                 defaultStoreSelect.appendChild(opt);
             });
         }
@@ -3732,20 +3333,14 @@
         }
 
         // Dropdown toggle button → open/close menu (no tab switch)
-        // In sidebar context, allow multiple groups to be open at once.
         document.querySelectorAll('.nav-dropdown-toggle').forEach(toggle => {
             toggle.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const dropdown = toggle.closest('.nav-dropdown');
                 if (!dropdown) return;
-                const inSidebar = !!dropdown.closest('.sidebar');
                 const wasOpen = dropdown.classList.contains('open');
-                if (!inSidebar) {
-                    // Legacy navbar behavior: only one dropdown open at a time
-                    document.querySelectorAll('.nav-dropdown').forEach(d => d.classList.remove('open'));
-                }
-                dropdown.classList.toggle('open', !wasOpen);
-                toggle.setAttribute('aria-expanded', String(!wasOpen));
+                document.querySelectorAll('.nav-dropdown').forEach(d => d.classList.remove('open'));
+                if (!wasOpen) dropdown.classList.add('open');
             });
         });
 
@@ -3768,41 +3363,11 @@
         });
 
         // Click anywhere outside an open dropdown → close all
-        // (only applies to legacy navbar dropdowns, NOT sidebar groups)
         document.addEventListener('click', (e) => {
-            if (e.target.closest('.sidebar')) return;
             if (!e.target.closest('.nav-dropdown')) {
-                document.querySelectorAll('.nav-dropdown:not(.sidebar .nav-dropdown)').forEach(d => d.classList.remove('open'));
+                document.querySelectorAll('.nav-dropdown').forEach(d => d.classList.remove('open'));
             }
         });
-
-        // ===== Sidebar hamburger toggle (mobile) =====
-        (function initSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const backdrop = document.getElementById('sidebarBackdrop');
-            const hamburger = document.getElementById('hamburgerToggle');
-            if (!sidebar || !backdrop || !hamburger) return;
-
-            function open() {
-                sidebar.classList.add('open');
-                backdrop.classList.add('show');
-            }
-            function close() {
-                sidebar.classList.remove('open');
-                backdrop.classList.remove('show');
-            }
-            hamburger.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (sidebar.classList.contains('open')) close(); else open();
-            });
-            backdrop.addEventListener('click', close);
-            // Tapping a sub-item on mobile should close the sidebar
-            sidebar.querySelectorAll('.nav-dropdown-item, .nav-btn:not(.nav-dropdown-toggle)').forEach(el => {
-                el.addEventListener('click', () => {
-                    if (window.innerWidth <= 900) close();
-                });
-            });
-        })();
 
         // ============================================================================
         // FALLBACK DATA (used when Supabase is unreachable)
@@ -4655,7 +4220,7 @@
             stores.forEach(store => {
                 const option = document.createElement('option');
                 option.value = store.id;
-                option.textContent = store.name;
+                option.textContent = `${store.code} - ${store.name}`;
                 select.appendChild(option);
             });
             if (currentValue) select.value = currentValue;
@@ -4675,7 +4240,7 @@
             Object.keys(byStore).forEach(storeId => {
                 const store = stores.find(s => s.id === storeId);
                 const optgroup = document.createElement('optgroup');
-                optgroup.label = store ? store.name : storeId;
+                optgroup.label = store ? `${store.code} - ${store.name}` : storeId;
 
                 byStore[storeId].forEach(adv => {
                     const option = document.createElement('option');
@@ -5773,14 +5338,19 @@
             const partsMtdData = (await LS.getPartsEntries()).filter(p =>
                 p.store_id === storeId && p.entry_date >= monthStart && p.entry_date <= ds
             );
+            // Each entry is a running MTD snapshot for the store, NOT a daily delta. The month
+            // total = the latest saved entry's value (or the live form if today's the latest).
             let totalPartsMtd = 0;
-            partsMtdData.forEach(p => {
-                if (p.entry_date === ds) return; // exclude saved row for today; use live form
-                // Prefer total_parts_sales (new field); fall back to total_parts_gross from
-                // legacy rows where sales wasn't recorded separately.
-                totalPartsMtd += (parseFloat(p.total_parts_sales) || parseFloat(p.total_parts_gross) || 0);
-            });
-            totalPartsMtd += partsTotalDay;
+            const todayRow = partsMtdData.find(p => p.entry_date === ds);
+            const priorRows = partsMtdData.filter(p => p.entry_date !== ds);
+            if (priorRows.length > 0) {
+                const latestPrior = priorRows.reduce((m, p) => p.entry_date > m.entry_date ? p : m);
+                totalPartsMtd = parseFloat(latestPrior.total_parts_sales) || 0;
+            }
+            // If today has a saved entry OR the live form has values, those override the prior MTD
+            if (todayRow || partsTotalDay > 0) {
+                totalPartsMtd = partsTotalDay;
+            }
 
             const mtdEl = document.getElementById('partsTotalMtd');
             const paceEl = document.getElementById('partsTotalPace');
@@ -5942,13 +5512,20 @@
                 // Recompute derived cells (gross %, totals, obso %) from the populated fields
                 renderPartsDailyDerived(readPartsDailyForm());
 
-                // MTD across all stores
+                // MTD across all stores — each entry is a running MTD snapshot per store, so
+                // the month total = sum of (each store's latest entry as-of the viewed date),
+                // NOT the sum of every entry.
                 const monthStart = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
                 const dayNum = parseInt(document.getElementById('partsDailyDayNumber')?.value) || 0;
                 const daysInMonth = parseInt(document.getElementById('partsDailyDaysInMonth')?.value) || 0;
                 const monthData = allParts.filter(p => p.entry_date >= monthStart && p.entry_date <= ds);
-                const totalMtd = monthData.reduce((s, p) =>
-                    s + (parseFloat(p.total_parts_sales) || parseFloat(p.total_parts_gross) || 0), 0);
+                const latestByStore = {};
+                monthData.forEach(p => {
+                    const prev = latestByStore[p.store_id];
+                    if (!prev || p.entry_date > prev.entry_date) latestByStore[p.store_id] = p;
+                });
+                const totalMtd = Object.values(latestByStore).reduce((s, p) =>
+                    s + (parseFloat(p.total_parts_sales) || 0), 0);
                 document.getElementById('partsTotalMtd').textContent = formatCurrency(totalMtd);
                 if (dayNum > 0 && daysInMonth > 0) {
                     document.getElementById('partsTotalPace').textContent = formatCurrency((totalMtd / dayNum) * daysInMonth);
@@ -7743,12 +7320,21 @@
                 );
                 if (!allMode) entries = entries.filter(p => p.store_id === storeId);
 
-                // Aggregate MTD across the entries — sales AND gross per channel + obso + inventory
+                // Each parts_entries row stores a RUNNING MONTH-TO-DATE snapshot per store
+                // (the parts manager enters the cumulative MTD each time, not a daily delta).
+                // So the correct month total is the LATEST entry per store, summed across
+                // stores — NOT a sum of every entry. Previously this was double/triple-counting.
+                const latestPerStore = {};
+                entries.forEach(p => {
+                    const prev = latestPerStore[p.store_id];
+                    if (!prev || p.entry_date > prev.entry_date) latestPerStore[p.store_id] = p;
+                });
+
                 let mtdSvc = 0, mtdWhs = 0, mtdObso = 0, mtdTotalSales = 0;
                 let mtdSvcG = 0, mtdWhsG = 0, mtdTotalGross = 0;
                 let mtdCounterTotal = 0, mtdCounterTotalGross = 0;
                 let mtdInventory = 0, mtdInventorySamples = 0;
-                entries.forEach(p => {
+                Object.values(latestPerStore).forEach(p => {
                     // Sales
                     mtdSvc        += parseFloat(p.service_parts) || 0;
                     mtdWhs        += parseFloat(p.wholesale)     || 0;
@@ -7766,11 +7352,10 @@
                     mtdCounterTotal      += cSales;
                     mtdCounterTotalGross += cGross;
                     mtdTotalSales += parseFloat(p.total_parts_sales)
-                                   || parseFloat(p.total_parts_gross)
-                                   || ((parseFloat(p.service_parts)||0)+(parseFloat(p.wholesale)||0) + cSales);
+                                   || ((parseFloat(p.service_parts)||0)+(parseFloat(p.wholesale)||0));
                     mtdTotalGross += parseFloat(p.total_parts_gross)
-                                   || ((parseFloat(p.service_parts_gross)||0)+(parseFloat(p.wholesale_gross)||0) + cGross);
-                    // Inventory — average across days that recorded one
+                                   || ((parseFloat(p.service_parts_gross)||0)+(parseFloat(p.wholesale_gross)||0));
+                    // Inventory — point-in-time snapshot, take latest store's value
                     const inv = parseFloat(p.inventory) || 0;
                     if (inv > 0) { mtdInventory += inv; mtdInventorySamples++; }
                 });
@@ -7881,29 +7466,27 @@
                     }).join('');
                 }
 
-                // Counter People Leaderboard — aggregate by counter person (staff id) across all entries.
-                // Make sure department staff is loaded so we can resolve names.
+                // Counter People Leaderboard — each counter person's MTD comes from their
+                // store's LATEST entry (which is the running MTD snapshot, not a daily delta).
+                // Summing across entries would multi-count a counter person whose values
+                // grew over the month.
                 if (!partsCounterStaff || partsCounterStaff.length === 0) {
                     try { await loadDepartmentStaff(); } catch(e) { /* non-fatal */ }
                 }
                 const rows = [];
-                entries.forEach(p => {
+                Object.values(latestPerStore).forEach(p => {
                     const breakdown = counterBreakdownForEntry(p) || {};
                     const storeRow = (stores.find(s => s.id === p.store_id) || FALLBACK_STORES.find(s => s.id === p.store_id));
                     const storeCode = storeRow ? storeRow.code : p.store_id;
+                    // days = working day of this store's latest entry — used for "avg sales / day"
+                    const storeDayNum = getWorkingDayOfMonth(pickerDate(new Date(p.entry_date + 'T12:00:00')));
                     Object.entries(breakdown).forEach(([key, val]) => {
                         const sales = parseFloat(val.sales) || 0;
                         const gross = parseFloat(val.gross) || 0;
                         if (sales <= 0 && gross <= 0) return;
                         const nm = counterDisplayName(key, val);
-                        let slot = rows.find(x => x.key === key);
-                        if (!slot) {
-                            slot = { key, name: nm, storeCode, sales: 0, gross: 0, days: 0 };
-                            rows.push(slot);
-                        }
-                        slot.sales += sales;
-                        slot.gross += gross;
-                        slot.days  += 1;
+                        // Latest entry is the MTD — assign, don't accumulate
+                        rows.push({ key, name: nm, storeCode, sales, gross, days: storeDayNum || 1 });
                     });
                 });
                 rows.sort((a, b) => b.sales - a.sales);
@@ -7945,30 +7528,42 @@
                 const dailyBody = document.getElementById('partsDailyBody');
                 const dailyFooter = document.getElementById('partsDailyFooter');
                 if (dailyBody) {
-                    // Build a per-date roll-up across the entries (single store or all stores).
-                    // "Total Parts ($)" = Total Parts row + Wholesale row (sales). Counter rows
-                    // are a BREAKDOWN of the Total Parts row (counter people's individual contributions),
-                    // NOT an additional channel — adding them again would double-count. Obso is not
-                    // revenue, so it's never part of the headline total either.
+                    // Each parts_entries row is a running-MTD snapshot per store. To show the
+                    // cross-store MTD as-of each date, walk every entry date in order and, for
+                    // each store, take that store's latest entry whose date <= the row's date.
+                    // Then sum across stores. This avoids double-counting earlier snapshots.
                     const byDate = {};
-                    entries.forEach(p => {
-                        const d = byDate[p.entry_date] || (byDate[p.entry_date] = { svc: 0, whs: 0, ctr: 0, obso: 0, total: 0 });
-                        const pSvc = parseFloat(p.service_parts) || 0;
-                        const pWhs = parseFloat(p.wholesale)     || 0;
-                        d.svc   += pSvc;
-                        d.whs   += pWhs;
-                        const bd = counterBreakdownForEntry(p) || {};
-                        Object.values(bd).forEach(v => { d.ctr += parseFloat(v.sales) || 0; });
-                        d.obso  += parseFloat(p.obso)            || 0;
-                        // Total Parts $ = saved total_parts_sales (Total Parts row + Wholesale row),
-                        // falling back to svc + whs only if a legacy entry didn't save it.
-                        d.total += parseFloat(p.total_parts_sales) || (pSvc + pWhs);
+                    const allEntryDates = [...new Set(entries.map(e => e.entry_date))].sort();
+                    allEntryDates.forEach(rowDate => {
+                        const latestAsOf = {};
+                        entries.forEach(p => {
+                            if (p.entry_date > rowDate) return;
+                            const prev = latestAsOf[p.store_id];
+                            if (!prev || p.entry_date > prev.entry_date) latestAsOf[p.store_id] = p;
+                        });
+                        const agg = { svc: 0, whs: 0, ctr: 0, obso: 0, total: 0 };
+                        Object.values(latestAsOf).forEach(p => {
+                            const pSvc = parseFloat(p.service_parts) || 0;
+                            const pWhs = parseFloat(p.wholesale)     || 0;
+                            agg.svc  += pSvc;
+                            agg.whs  += pWhs;
+                            const bd = counterBreakdownForEntry(p) || {};
+                            Object.values(bd).forEach(v => { agg.ctr += parseFloat(v.sales) || 0; });
+                            agg.obso += parseFloat(p.obso) || 0;
+                            agg.total += parseFloat(p.total_parts_sales) || (pSvc + pWhs);
+                        });
+                        byDate[rowDate] = agg;
                     });
-                    // Iterate working days only (Mon-Sat) — same convention as the Service Daily table
+                    // Iterate working days only (Mon-Sat) — same convention as the Service Daily table.
+                    // Each row's columns are already CUMULATIVE MTD as-of that date (carried
+                    // forward from the prior entry when no new entry exists that day). The old
+                    // "running" accumulator is gone — adding running on top would double-count.
                     const monthIdx = month - 1;
                     let html = '';
-                    let running = 0;
                     let workingDay = 0;
+                    // Carry-forward MTD so days without an entry still show the running snapshot
+                    let carry = { svc: 0, whs: 0, ctr: 0, obso: 0, total: 0 };
+                    let hadAnyEntry = false;
                     const lastDate = new Date(year, monthIdx + 1, 0).getDate();
                     for (let d = 1; d <= lastDate; d++) {
                         const dt = new Date(year, monthIdx, d);
@@ -7977,25 +7572,26 @@
                         workingDay++;
                         const ds = dateToString(dt);
                         const row = byDate[ds];
-                        const svc = row?.svc || 0, whs = row?.whs || 0, ctr = row?.ctr || 0, obso = row?.obso || 0;
-                        // Total Parts $ on the row = Total Parts row + Wholesale row (sales).
-                        // Counter is a subset of svc (don't re-add); obso isn't revenue.
-                        const tot = (row?.total || (svc + whs)) || 0;
-                        running += tot;
-                        const tracking = (workingDay > 0 && daysInMonth > 0) ? (running / workingDay) * daysInMonth : 0;
+                        if (row) { carry = row; hadAnyEntry = true; }
+                        // Until the first entry of the month, leave the row visually blank
+                        const showBlank = !hadAnyEntry;
+                        const svc = carry.svc, whs = carry.whs, ctr = carry.ctr, obso = carry.obso;
+                        const tot = carry.total || (svc + whs);
+                        const tracking = (!showBlank && workingDay > 0 && daysInMonth > 0)
+                            ? (tot / workingDay) * daysInMonth : 0;
                         const labelDate = `${monthIdx + 1}/${d}`;
-                        const empty = !row;
+                        const dim = !row && !showBlank; // carrying forward — dim it
                         html += `
-                            <tr ${empty ? 'style="opacity:0.55;"' : ''}>
+                            <tr ${dim ? 'style="opacity:0.55;"' : (showBlank ? 'style="opacity:0.35;"' : '')}>
                                 <td style="background:#1a1a1a;color:#fff;font-weight:700;text-align:center;">${workingDay}</td>
                                 <td>${labelDate}</td>
-                                <td>${empty ? '—' : formatCurrency(svc)}</td>
-                                <td>${empty ? '—' : formatCurrency(whs)}</td>
-                                <td>${empty ? '—' : formatCurrency(ctr)}</td>
-                                <td>${empty ? '—' : formatCurrency(obso)}</td>
-                                <td style="font-weight:700;">${empty ? '—' : formatCurrency(tot)}</td>
-                                <td>${formatCurrency(running)}</td>
-                                <td style="background:#1a1a1a;color:#facc15;font-weight:700;">${formatCurrency(tracking)}</td>
+                                <td>${showBlank ? '—' : formatCurrency(svc)}</td>
+                                <td>${showBlank ? '—' : formatCurrency(whs)}</td>
+                                <td>${showBlank ? '—' : formatCurrency(ctr)}</td>
+                                <td>${showBlank ? '—' : formatCurrency(obso)}</td>
+                                <td style="font-weight:700;">${showBlank ? '—' : formatCurrency(tot)}</td>
+                                <td>${showBlank ? '—' : formatCurrency(tot)}</td>
+                                <td style="background:#1a1a1a;color:#facc15;font-weight:700;">${showBlank ? '—' : formatCurrency(tracking)}</td>
                             </tr>
                         `;
                     }
