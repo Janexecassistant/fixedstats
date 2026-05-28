@@ -7086,6 +7086,15 @@
                     const csiScore = csiRaw === '' ? null : (parseFloat(csiRaw) || 0);
                     const mpviPct = mpviRaw === '' ? null : (parseFloat(mpviRaw) || 0);
 
+                    // Guard: skip advisor rows that are entirely blank/zero. Prevents an
+                    // empty/re-rendered form from overwriting previously-saved real numbers
+                    // with zeros (the Vero Beach "numbers reset to zero" bug). A row with
+                    // even one filled field (incl. CSI or MPVI only) still saves normally.
+                    if (laborGross === 0 && partsGross === 0 && totalRos === 0 &&
+                        cpRos === 0 && hours === 0 && csiScore === null && mpviPct === null) {
+                        continue;
+                    }
+
                     const advResult = await LS.saveAdvisorEntry({
                         store_id: storeId,
                         advisor_id: parseInt(advisorId),
