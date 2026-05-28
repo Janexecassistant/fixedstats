@@ -2807,7 +2807,12 @@
             const d = reference ? new Date(reference) : new Date();
             d.setHours(0, 0, 0, 0);
             d.setDate(d.getDate() - 1);
-            while (d.getDay() === 0 || d.getDay() === 6) {
+            // Skip back past Sat/Sun (original behavior) AND company holidays.
+            // Without the holiday skip, the day after a holiday (e.g. Tuesday
+            // after Memorial Day) would land on the holiday and use it as the
+            // as-of date — which has no entries and the wrong working-day
+            // number for projection math.
+            while (d.getDay() === 0 || d.getDay() === 6 || isCompanyHoliday(d)) {
                 d.setDate(d.getDate() - 1);
             }
             return d;
@@ -7363,15 +7368,19 @@
 
                 for (let d = 1; d <= daysInMonthCount; d++) {
                     const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                    const dayOfWeek = new Date(year, month - 1, d).getDay();
+                    const currentDt = new Date(year, month - 1, d);
+                    const dayOfWeek = currentDt.getDay();
                     const dayName = dayNames[dayOfWeek];
                     const isSunday = dayOfWeek === 0;
                     const isSaturday = dayOfWeek === 6;
+                    const isHoliday = isCompanyHoliday(currentDt);
                     const isToday = isCurrentMonth && d === today.getDate();
                     const isFuture = isCurrentMonth && d > today.getDate();
 
-                    // Track working day number (Mon-Sat = working days)
-                    if (!isSunday) workingDayNum++;
+                    // Track working day number (Mon-Sat, excluding company holidays).
+                    // Memorial Day, etc. were leaking through here and inflating the
+                    // tracking-divisor by 1, dragging projected month-end down.
+                    if (!isSunday && !isHoliday) workingDayNum++;
 
                     const dep = dailyByDate[dateStr] || { labor: 0, parts: 0, gross: 0 };
                     const adv = advByDate[dateStr] || { roCount: 0, hours: 0, gross: 0 };
@@ -7385,8 +7394,9 @@
                     totLabor += dep.labor; totParts += dep.parts; totGross += dayGross;
                     totRo += adv.roCount; totHours += adv.hours;
 
-                    const dayType = isSunday ? 'Closed' : isSaturday ? 'Saturday' : 'Weekday';
-                    const rowStyle = isSunday ? 'opacity:0.35;' : isToday ? 'background:#fff3cd;font-weight:700;' : isFuture ? 'opacity:0.4;' : '';
+                    const dayType = isSunday ? 'Closed' : isHoliday ? 'Holiday' : isSaturday ? 'Saturday' : 'Weekday';
+                    // Holidays are treated like Sundays — dimmed row, no working day counted.
+                    const rowStyle = isSunday ? 'opacity:0.35;' : isHoliday ? 'opacity:0.35;background:#fef3c7;' : isToday ? 'background:#fff3cd;font-weight:700;' : isFuture ? 'opacity:0.4;' : '';
                     const hasData = dep.labor > 0 || dep.parts > 0 || adv.roCount > 0;
 
                     // Color code labor, parts, gross, and gross/RO vs daily goals
@@ -8034,6 +8044,7 @@
                         const dt = new Date(year, monthIdx, d);
                         const dow = dt.getDay();
                         if (dow === 0) continue; // skip Sunday only — Sat counts as a working day
+                        if (isCompanyHoliday(dt)) continue; // skip company holidays (e.g. Memorial Day)
                         workingDay++;
                         const ds = dateToString(dt);
                         const row = byDate[ds];
