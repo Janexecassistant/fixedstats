@@ -147,6 +147,24 @@
             color: #cc0000;
         }
 
+        /* Official Dyer wordmark on the login screen.  The PNG has dark text +
+           red "!" on a transparent background, so we sit it on a light pill so
+           the brand colors stay intact against the dark login backdrop. */
+        .login-logo-pill {
+            display: block;
+            width: fit-content;
+            margin: 0 auto 10px;
+            padding: 12px 18px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+        }
+        .login-logo-pill img {
+            display: block;
+            height: 60px;
+            max-width: 240px;
+        }
+
         .login-card p {
             text-align: center;
             color: rgba(255,255,255,0.4);
@@ -984,11 +1002,14 @@
             transition: transform 0.25s ease;
         }
         .sidebar-brand {
-            padding: 18px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-            display: flex; align-items: center;
+            /* Light pill behind the official Dyer wordmark so the dark text and
+               red "!" both stay legible against the near-black sidebar. */
+            padding: 14px 16px;
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex; align-items: center; justify-content: center;
         }
-        .sidebar-brand img { height: 45px; display: block; }
+        .sidebar-brand img { height: 50px; max-width: 100%; display: block; }
 
         .sidebar-scroll {
             flex: 1;
@@ -1288,7 +1309,7 @@
     <!-- Login Screen -->
     <div id="loginScreen" class="login-screen">
         <div class="login-card">
-            <h1>Dyer<span class="dyer-red">!</span></h1>
+            <div class="login-logo-pill"><img src="assets/dyerlogo.png" alt="Dyer Auto"></div>
             <p>Fixed Operations</p>
             <div class="login-error" id="loginError"></div>
             <form id="loginForm" onsubmit="handleLogin(event)">
@@ -1311,7 +1332,7 @@
     <!-- Sidebar Navigation -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNzAgNTUiIHdpZHRoPSIxNzAiIGhlaWdodD0iNTUiPjx0ZXh0IHg9IjUiIHk9IjQyIiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEltcGFjdCwgc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjkwMCIgZm9udC1zaXplPSI1MiIgZmlsbD0iI2ZmZmZmZiIgbGV0dGVyLXNwYWNpbmc9Ii0yIj5EeWVyPC90ZXh0Pjx0ZXh0IHg9IjEzMiIgeT0iNDIiIGZvbnQtZmFtaWx5PSJBcmlhbCBCbGFjaywgSW1wYWN0LCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjUyIiBmaWxsPSIjY2MwMDAwIj4hPC90ZXh0Pjwvc3ZnPg==" alt="Dyer Auto">
+            <img src="assets/dyerlogo.png" alt="Dyer Auto">
         </div>
         <div class="sidebar-scroll">
             <ul class="nav-tabs">
@@ -7209,25 +7230,45 @@
                 // Calculate working day number and total working days in month for tracking projection
                 const wd = getWorkingDaysInMonth(year, month);
                 const daysInMonth = wd.totalDays || new Date(year, month, 0).getDate();
-                // As-of date: defaults to yesterday (today's numbers aren't usually entered
-                // yet), but flips forward to today once today's entry has been saved. Without
-                // this, the pace divisor includes a day with $0 of data and projection drops.
-                const latestDailyDate = dailyData.reduce((m, d) => d.entry_date > m ? d.entry_date : m, '');
-                const effectiveAsOf = resolveDashboardAsOf(latestDailyDate);
-                let currentWorkingDay;
-                if (year === effectiveAsOf.getFullYear() && month === (effectiveAsOf.getMonth() + 1)) {
-                    // As-of date is in the displayed month — use its working day number
-                    currentWorkingDay = getWorkingDayOfMonth(effectiveAsOf);
-                } else {
-                    // Historical month (or month transition) — use total working days
-                    currentWorkingDay = daysInMonth;
-                }
-                const dayOfMonth = currentWorkingDay || 1; // avoid divide by zero
 
-                // Tracking = (Actual MTD / Working Day #) * Working Days in Month
-                const laborTracking = (laborMtd / dayOfMonth) * daysInMonth;
-                const partsTracking = (partsMtd / dayOfMonth) * daysInMonth;
-                const totalGrossTracking = (totalGrossMtd / dayOfMonth) * daysInMonth;
+                // PER-STORE as-of date. Each store gets its own working-day divisor based
+                // on its own latest entry. Stores caught up to today use today (e.g. day 23);
+                // stores still on yesterday use yesterday (day 22). Without this, when one
+                // store enters today and the others haven't, the all-stores roll-up flipped
+                // to day 23 across the board — suppressing the projection for the stores
+                // whose MTD only goes through yesterday. (Jay 2026-05-28.)
+                function workingDayForStore(sid) {
+                    const sDaily = dailyData.filter(d => d.store_id === sid);
+                    const sLatest = sDaily.reduce((m, d) => d.entry_date > m ? d.entry_date : m, '');
+                    const eff = resolveDashboardAsOf(sLatest);
+                    if (year === eff.getFullYear() && month === (eff.getMonth() + 1)) {
+                        return getWorkingDayOfMonth(eff) || 1;
+                    }
+                    return daysInMonth;
+                }
+
+                // Per-store tracking, then sum for the headline KPI. Each store contributes
+                // (its MTD / its own working day) * total working days in month.
+                const storesInScope = allMode ? stores : stores.filter(s => s.id === storeId);
+                let laborTracking = 0, partsTracking = 0, totalGrossTracking = 0;
+                storesInScope.forEach(s => {
+                    const sDaily = dailyData.filter(d => d.store_id === s.id);
+                    const sLabor = sDaily.reduce((sum, d) => sum + (d.labor_day || 0), 0);
+                    const sParts = sDaily.reduce((sum, d) => sum + (d.parts_day || 0), 0);
+                    const sDay = workingDayForStore(s.id);
+                    laborTracking      += (sLabor / sDay) * daysInMonth;
+                    partsTracking      += (sParts / sDay) * daysInMonth;
+                    totalGrossTracking += ((sLabor + sParts) / sDay) * daysInMonth;
+                });
+
+                // Representative `dayOfMonth` for downstream UI (table headings, copy).
+                // Single-store: the store's own day. All-stores: the EARLIEST (most behind)
+                // store's day, so the headline "Day X of Y" reflects the slowest-to-enter
+                // store rather than misleadingly showing the most-caught-up one.
+                const scopeDays = storesInScope.map(s => workingDayForStore(s.id));
+                const dayOfMonth = (allMode
+                    ? (scopeDays.length ? Math.min(...scopeDays) : 1)
+                    : workingDayForStore(storeId)) || 1;
 
                 // Pace % is now tracking vs goal (projected end-of-month vs target)
                 const laborPace = laborGoal > 0 ? (laborTracking / laborGoal) * 100 : 0;
@@ -7253,9 +7294,11 @@
                         const sLabor = sDaily.reduce((s, d) => s + (d.labor_day || 0), 0);
                         const sParts = sDaily.reduce((s, d) => s + (d.parts_day || 0), 0);
                         const sGross = sLabor + sParts;
-                        const sLaborTrack = (sLabor / dayOfMonth) * daysInMonth;
-                        const sPartsTrack = (sParts / dayOfMonth) * daysInMonth;
-                        const sGrossTrack = (sGross / dayOfMonth) * daysInMonth;
+                        // Use this store's own working-day number (its own as-of date).
+                        const sDayNum = workingDayForStore(store.id);
+                        const sLaborTrack = (sLabor / sDayNum) * daysInMonth;
+                        const sPartsTrack = (sParts / sDayNum) * daysInMonth;
+                        const sGrossTrack = (sGross / sDayNum) * daysInMonth;
                         const sLaborGoal = sGoal?.labor_goal || 0;
                         const sPartsGoal = sGoal?.parts_goal || 0;
                         const sGrossGoal = sGoal?.total_gross_goal || 0;
