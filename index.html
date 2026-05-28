@@ -7492,28 +7492,32 @@
                     return totalGrossGoal > 0 ? Math.round((totalGrossGoal / daysInMonth) * dayNum) : 0;
                 });
 
+                // Tracking projection is the primary series — it shows where the month
+                // is projected to land based on current pace, which is what managers want
+                // to see at a glance. Actual MTD is kept as a thin dashed reference so the
+                // raw cumulative is still visible without dominating the view.
                 const chartDatasets = [
-                    {
-                        label: 'Actual MTD',
-                        data: actualLine,
-                        borderColor: '#60a5fa',
-                        backgroundColor: 'rgba(96, 165, 250, 0.08)',
-                        tension: 0.4,
-                        fill: true,
-                        borderWidth: 3,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#60a5fa'
-                    },
                     {
                         label: 'Tracking (Projected)',
                         data: trackingProjectionLine,
                         borderColor: '#4ade80',
-                        borderDash: [6, 3],
+                        backgroundColor: 'rgba(74, 222, 128, 0.12)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#4ade80'
+                    },
+                    {
+                        label: 'Actual MTD',
+                        data: actualLine,
+                        borderColor: '#60a5fa',
+                        borderDash: [4, 3],
                         tension: 0.3,
                         fill: false,
                         borderWidth: 2,
                         pointRadius: 3,
-                        pointBackgroundColor: '#4ade80'
+                        pointBackgroundColor: '#60a5fa'
                     }
                 ];
 
