@@ -1002,14 +1002,26 @@
             transition: transform 0.25s ease;
         }
         .sidebar-brand {
-            /* Light pill behind the official Dyer wordmark so the dark text and
-               red "!" both stay legible against the near-black sidebar. */
+            /* Sidebar header keeps the dark background; the logo itself sits in
+               a white pill (matching the login screen treatment) so the dark
+               Dyer wordmark and red "!" stay legible without flooding the whole
+               brand area white. */
             padding: 14px 16px;
-            background: #ffffff;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
             display: flex; align-items: center; justify-content: center;
         }
-        .sidebar-brand img { height: 50px; max-width: 100%; display: block; }
+        .sidebar-logo-pill {
+            display: block;
+            padding: 8px 14px;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+        }
+        .sidebar-logo-pill img {
+            height: 42px;
+            max-width: 100%;
+            display: block;
+        }
 
         .sidebar-scroll {
             flex: 1;
@@ -1332,7 +1344,7 @@
     <!-- Sidebar Navigation -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-            <img src="assets/dyerlogo.png" alt="Dyer Auto">
+            <div class="sidebar-logo-pill"><img src="assets/dyerlogo.png" alt="Dyer Auto"></div>
         </div>
         <div class="sidebar-scroll">
             <ul class="nav-tabs">
