@@ -1,5 +1,29 @@
 const STORAGE_KEY = "flatRateFrenzySaveV1";
+const GAME_KEY = "flat_rate_frenzy";
 const TIME_LIMIT_MULTIPLIER = 5;
+
+// --- Signed-in Dyer session + account cloud sync (Supabase) ---
+const SUPA_URL = "https://eflnjrorpgrqbvzljewu.supabase.co";
+const SUPA_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmbG5qcm9ycGdycWJ2emxqZXd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1Njg5ODMsImV4cCI6MjA5MTE0NDk4M30.4qVg6A4kynixs-Dm-Et1geJ56jqymekdnI0LexbIr_g";
+let cloudDb = null;
+try { if (window.supabase) cloudDb = window.supabase.createClient(SUPA_URL, SUPA_ANON_KEY); } catch (_) {}
+
+function getDyerSession() {
+  try { return JSON.parse(localStorage.getItem("dyer_session") || "null"); } catch (_) { return null; }
+}
+function sessionName() {
+  const s = getDyerSession();
+  return (s && (s.display_name || s.username)) || "";
+}
+function sessionToken() {
+  const s = getDyerSession();
+  return (s && s.token) || "";
+}
+// Per-user local cache key so two different logins on one browser stay separate
+function storeKey() {
+  const s = getDyerSession();
+  return s && s.username ? `${STORAGE_KEY}::${s.username}` : STORAGE_KEY;
+}
 
 const levelTitles = [
   "Express Lube Rookie",
@@ -511,7 +535,7 @@ function createNewState(name = "New Tech") {
 }
 
 function loadState() {
-  const saved = localStorage.getItem(STORAGE_KEY);
+  const saved = localStorage.getItem(storeKey());
   if (!saved) return;
   try {
     state = { ...createNewState(), ...JSON.parse(saved) };
@@ -521,7 +545,31 @@ function loadState() {
 }
 
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  localStorage.setItem(storeKey(), JSON.stringify(state));
+  cloudSave();
+}
+
+// Debounced write to the signed-in tech's account record
+let cloudSaveTimer = null;
+function cloudSave() {
+  const token = sessionToken();
+  if (!cloudDb || !token) return;
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer = setTimeout(() => {
+    cloudDb.rpc("save_game_progress", { p_token: token, p_state: state })
+      .then(({ error }) => { if (error) console.warn("Game cloud save failed", error); })
+      .catch((e) => console.warn("Game cloud save threw", e));
+  }, 1200);
+}
+
+async function cloudLoad() {
+  const token = sessionToken();
+  if (!cloudDb || !token) return null;
+  try {
+    const { data, error } = await cloudDb.rpc("load_game_progress", { p_token: token });
+    if (error) { console.warn("Game cloud load failed", error); return null; }
+    return data || null;
+  } catch (e) { console.warn("Game cloud load threw", e); return null; }
 }
 
 function getLevel() {
@@ -1104,7 +1152,7 @@ function renderCompletion(result) {
 
 function wireEvents() {
   $("startGameBtn").addEventListener("click", () => {
-    const name = $("techNameInput").value.trim() || "New Tech";
+    const name = $("techNameInput").value.trim() || sessionName() || "New Tech";
     state.techName = name;
     saveState();
     updateDashboard();
@@ -1113,10 +1161,12 @@ function wireEvents() {
 
   $("resetGameBtn").addEventListener("click", () => {
     if (!confirm("Reset Flat Rate Frenzy progress?")) return;
-    localStorage.removeItem(STORAGE_KEY);
-    state = createNewState();
+    localStorage.removeItem(storeKey());
+    state = createNewState(sessionName() || "New Tech");
+    cloudSave();
     clearInterval(timerId);
     updateDashboard();
+    prefillName();
     showScreen("startScreen");
   });
 
@@ -1147,10 +1197,41 @@ function wireEvents() {
   });
 }
 
-loadState();
+// Pre-fill the technician name from the signed-in Dyer session
+function prefillName() {
+  const n = sessionName();
+  const input = $("techNameInput");
+  if (input && n && !input.value) input.value = n;
+  if (n && (!state.techName || state.techName === "New Tech")) state.techName = n;
+}
+
+loadState();            // instant local cache
+prefillName();
 wireEvents();
 updateDashboard();
 
-if (localStorage.getItem(STORAGE_KEY)) {
-  showScreen("dashboardScreen");
-}
+const hasLocalSave = !!localStorage.getItem(storeKey());
+if (hasLocalSave) showScreen("dashboardScreen");
+
+// Pull the tech's account record and reconcile (most-progress-wins), so play
+// follows them to any device. Runs async once Supabase has loaded.
+(async function syncFromCloud() {
+  const cloud = await cloudLoad();
+  if (!cloud) {
+    if (hasLocalSave) cloudSave(); // seed the account with existing local progress
+    return;
+  }
+  const localXp = (state && state.xp) || 0;
+  const cloudXp = cloud.xp || 0;
+  if (cloudXp >= localXp) {
+    state = { ...createNewState(sessionName() || "New Tech"), ...cloud };
+    localStorage.setItem(storeKey(), JSON.stringify(state));
+  } else {
+    cloudSave(); // local is ahead — push it up
+  }
+  prefillName();
+  updateDashboard();
+  if ((state.xp || 0) > 0 || (state.jobsCompleted || 0) > 0) {
+    showScreen("dashboardScreen");
+  }
+})();
