@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flat Rate Frenzy</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Dealership Service Training</p>
+          <h1>Flat Rate Frenzy</h1>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <a href="../" class="ghost-btn" style="text-decoration:none;">&larr; Training</a>
+          <button id="resetGameBtn" class="ghost-btn" type="button">Reset</button>
+        </div>
+      </header>
+
+      <main>
+        <section id="startScreen" class="screen start-screen active">
+          <div class="hero-panel">
+            <div class="hero-copy">
+              <p class="eyebrow">Clock in, check the RO, beat the book time.</p>
+              <h2>Start as a quick-lube rookie and build your way to master tech.</h2>
+              <p>
+                Complete fixed operations jobs in the right order, avoid comebacks,
+                earn certifications, and keep customers happy while the service drive
+                keeps stacking repair orders.
+              </p>
+              <label class="name-field" for="techNameInput">
+                Technician name
+                <input id="techNameInput" type="text" maxlength="24" placeholder="Alex Wrench" />
+              </label>
+              <button id="startGameBtn" class="primary-btn" type="button">Start Game</button>
+            </div>
+            <div class="bay-illustration" aria-label="Service bay illustration">
+              <div class="garage-door"></div>
+              <div class="lift"></div>
+              <div class="car">
+                <span></span>
+                <span></span>
+              </div>
+              <div class="floor-lines"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="dashboardScreen" class="screen">
+          <div class="dashboard-grid">
+            <aside class="stats-panel">
+              <div class="tech-card">
+                <div class="avatar" aria-label="Dyer inspired red exclamation badge"><span>!</span></div>
+                <div>
+                  <p class="eyebrow">Technician</p>
+                  <h2 id="techNameDisplay">New Tech</h2>
+                  <p id="levelTitle">Level 1 Express Lube Rookie</p>
+                </div>
+              </div>
+
+              <div class="xp-wrap">
+                <div class="meter-label">
+                  <span id="xpText">0 / 100 XP</span>
+                  <span id="levelText">Level 1</span>
+                </div>
+                <div class="meter"><span id="xpBar"></span></div>
+              </div>
+
+              <div class="stat-grid">
+                <div><span id="moneyText">$0</span><small>Money</small></div>
+                <div><span id="csiText">100</span><small>CSI</small></div>
+                <div><span id="comebackText">0</span><small>Comebacks</small></div>
+                <div><span id="jobsText">0</span><small>Jobs</small></div>
+                <div><span id="efficiencyText">100%</span><small>Efficiency</small></div>
+                <div><span id="accuracyText">100%</span><small>Accuracy</small></div>
+              </div>
+
+              <div>
+                <h3>Certifications</h3>
+                <div id="certList" class="tag-list"></div>
+              </div>
+            </aside>
+
+            <section class="jobs-panel">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Dispatch board</p>
+                  <h2>Available Repair Orders</h2>
+                </div>
+                <button id="openUpgradeBtn" class="tool-btn" type="button">Upgrade Shop</button>
+              </div>
+              <div id="availableJobs" class="job-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="serviceBayScreen" class="screen">
+          <div class="bay-layout">
+            <aside class="repair-order">
+              <button id="backToDashboardBtn" class="ghost-btn" type="button">Back to board</button>
+              <p class="eyebrow">Repair Order</p>
+              <h2 id="roService">Oil Change</h2>
+              <dl>
+                <div><dt>Customer</dt><dd id="roCustomer"></dd></div>
+                <div><dt>Vehicle</dt><dd id="roVehicle"></dd></div>
+                <div><dt>Mileage</dt><dd id="roMileage"></dd></div>
+                <div><dt>Difficulty</dt><dd id="roDifficulty"></dd></div>
+                <div><dt>Payout</dt><dd id="roPayout"></dd></div>
+                <div><dt>XP</dt><dd id="roXp"></dd></div>
+              </dl>
+              <div class="timer-card">
+                <span>Time left</span>
+                <strong id="timerText">00:00</strong>
+              </div>
+              <div class="meter progress-meter"><span id="jobProgressBar"></span></div>
+            </aside>
+
+            <section class="work-area">
+              <div class="service-scene" id="serviceScene">
+                <div class="scene-depth"></div>
+                <div class="shop-wall">
+                  <span>PARTS</span>
+                  <span>TOOLS</span>
+                  <span>QC</span>
+                </div>
+                <button class="shop-station station-ro" type="button" data-station="ro">
+                  <span class="station-art art-desk"></span>
+                  <strong>Advisor Desk</strong>
+                </button>
+                <button class="shop-station station-drive" type="button" data-station="drive">
+                  <span class="station-art art-driver"></span>
+                  <strong>Driver Seat</strong>
+                </button>
+                <button class="shop-station station-lift" type="button" data-station="lift">
+                  <span class="station-art art-lift-control"></span>
+                  <strong>Lift Controls</strong>
+                </button>
+                <button class="shop-station station-drain" type="button" data-station="drain">
+                  <span class="station-art art-drain"></span>
+                  <strong>Drain Pan</strong>
+                </button>
+                <button class="shop-station station-oil" type="button" data-station="oil">
+                  <span class="station-art art-oil"></span>
+                  <strong>Oil Cart</strong>
+                </button>
+                <button class="shop-station station-tires" type="button" data-station="tires">
+                  <span class="station-art art-tire"></span>
+                  <strong>Vehicle Wheels</strong>
+                </button>
+                <button class="shop-station station-tools" type="button" data-station="tools">
+                  <span class="station-art art-tools"></span>
+                  <strong>Toolbox</strong>
+                </button>
+                <button class="shop-station station-scan" type="button" data-station="scan">
+                  <span class="station-art art-scan"></span>
+                  <strong>Scan Cart</strong>
+                </button>
+                <button class="shop-station station-qc" type="button" data-station="qc">
+                  <span class="station-art art-qc"></span>
+                  <strong>MPVI / QC</strong>
+                </button>
+                <div class="service-lane">
+                  <span></span>
+                  <span></span>
+                </div>
+                <div class="shop-cabinet cabinet-left"></div>
+                <div class="shop-cabinet cabinet-right"></div>
+                <div class="safety-cone cone-left"></div>
+                <div class="safety-cone cone-right"></div>
+                <div class="active-lift"></div>
+                <div class="active-car" id="activeCar">
+                  <span></span>
+                  <span></span>
+                </div>
+                <div class="tech-sprite" id="techSprite" aria-hidden="true">
+                  <div class="tech-head"></div>
+                  <div class="tech-cap"></div>
+                  <div class="tech-body"></div>
+                  <div class="tech-arm tech-arm-left"></div>
+                  <div class="tech-arm tech-arm-right"></div>
+                  <div class="tech-leg tech-leg-left"></div>
+                  <div class="tech-leg tech-leg-right"></div>
+                  <div class="tech-shadow"></div>
+                </div>
+              </div>
+
+              <div id="eventPanel" class="event-panel hidden">
+                <p class="eyebrow">Shop curveball</p>
+                <h3 id="eventTitle"></h3>
+                <p id="eventDescription"></p>
+                <div id="eventChoices" class="choice-grid"></div>
+              </div>
+
+              <div class="feedback-card" id="feedbackCard">Read the repair order first. Every clean job starts there.</div>
+
+              <div class="steps-wrap">
+                <div class="section-heading compact">
+                  <h2>Current Process</h2>
+                  <span id="stepCounter">0 / 0</span>
+                </div>
+                <div id="currentActionCard" class="current-action-card">
+                  Click the correct shop area to begin.
+                </div>
+                <div id="processList" class="process-list"></div>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section id="completeScreen" class="screen">
+          <div class="result-panel">
+            <p class="eyebrow">Job Complete</p>
+            <h2 id="completeTitle">Nice work.</h2>
+            <div class="result-grid">
+              <div><span id="resultTime"></span><small>Time used</small></div>
+              <div><span id="resultAccuracy"></span><small>Accuracy</small></div>
+              <div><span id="resultMoney"></span><small>Money earned</small></div>
+              <div><span id="resultXp"></span><small>XP earned</small></div>
+              <div><span id="resultCsi"></span><small>CSI change</small></div>
+              <div><span id="resultUpsells"></span><small>Recommendations</small></div>
+            </div>
+            <div>
+              <h3>Mistakes</h3>
+              <ul id="resultMistakes" class="mistake-list"></ul>
+            </div>
+            <button id="continueBtn" class="primary-btn" type="button">Return to Dispatch</button>
+          </div>
+        </section>
+
+        <section id="upgradeScreen" class="screen">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Tool truck and training office</p>
+              <h2>Upgrade Shop</h2>
+            </div>
+            <button id="closeUpgradeBtn" class="ghost-btn" type="button">Back to dashboard</button>
+          </div>
+          <div id="upgradeList" class="upgrade-grid"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

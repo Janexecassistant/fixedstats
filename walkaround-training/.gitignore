@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Vercel
+.vercel
+
+# Node (in case future tooling)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Misc
+*.log
+.env
+.env.local

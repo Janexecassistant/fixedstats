@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manager Scorecard | Dyer Automotive Walk-Around Training</title>
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <div class="brand">
+      <div class="brand-mark">D</div>
+      <div>
+        <div class="brand-name">Dyer Automotive</div>
+        <div class="brand-sub">Fixed Operations Training</div>
+      </div>
+    </div>
+    <div class="module-tag">Module 01 · Manager Scorecard</div>
+  </div>
+</header>
+
+<div class="progress-wrap">
+  <div class="progress-inner">
+    <span class="progress-label">Your Progress</span>
+    <div class="progress-bar"><div class="progress-fill"></div></div>
+    <span class="progress-text">0 of 7 lessons complete (0%)</span>
+  </div>
+</div>
+
+<main class="page page-narrow">
+
+  <div class="eyebrow">Coaching Tool · Ride-Along Scorecard</div>
+  <h1>Walk-Around Manager Scorecard</h1>
+  <p class="lead">Use this during ride-alongs to score advisor walk-around behavior on a 1–5 scale. Total updates automatically. Hit "Print" for a clean paper version. Hit "Clear" to start fresh.</p>
+
+  <div class="card no-print" style="margin-bottom:20px;">
+    <strong>How to use:</strong> Observe one walk-around start to finish. Score each category. Use the notes field for specific coaching points. Review with the advisor within 24 hours — the closer to the moment, the better the coaching sticks.
+  </div>
+
+  <div id="scorecard" class="scorecard">
+
+    <div class="scorecard-meta">
+      <div class="scorecard-field">
+        <label for="advisor-name">Advisor Name</label>
+        <input type="text" id="advisor-name" name="advisor" placeholder="Advisor name">
+      </div>
+      <div class="scorecard-field">
+        <label for="manager-name">Observed By</label>
+        <input type="text" id="manager-name" name="manager" placeholder="Manager name">
+      </div>
+      <div class="scorecard-field">
+        <label for="obs-date">Date</label>
+        <input type="date" id="obs-date" name="date">
+      </div>
+      <div class="scorecard-field">
+        <label for="ro-number">RO #</label>
+        <input type="text" id="ro-number" name="ro" placeholder="RO number">
+      </div>
+    </div>
+
+    <h2 style="margin-top:0;">Walk-Around Behaviors</h2>
+
+    <div class="score-row">
+      <div class="score-cat">1. Pre-Arrival Preparation
+        <small>RO reviewed, history checked, recalls noted, customer name known, kit ready</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s1" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s1" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s1" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s1" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s1" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">2. Greeting at the Vehicle
+        <small>Met customer at the car (not the desk), eye contact, smile, used customer's name</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s2" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s2" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s2" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s2" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s2" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">3. Transition Into the Walk-Around
+        <small>Confident bridge into inspection without asking permission or sounding scripted</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s3" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s3" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s3" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s3" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s3" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">4. Routine & Consistency
+        <small>Used the seven-stop counter-clockwise routine, no skipped sections, ~90 seconds</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s4" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s4" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s4" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s4" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s4" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">5. Inspection Quality
+        <small>Caught visible damage, tires, lights, leaks, dash warnings — didn't miss the obvious</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s5" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s5" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s5" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s5" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s5" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">6. Customer Involvement
+        <small>Pointed at findings, paused for customer to see, asked the "anything else?" question</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s6" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s6" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s6" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s6" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s6" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">7. Language & Trust
+        <small>Plain English, no fear tactics, no jargon, confident not pushy</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s7" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s7" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s7" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s7" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s7" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">8. Documentation Quality
+        <small>Pre-existing damage logged, customer concerns verbatim, walk-around flags for tech</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s8" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s8" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s8" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s8" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s8" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">9. Technician Handoff
+        <small>30-second brief to tech with headline, flags, and video focus</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s9" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s9" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s9" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s9" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s9" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">10. Closing the Customer
+        <small>Specific time window, contact confirmed, advisor name reintroduced, confidence statement</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s10" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s10" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s10" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s10" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s10" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-total">
+      <div>
+        <div class="total-label">Total Score</div>
+        <div id="score-rating" class="score-rating">—</div>
+      </div>
+      <div id="score-total-num" class="total-num">0 / 50</div>
+    </div>
+
+    <h3>Coaching Notes</h3>
+    <textarea class="notes" name="notes-strengths" placeholder="What did the advisor do well? Be specific."></textarea>
+    <textarea class="notes" name="notes-improve" placeholder="What's the top 1–2 things to coach? Don't list everything — pick the highest-leverage."></textarea>
+    <textarea class="notes" name="notes-followup" placeholder="Agreed follow-up action and date."></textarea>
+
+    <div style="font-size:12px; color:var(--dyer-text-muted); margin-top:18px;">
+      <strong>Scoring guide:</strong> 5 = excellent, coach others · 4 = strong, minor opportunities · 3 = meets standard ·
+      2 = below standard, needs coaching · 1 = not meeting expectations
+    </div>
+  </div>
+
+  <div class="lesson-nav no-print">
+    <div class="nav-side">
+      <a href="09-roleplays.html" class="btn btn-secondary">← Roleplays</a>
+      <a href="index.html" class="btn btn-secondary">Module Map</a>
+    </div>
+    <div class="nav-side">
+      <button id="score-clear" class="btn btn-secondary">Clear Scorecard</button>
+      <button id="score-print" class="btn">Print Scorecard</button>
+    </div>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  Dyer Automotive · Fixed Operations Training · Built for the team, by the team.
+</footer>
+
+<script src="assets/script.js"></script>
+</body>
+</html>
