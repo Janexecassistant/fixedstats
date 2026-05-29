@@ -73,6 +73,19 @@
   }
   .module-card .status-pill.coming { background: var(--dyer-gray-soft); color: var(--dyer-text-muted); }
   .module-card.coming-soon { cursor: not-allowed; pointer-events: none; opacity: 0.65; }
+  /* Standout "game" module — navy + gold so it pops against the plain cards */
+  .module-card.game {
+    background: linear-gradient(135deg, #0a2540 0%, #061a30 100%);
+    border: 2px solid #f2b705;
+    color: #fff;
+  }
+  .module-card.game:hover { border-color: #ffd54a; box-shadow: 0 12px 30px rgba(10,37,64,0.40); }
+  .module-card.game h3 { color: #fff; }
+  .module-card.game .module-num { color: #ffd54a; }
+  .module-card.game p { color: #cfd8e3; }
+  .module-card.game .lessons-count { color: #aab6c4; }
+  .module-card.game .status-pill { background: #f2b705; color: #0a2540; }
+  .module-card.game .audience.tech { background: rgba(242,183,5,0.18); color: #ffd54a; }
   .modules-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -315,6 +328,15 @@
       <span class="audience advisor">For Service Advisors</span>
       <p style="margin:0; color:var(--dyer-text-muted); font-size:14px;">The Numa playbook: DMS discipline so auto-texts actually fire, the 4-touch proactive update standard, text-for-approval / call-for-empathy, click-to-call, @ tag handoffs, clean delay apologies, and the 90-second pickup CSI window.</p>
       <div class="lessons-count">7 lessons · Quiz · 3 roleplays · Manager scorecard</div>
+    </a>
+
+    <a href="/walkaround-training/flat-rate-frenzy/" class="module-card game">
+      <span class="status-pill">Game</span>
+      <span class="module-num">Tech Practice</span>
+      <h3>Flat Rate Frenzy</h3>
+      <span class="audience tech">For Technicians</span>
+      <p style="margin:0; font-size:14px;">A hands-on shop-floor game. Run real fixed-ops jobs in the right order, beat book time, avoid comebacks, answer MPVI findings, and level up from express-lube rookie to master tech.</p>
+      <div class="lessons-count">Interactive · Saves progress · Play on any device</div>
     </a>
 
   </div>
