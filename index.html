@@ -2358,7 +2358,7 @@
                     <label>View Period</label>
                     <select id="rosterPeriod">
                         <option value="week">This Week</option>
-                        <option value="mtd">Month to Date</option>
+                        <option value="mtd" selected>Month to Date</option>
                         <option value="lastmonth">Last Month</option>
                         <option value="ytd">Year to Date</option>
                         <option value="custom">Custom Range</option>
@@ -3078,6 +3078,11 @@
                 if (baysKpiCard) baysKpiCard.style.display = '';
                 showServiceStaffCards(true);
                 showDeptCards(true, true, true, true);
+                // Admins land on no tab — clear the hardcoded default so the app
+                // opens to a blank canvas until they choose a tab from the nav.
+                document.querySelectorAll('.nav-btn, .nav-dropdown-item, .nav-dropdown-toggle').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.nav-dropdown').forEach(d => d.classList.remove('open'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             } else if (currentUser.role === 'manager') {
                 // Managers can see Admin Console. They can manage user accounts for their
                 // store staff (advisors + technicians only) but cannot create admin/manager/executive users.
@@ -4656,6 +4661,8 @@
                     await loadPartsDailyEntry();
                 } else if (currentUser && currentUser.role === 'collision_manager') {
                     loadCollisionDailyEntry();
+                } else if (currentUser && currentUser.role === 'admin') {
+                    // Admins land on no tab — nothing to load until they pick one.
                 } else {
                     await loadDailyEntry();
                 }
