@@ -4102,8 +4102,20 @@
             async getAdvisorEntries() {
                 if (useSupabase) {
                     try {
-                        const { data, error } = await db.from('advisor_entries').select('*');
-                        if (!error && data) { this._set('dyer_advisor_entries', data); return data; }
+                        // Supabase/PostgREST caps a plain select at 1000 rows. Paginate
+                        // in 1000-row batches so newest entries aren't silently dropped.
+                        const PAGE = 1000;
+                        let all = [], from = 0, done = false;
+                        while (!done) {
+                            const { data, error } = await db.from('advisor_entries')
+                                .select('*').order('id', { ascending: true })
+                                .range(from, from + PAGE - 1);
+                            if (error) throw error;
+                            if (data && data.length) { all = all.concat(data); from += data.length; }
+                            if (!data || data.length < PAGE) done = true;
+                        }
+                        this._set('dyer_advisor_entries', all);
+                        return all;
                     } catch(e) { console.warn('Supabase getAdvisorEntries failed, using cache', e); }
                 }
                 return this._get('dyer_advisor_entries');
