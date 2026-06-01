@@ -2872,6 +2872,19 @@
             return getEffectiveTrackingDate();
         }
 
+        // A month is "closed" once the real calendar has moved past it. Closed
+        // months are final — tracking/pace should equal actual MTD, not a forward
+        // projection. Keyed off the REAL date (new Date()), NOT the effective
+        // as-of date: on the 1st of a new month the as-of lingers in the prior
+        // month (yesterday/last Friday), which would otherwise keep the just-ended
+        // month "projecting" on an incomplete working-day divisor (e.g. day 24 of
+        // 25), inflating its tracking ~4%. month is 1-indexed.
+        function isClosedMonth(year, month) {
+            const now = new Date();
+            const curY = now.getFullYear(), curM = now.getMonth() + 1;
+            return (year < curY) || (year === curY && month < curM);
+        }
+
 
         // ============================================================================
         // AUTHENTICATION & USER MANAGEMENT
@@ -7278,6 +7291,8 @@
                 // to day 23 across the board — suppressing the projection for the stores
                 // whose MTD only goes through yesterday. (Jay 2026-05-28.)
                 function workingDayForStore(sid) {
+                    // Finished (past) month: divisor = full working days → tracking == actual.
+                    if (isClosedMonth(year, month)) return daysInMonth;
                     const sDaily = dailyData.filter(d => d.store_id === sid);
                     const sLatest = sDaily.reduce((m, d) => d.entry_date > m ? d.entry_date : m, '');
                     const eff = resolveDashboardAsOf(sLatest);
@@ -7472,7 +7487,11 @@
                     runningTotal += dayGross;
 
                     // Tracking = (Running Total / Working Day #) * Working Days in Month
-                    const trackingValue = (workingDayNum > 0 && runningTotal > 0) ? (runningTotal / workingDayNum) * daysInMonth : 0;
+                    // Finished month: tracking column shows the actual running total
+                    // (the month landed where it landed), not a forward projection.
+                    const trackingValue = isClosedMonth(year, month)
+                        ? runningTotal
+                        : ((workingDayNum > 0 && runningTotal > 0) ? (runningTotal / workingDayNum) * daysInMonth : 0);
 
                     totLabor += dep.labor; totParts += dep.parts; totGross += dayGross;
                     totRo += adv.roCount; totHours += adv.hours;
@@ -7573,9 +7592,13 @@
                 // Tracking projection line: at each day, project (cumulative / days worked so far) * days in month
                 let cumForTrack = 0;
                 let daysWorkedSoFar = 0;
+                const closedMonthChart = isClosedMonth(year, month);
                 const trackingProjectionLine = sortedDaily.map(d => {
                     cumForTrack += d.gross;
                     if (d.gross > 0) daysWorkedSoFar++;
+                    // Finished month: the projection line tracks the actual cumulative
+                    // (no forward projection — the month is final).
+                    if (closedMonthChart) return Math.round(cumForTrack);
                     return daysWorkedSoFar > 0 ? Math.round((cumForTrack / daysWorkedSoFar) * daysInMonth) : 0;
                 });
 
@@ -7935,7 +7958,10 @@
                 const dayNum = getWorkingDayOfMonth(refDate);
                 const wd = getWorkingDaysInMonth(year, month);
                 const daysInMonth = wd.totalDays;
-                const proj = (mtd) => (dayNum > 0 && daysInMonth > 0) ? (mtd / dayNum) * daysInMonth : 0;
+                // Finished month: no projection — tracking equals actual MTD.
+                const proj = (mtd) => isClosedMonth(year, month)
+                    ? mtd
+                    : ((dayNum > 0 && daysInMonth > 0) ? (mtd / dayNum) * daysInMonth : 0);
                 const trackTotal     = proj(mtdTotal);
                 const trackWholesale = proj(mtdWhs);
                 const trackCounter   = proj(mtdCounterTotal);
@@ -8137,8 +8163,9 @@
                         const ctr = hasEntry ? row.ctr  : 0;
                         const obso = hasEntry ? row.obso : 0;
                         const tot = hasEntry ? (row.total || (svc + whs)) : 0;
-                        const tracking = (hasEntry && workingDay > 0 && daysInMonth > 0)
-                            ? (tot / workingDay) * daysInMonth : 0;
+                        const tracking = !hasEntry ? 0
+                            : isClosedMonth(year, month) ? tot
+                            : ((workingDay > 0 && daysInMonth > 0) ? (tot / workingDay) * daysInMonth : 0);
                         const labelDate = `${monthIdx + 1}/${d}`;
                         html += `
                             <tr ${hasEntry ? '' : 'style="opacity:0.35;"'}>
@@ -8159,7 +8186,9 @@
                         // Project MTD forward using the dashboard's effective as-of working day
                         // (the `dayNum` resolved up top), NOT the loop counter — that counter
                         // ended at total working days, which would make tracking == MTD.
-                        const finalTracking = (dayNum > 0 && daysInMonth > 0) ? (mtdTotal / dayNum) * daysInMonth : 0;
+                        const finalTracking = isClosedMonth(year, month)
+                            ? mtdTotal
+                            : ((dayNum > 0 && daysInMonth > 0) ? (mtdTotal / dayNum) * daysInMonth : 0);
                         dailyFooter.innerHTML = `
                             <tr style="background:#0f172a;color:#fff;font-weight:700;">
                                 <td colspan="2" style="background:#0f172a;color:#fff;">MTD</td>
@@ -8281,7 +8310,8 @@
             const latestCtrDate = entries.reduce((m, e) => e.entry_date > m ? e.entry_date : m, '');
             const effCtr = resolveDashboardAsOf(latestCtrDate);
             const isCurrentMonth = (year === effCtr.getFullYear() && month === (effCtr.getMonth() + 1));
-            const workingDaysSoFar = isCurrentMonth ? getWorkingDayOfMonth(effCtr) : wdMonth.totalDays;
+            const workingDaysSoFar = (isCurrentMonth && !isClosedMonth(year, month))
+                ? getWorkingDayOfMonth(effCtr) : wdMonth.totalDays;
 
             // 7) Render rows — sort by MTD Sales desc so top performers float to the top
             const rows = counters.map(c => {
@@ -8407,9 +8437,11 @@
                     const latestStoreDate = storeDaily.reduce((m, d) => d.entry_date > m ? d.entry_date : m, '');
                     const effAsOf = resolveDashboardAsOf(latestStoreDate);
                     let wdCurrent;
-                    if (year === effAsOf.getFullYear() && month === (effAsOf.getMonth() + 1)) {
+                    if (!isClosedMonth(year, month) && year === effAsOf.getFullYear() && month === (effAsOf.getMonth() + 1)) {
                         wdCurrent = getWorkingDayOfMonth(effAsOf);
                     } else {
+                        // Finished month (or as-of in a different month): use full working
+                        // days so tracking equals the actual final total.
                         wdCurrent = wdTotal;
                     }
                     const wdNum = wdCurrent || 1;
@@ -10225,7 +10257,8 @@
                 let elapsedDays = 0;
                 const latestForElapsed = daily.reduce((m, d) => d.entry_date > m ? d.entry_date : m, '');
                 const effectiveForElapsed = resolveDashboardAsOf(latestForElapsed);
-                const inDisplayedMonth = (currentYear === effectiveForElapsed.getFullYear()
+                const inDisplayedMonth = (!isClosedMonth(currentYear, currentMonth)
+                                          && currentYear === effectiveForElapsed.getFullYear()
                                           && currentMonth === effectiveForElapsed.getMonth() + 1);
                 const elapsedThrough = inDisplayedMonth
                     ? effectiveForElapsed.getDate()
