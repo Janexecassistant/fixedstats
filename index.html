@@ -7383,23 +7383,16 @@
                     if (npsCard && npsGrid) {
                         const storesToShow = allMode ? stores : stores.filter(s => s.id === storeId);
                         const npsByStore = {};
-                        const csiSumByStore = {}; const csiCntByStore = {};
                         // Most recent region_nps per store
                         [...dailyData]
                             .filter(d => d.region_nps != null && d.region_nps !== '')
                             .sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date))
                             .forEach(d => { npsByStore[d.store_id] = parseFloat(d.region_nps); });
-                        // Average advisor CSI per store within the period (for visual comparison)
-                        advisorData.forEach(d => {
-                            if (d.csi_score) {
-                                csiSumByStore[d.store_id] = (csiSumByStore[d.store_id] || 0) + d.csi_score;
-                                csiCntByStore[d.store_id] = (csiCntByStore[d.store_id] || 0) + 1;
-                            }
-                        });
 
                         npsGrid.innerHTML = storesToShow.map(s => {
                             const nps = npsByStore[s.id];
-                            const csi = csiCntByStore[s.id] > 0 ? csiSumByStore[s.id] / csiCntByStore[s.id] : 0;
+                            // Store CSI = average of advisors' standing (latest-entry) CSI values
+                            const csi = avgLastByAdvisor(advisorData.filter(d => d.store_id === s.id), 'csi_score');
                             const hasNps = nps != null && !isNaN(nps);
                             const beatsRegion = hasNps && csi > 0 && csi >= nps;
                             const tickColor = beatsRegion ? '#10b981' : (hasNps && csi > 0 ? '#ef4444' : '#aaa');
@@ -8413,20 +8406,15 @@
 
                     let totalGrossAdvisors = 0;
                     let totalRoAdvisors = 0;
-                    let csiSum = 0;
-                    let csiCount = 0;
 
                     storeAdvisors.forEach(adv => {
                         totalGrossAdvisors += adv.total_gross || 0;
                         totalRoAdvisors += adv.ro_count || 0;
-                        if (adv.csi_score) {
-                            csiSum += adv.csi_score;
-                            csiCount++;
-                        }
                     });
 
                     const avgGrossRo = totalRoAdvisors > 0 ? totalGrossAdvisors / totalRoAdvisors : 0;
-                    const avgCsi = csiCount > 0 ? csiSum / csiCount : 0;
+                    // Store CSI = average of advisors' standing (latest-entry) CSI values
+                    const avgCsi = avgLastByAdvisor(storeAdvisors, 'csi_score');
                     const goal = storeGoals?.total_gross_goal || 0;
 
                     // Calculate tracking (projected end-of-month) using working days.
@@ -8618,10 +8606,12 @@
                     a.ros += d.ro_count || 0;
                     a.cpRos += d.cp_ros || 0;
                     a.hours += d.hours || 0;
-                    if (d.csi_score) { a.csiSum += d.csi_score; a.csiCount++; }
-                    if (d.mpvi_pct) { a.mpviSum += d.mpvi_pct; a.mpviCount++; }
                     a.days++;
                 });
+
+                // CSI & MPVI are standing MTD figures — latest entry per advisor wins, not averaged.
+                const csiLastMap = lastByAdvisor(allEntries, 'csi_score');
+                const mpviLastMap = lastByAdvisor(allEntries, 'mpvi_pct');
 
                 // Build ranked list
                 const filteredAdvisors = allMode ? advisors.filter(a => a.is_active !== false) : advisors.filter(a => a.store_id === storeId && a.is_active !== false);
@@ -8647,8 +8637,8 @@
                         grossRo: ros > 0 ? gross / ros : 0,
                         elr: hours > 0 ? gross / hours : 0,
                         hro: ros > 0 ? hours / ros : 0,
-                        csi: (a.csiCount || 0) > 0 ? a.csiSum / a.csiCount : 0,
-                        mpvi: (a.mpviCount || 0) > 0 ? a.mpviSum / a.mpviCount : 0,
+                        csi: csiLastMap[adv.id] ? csiLastMap[adv.id].val : 0,
+                        mpvi: mpviLastMap[adv.id] ? mpviLastMap[adv.id].val : 0,
                         regionNps: regionNpsByStore[adv.store_id] || 0,
                         days: a.days || 0
                     };
@@ -9082,6 +9072,31 @@
             setupRosterSortHandlers();
         }
 
+        // ── Standing month-to-date metrics (CSI, MPVI) ──────────────────────────
+        // These are NOT averaged across days. Per Jay (2026-06): the value entered on
+        // an advisor's most recent day IS their figure for the period — including a
+        // trailing 0. lastByAdvisor → {advisor_id: {date, val}} from the latest
+        // entry_date per advisor. avgLastByAdvisor → store/group rollup that averages
+        // those standing values, skipping advisors whose latest value is 0 (never
+        // actually reported) so the benchmark stays meaningful.
+        function lastByAdvisor(entries, field) {
+            const best = {};
+            for (const e of (entries || [])) {
+                const id = e.advisor_id;
+                const d = e.entry_date || '';
+                if (!(id in best) || d >= best[id].date) {
+                    best[id] = { date: d, val: parseFloat(e[field]) || 0 };
+                }
+            }
+            return best;
+        }
+        function avgLastByAdvisor(entries, field) {
+            const best = lastByAdvisor(entries, field);
+            let sum = 0, n = 0;
+            for (const id in best) { if (best[id].val > 0) { sum += best[id].val; n++; } }
+            return n ? sum / n : 0;
+        }
+
         async function loadAdvisorDrillDown(startDate, endDate) {
             const advisorId = document.getElementById('advisorSelect').value;
             if (!advisorId) {
@@ -9120,19 +9135,18 @@
                     const totalRo = entries.reduce((s, e) => s + (e.ro_count || 0), 0);
                     const totalCp = entries.reduce((s, e) => s + (e.cp_ros || 0), 0);
                     const totalHours = entries.reduce((s, e) => s + (e.hours || 0), 0);
-                    const csiCount = entries.filter(e => e.csi_score).length;
-                    const csiSum = entries.reduce((s, e) => s + (e.csi_score || 0), 0);
-                    const mpviCount = entries.filter(e => e.mpvi_pct).length;
-                    const mpviSum = entries.reduce((s, e) => s + (e.mpvi_pct || 0), 0);
+                    // CSI & MPVI are standing MTD figures: last entry wins, not averaged.
+                    // avgLastByAdvisor over a single-advisor array returns that advisor's
+                    // latest value; over a store pool it averages advisors' latest values.
                     return {
                         labor: totalLabor, parts: totalParts, gross: totalGross,
                         grossRo: totalRo > 0 ? totalGross / totalRo : 0,
                         roCount: totalRo,
                         cpPct: totalRo > 0 ? (totalCp / totalRo) * 100 : 0,
-                        csi: csiCount > 0 ? csiSum / csiCount : 0,
+                        csi: avgLastByAdvisor(entries, 'csi_score'),
                         hro: totalRo > 0 ? totalHours / totalRo : 0,
                         elr: totalHours > 0 ? totalGross / totalHours : 0,
-                        mpvi: mpviCount > 0 ? mpviSum / mpviCount : 0
+                        mpvi: avgLastByAdvisor(entries, 'mpvi_pct')
                     };
                 };
 
@@ -9711,6 +9725,10 @@
                     if (d.mpvi_pct) { a.mpviSum += d.mpvi_pct; a.mpviCount++; }
                 });
 
+                // CSI & MPVI are standing MTD figures — latest entry per advisor wins.
+                const csiLastMap = lastByAdvisor(weeklyAdvData, 'csi_score');
+                const mpviLastMap = lastByAdvisor(weeklyAdvData, 'mpvi_pct');
+
                 // Build advisor roster rows — use daily aggregates as base, roster overrides on top
                 const advEntryData = storeAdvisors.map(advisor => {
                     const rEntry = rosterData.find(r => r.advisor_id === advisor.id) || {};
@@ -9722,9 +9740,12 @@
                     const parts = dAgg.parts || 0;
                     const cpRos = dAgg.cpRos || 0;
                     const hours = dAgg.hours || 0;
-                    const csiAvg = dAgg.csiCount > 0 ? dAgg.csiSum / dAgg.csiCount : (parseFloat(rEntry.csi_score) || 0);
-                    const mpviAvg = dAgg.mpviCount > 0 ? dAgg.mpviSum / dAgg.mpviCount : (parseFloat(rEntry.mpvi_xtime_pct) || 0);
-                    return { advisor, entry: rEntry, gross, roCount, labor, parts, cpRos, hours, csiAvg, mpviAvg,
+                    const csiRec = csiLastMap[advisor.id];
+                    const mpviRec = mpviLastMap[advisor.id];
+                    const csiHas = !!csiRec, mpviHas = !!mpviRec;
+                    const csiAvg = csiHas ? csiRec.val : (parseFloat(rEntry.csi_score) || 0);
+                    const mpviAvg = mpviHas ? mpviRec.val : (parseFloat(rEntry.mpvi_xtime_pct) || 0);
+                    return { advisor, entry: rEntry, gross, roCount, labor, parts, cpRos, hours, csiAvg, mpviAvg, csiHas, mpviHas,
                         hasDaily: !!(dAgg.gross || dAgg.ros)
                     };
                 });
@@ -9734,7 +9755,7 @@
                 ranked.forEach((item, idx) => { item.rank = item.gross > 0 ? idx + 1 : '—'; });
 
                 let advHtml = '';
-                advEntryData.forEach(({ advisor, entry, gross, roCount, rank, labor, parts, cpRos, hours, csiAvg, mpviAvg, hasDaily }) => {
+                advEntryData.forEach(({ advisor, entry, gross, roCount, rank, labor, parts, cpRos, hours, csiAvg, mpviAvg, csiHas, mpviHas, hasDaily }) => {
                     const grossPerRo = roCount > 0 ? (gross / roCount) : 0;
                     const elr = hours > 0 ? (gross / hours) : 0;
                     const hro = roCount > 0 ? (hours / roCount) : 0;
@@ -9786,7 +9807,7 @@
                                 <option value="In Progress" ${entry.training_status === 'In Progress' ? 'selected' : ''}>In Progress</option>
                                 <option value="N/A" ${entry.training_status === 'N/A' ? 'selected' : ''}>N/A</option>
                             </select></td>
-                            <td class="input-gray" style="font-weight:600">${mpviAvg > 0 ? mpviAvg.toFixed(1) + '%' : (entry.mpvi_xtime_pct || '—')}</td>
+                            <td class="input-gray" style="font-weight:600">${mpviHas ? mpviAvg.toFixed(1) + '%' : (entry.mpvi_xtime_pct || '—')}</td>
                             <td class="input-gray roster-labor">${labor > 0 ? formatCurrency(labor) : '—'}</td>
                             <td class="input-gray roster-parts">${parts > 0 ? formatCurrency(parts) : '—'}</td>
                             <td class="input-gray roster-gross" style="font-weight:700">${gross > 0 ? formatCurrency(gross) : '—'}</td>
@@ -9797,7 +9818,7 @@
                             <td class="input-gray" style="font-weight:700;">${elr > 0 ? formatCurrency(elr) : '—'}</td>
                             <td class="input-gray">${hro > 0 ? hro.toFixed(2) : '—'}</td>
                             <td class="roster-rank" style="font-weight:700;color:${rankColor};text-align:center;">${rank}</td>
-                            <td class="input-gray" style="font-weight:600">${csiAvg > 0 ? csiAvg.toFixed(1) : '—'}</td>
+                            <td class="input-gray" style="font-weight:600">${csiHas ? csiAvg.toFixed(1) : '—'}</td>
                             <td class="input-gray" style="font-weight:600">${avgRegionNps != null ? avgRegionNps.toFixed(1) : (entry.csi_region || '—')}</td>
                         </tr>
                     `;
