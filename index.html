@@ -1550,7 +1550,11 @@
 
             <!-- Advisor Section -->
             <div class="card">
-                <h3 class="card-title">Advisor Performance</h3>
+                <h3 class="card-title">Advisor Performance — Month-to-Date</h3>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">
+                    Enter each advisor's <strong>running month-to-date</strong> numbers straight off the DOC — the latest
+                    saved entry IS the month (same as Parts and Collision). CSI and MPVI are standing values too.
+                </p>
                 <div style="overflow-x: auto;">
                     <table id="dailyAdvisorTable">
                         <thead>
@@ -7627,8 +7631,9 @@
 
                 let avgGrossPerRo = 0;
                 if (advisorData && advisorData.length > 0) {
-                    const totalGross = advisorData.reduce((sum, d) => sum + (d.total_gross || 0), 0);
-                    const totalRo = advisorData.reduce((sum, d) => sum + (d.ro_count || 0), 0);
+                    const aggAll = Object.values(aggregateAdvisorEntries(advisorData));
+                    const totalGross = aggAll.reduce((sum, a) => sum + a.gross, 0);
+                    const totalRo = aggAll.reduce((sum, a) => sum + a.ros, 0);
                     if (totalRo > 0) avgGrossPerRo = totalGross / totalRo;
                 }
 
@@ -7715,8 +7720,9 @@
                         const sPartsGoal = sGoal?.parts_goal || 0;
                         const sGrossGoal = sGoal?.total_gross_goal || 0;
                         const sGprGoal = sGoal?.gross_per_ro_target || 0;
-                        const sAdvGross = sAdv.reduce((s, d) => s + (d.total_gross || 0), 0);
-                        const sAdvRo = sAdv.reduce((s, d) => s + (d.ro_count || 0), 0);
+                        const sAdvAgg = Object.values(aggregateAdvisorEntries(sAdv));
+                        const sAdvGross = sAdvAgg.reduce((s, a) => s + a.gross, 0);
+                        const sAdvRo = sAdvAgg.reduce((s, a) => s + a.ros, 0);
                         const sGpr = sAdvRo > 0 ? sAdvGross / sAdvRo : 0;
                         laborBreakdowns.push({ code: store.code, pct: sLaborGoal > 0 ? (sLaborTrack / sLaborGoal) * 100 : 0 });
                         partsBreakdowns.push({ code: store.code, pct: sPartsGoal > 0 ? (sPartsTrack / sPartsGoal) * 100 : 0 });
@@ -7787,9 +7793,12 @@
                     dailyByDate[d.entry_date].parts += (d.parts_day || d.total_parts || 0);
                     dailyByDate[d.entry_date].gross += (d.labor_day || d.total_labor || 0) + (d.parts_day || d.total_parts || 0);
                 });
-                // Also aggregate advisor entries by date for RO count and hours
+                // Also aggregate advisor entries by date for RO count and hours.
+                // June 2026+ advisor entries are MTD snapshots — convert to per-day
+                // deltas first so the day-by-day table shows the day, not the month.
+                const advForDaily = advisorEntriesAreMtd(monthStart) ? advisorDailyDeltas(advisorData) : advisorData;
                 const advByDate = {};
-                advisorData.forEach(d => {
+                advForDaily.forEach(d => {
                     if (!advByDate[d.entry_date]) advByDate[d.entry_date] = { roCount: 0, hours: 0, gross: 0 };
                     advByDate[d.entry_date].roCount += (d.ro_count || 0);
                     advByDate[d.entry_date].hours += (d.hours || 0);
@@ -7906,9 +7915,8 @@
                 // Advisor comparison chart — only active advisors with data
                 const filteredAdvisors = (allMode ? advisors : advisors.filter(a => a.store_id === storeId)).filter(a => a.is_active !== false);
                 const advisorStats = {};
-                advisorData?.forEach(entry => {
-                    if (!advisorStats[entry.advisor_id]) advisorStats[entry.advisor_id] = { totalGross: 0 };
-                    advisorStats[entry.advisor_id].totalGross += entry.total_gross || 0;
+                Object.entries(aggregateAdvisorEntries(advisorData)).forEach(([id, a]) => {
+                    advisorStats[id] = { totalGross: a.gross };
                 });
                 const rankings = filteredAdvisors
                     .filter(a => advisorStats[a.id]?.totalGross > 0)
@@ -8761,13 +8769,10 @@
                     const partsMtd = storeDaily.reduce((sum, d) => sum + (d.parts_day || 0), 0);
                     const totalGross = laborMtd + partsMtd;
 
-                    let totalGrossAdvisors = 0;
-                    let totalRoAdvisors = 0;
-
-                    storeAdvisors.forEach(adv => {
-                        totalGrossAdvisors += adv.total_gross || 0;
-                        totalRoAdvisors += adv.ro_count || 0;
-                    });
+                    // Cutover-aware: dailies summed pre-June-2026, latest MTD snapshot after
+                    const storeAdvAgg = Object.values(aggregateAdvisorEntries(storeAdvisors));
+                    const totalGrossAdvisors = storeAdvAgg.reduce((s, a) => s + a.gross, 0);
+                    const totalRoAdvisors = storeAdvAgg.reduce((s, a) => s + a.ros, 0);
 
                     const avgGrossRo = totalRoAdvisors > 0 ? totalGrossAdvisors / totalRoAdvisors : 0;
                     // Store CSI = average of advisors' standing (latest-entry) CSI values
@@ -8950,21 +8955,9 @@
                     .sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date))
                     .forEach(d => { regionNpsByStore[d.store_id] = parseFloat(d.region_nps); });
 
-                // Aggregate per advisor
-                const advAgg = {};
-                allEntries.forEach(d => {
-                    if (!advAgg[d.advisor_id]) {
-                        advAgg[d.advisor_id] = { labor: 0, parts: 0, gross: 0, ros: 0, cpRos: 0, hours: 0, csiSum: 0, csiCount: 0, mpviSum: 0, mpviCount: 0, days: 0 };
-                    }
-                    const a = advAgg[d.advisor_id];
-                    a.labor += d.labor_gross || 0;
-                    a.parts += d.parts_gross || 0;
-                    a.gross += d.total_gross || 0;
-                    a.ros += d.ro_count || 0;
-                    a.cpRos += d.cp_ros || 0;
-                    a.hours += d.hours || 0;
-                    a.days++;
-                });
+                // Aggregate per advisor — cutover-aware (pre-June-2026 months are
+                // summed dailies; June 2026+ months use the latest MTD snapshot).
+                const advAgg = aggregateAdvisorEntries(allEntries);
 
                 // CSI & MPVI are standing MTD figures — latest entry per advisor wins, not averaged.
                 const csiLastMap = lastByAdvisor(allEntries, 'csi_score');
@@ -9436,6 +9429,81 @@
         // entry_date per advisor. avgLastByAdvisor → store/group rollup that averages
         // those standing values, skipping advisors whose latest value is 0 (never
         // actually reported) so the benchmark stays meaningful.
+        // ── Advisor entry model cutover ──────────────────────────────────────────
+        // Through May 2026, advisor entries are DAILY increments — months are summed.
+        // From June 2026 (ADVISOR_MTD_CUTOVER) entries are RUNNING MTD SNAPSHOTS,
+        // same model as Parts/Collision: the latest entry per advisor in the month
+        // IS the month-to-date. Whoever does daily entry types each advisor's MTD
+        // numbers straight off the DOC.
+        const ADVISOR_MTD_CUTOVER = '2026-06-01';
+        function advisorEntriesAreMtd(dateStr) { return (dateStr || '') >= ADVISOR_MTD_CUTOVER; }
+
+        // Aggregate advisor entries for any period, respecting the cutover.
+        // Returns { advisor_id: { labor, parts, gross, ros, totalRos, cpRos, hours, days } }.
+        // Pre-cutover months: sum every entry. Post-cutover months: take only the
+        // latest entry in that month (the MTD snapshot). Multi-month windows mix
+        // both correctly (sum of old months' dailies + each new month's snapshot).
+        function aggregateAdvisorEntries(entries) {
+            const byAdvMonth = {};
+            (entries || []).forEach(d => {
+                if (d == null || d.advisor_id == null) return;
+                const key = d.advisor_id + '|' + String(d.entry_date || '').slice(0, 7);
+                (byAdvMonth[key] = byAdvMonth[key] || []).push(d);
+            });
+            const out = {};
+            Object.values(byAdvMonth).forEach(rows => {
+                const id = rows[0].advisor_id;
+                if (!out[id]) out[id] = { labor: 0, parts: 0, gross: 0, ros: 0, totalRos: 0, cpRos: 0, hours: 0, days: 0 };
+                const a = out[id];
+                const use = advisorEntriesAreMtd(rows[0].entry_date)
+                    ? [rows.reduce((best, r) => (!best || (r.entry_date || '') >= (best.entry_date || '')) ? r : best, null)]
+                    : rows;
+                use.forEach(d => {
+                    a.labor    += parseFloat(d.labor_gross) || 0;
+                    a.parts    += parseFloat(d.parts_gross) || 0;
+                    a.gross    += parseFloat(d.total_gross) || 0;
+                    a.ros      += parseInt(d.ro_count)      || 0;
+                    a.totalRos += parseInt(d.total_ros ?? d.ro_count) || 0;
+                    a.cpRos    += parseInt(d.cp_ros)        || 0;
+                    a.hours    += parseFloat(d.hours)       || 0;
+                });
+                a.days += rows.length; // days reported = entry count under both models
+            });
+            return out;
+        }
+
+        // Convert MTD-snapshot advisor entries into synthetic per-day increments
+        // (today's snapshot minus the advisor's previous snapshot in the same month).
+        // Used by day-by-day displays for June 2026+ months; pre-cutover entries are
+        // already daily and should be passed through untouched by callers.
+        function advisorDailyDeltas(entries) {
+            const byAdv = {};
+            (entries || []).forEach(d => {
+                if (d == null || d.advisor_id == null) return;
+                const key = d.advisor_id + '|' + String(d.entry_date || '').slice(0, 7);
+                (byAdv[key] = byAdv[key] || []).push(d);
+            });
+            const out = [];
+            Object.values(byAdv).forEach(rows => {
+                rows.sort((a, b) => (a.entry_date || '') < (b.entry_date || '') ? -1 : 1);
+                let prev = null;
+                rows.forEach(d => {
+                    const f = (v) => parseFloat(v) || 0;
+                    out.push(Object.assign({}, d, {
+                        labor_gross: f(d.labor_gross) - (prev ? f(prev.labor_gross) : 0),
+                        parts_gross: f(d.parts_gross) - (prev ? f(prev.parts_gross) : 0),
+                        total_gross: f(d.total_gross) - (prev ? f(prev.total_gross) : 0),
+                        ro_count:    f(d.ro_count)    - (prev ? f(prev.ro_count)    : 0),
+                        total_ros:   f(d.total_ros ?? d.ro_count) - (prev ? f(prev.total_ros ?? prev.ro_count) : 0),
+                        cp_ros:      f(d.cp_ros)      - (prev ? f(prev.cp_ros)      : 0),
+                        hours:       f(d.hours)       - (prev ? f(prev.hours)       : 0)
+                    }));
+                    prev = d;
+                });
+            });
+            return out;
+        }
+
         function lastByAdvisor(entries, field) {
             const best = {};
             for (const e of (entries || [])) {
@@ -9486,12 +9554,14 @@
                         return { labor: 0, parts: 0, gross: 0, grossRo: 0, roCount: 0, cpPct: 0, csi: 0, hro: 0, elr: 0, mpvi: 0 };
                     }
                     entries = entries || [];
-                    const totalLabor = entries.reduce((s, e) => s + (e.labor_gross || 0), 0);
-                    const totalParts = entries.reduce((s, e) => s + (e.parts_gross || 0), 0);
-                    const totalGross = entries.reduce((s, e) => s + (e.total_gross || 0), 0);
-                    const totalRo = entries.reduce((s, e) => s + (e.ro_count || 0), 0);
-                    const totalCp = entries.reduce((s, e) => s + (e.cp_ros || 0), 0);
-                    const totalHours = entries.reduce((s, e) => s + (e.hours || 0), 0);
+                    // Cutover-aware: dailies summed pre-June-2026, latest MTD snapshot after
+                    const aggArr = Object.values(aggregateAdvisorEntries(entries));
+                    const totalLabor = aggArr.reduce((s, a) => s + a.labor, 0);
+                    const totalParts = aggArr.reduce((s, a) => s + a.parts, 0);
+                    const totalGross = aggArr.reduce((s, a) => s + a.gross, 0);
+                    const totalRo = aggArr.reduce((s, a) => s + a.ros, 0);
+                    const totalCp = aggArr.reduce((s, a) => s + a.cpRos, 0);
+                    const totalHours = aggArr.reduce((s, a) => s + a.hours, 0);
                     // CSI & MPVI are standing MTD figures: last entry wins, not averaged.
                     // avgLastByAdvisor over a single-advisor array returns that advisor's
                     // latest value; over a store pool it averages advisors' latest values.
@@ -9539,15 +9609,17 @@
                     ${createScorecard('MPVI %', advisorStats.mpvi, storeAvgStats.mpvi, '%')}
                 `;
 
-                // Trend chart
+                // Trend chart — pre-cutover months plot daily gross; June 2026+ entries
+                // are running MTD snapshots, so the line climbs through the month.
                 const sorted = (advisorEntries || []).sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date));
                 const dates = sorted.map(e => new Date(e.entry_date).getDate());
                 const grossValues = sorted.map(e => e.total_gross || 0);
+                const mtdMode = sorted.length && advisorEntriesAreMtd(sorted[0].entry_date);
 
                 loadChart('advisorTrendChart', 'line', {
                     labels: dates,
                     datasets: [{
-                        label: 'Daily Total Gross',
+                        label: mtdMode ? 'MTD Total Gross' : 'Daily Total Gross',
                         data: grossValues,
                         borderColor: '#cc0000',
                         backgroundColor: 'rgba(204, 0, 0, 0.1)',
@@ -10100,32 +10172,12 @@
                     }
                 }
 
-                const priorAdvAgg = {};
-                priorAdvData.forEach(d => {
-                    if (!priorAdvAgg[d.advisor_id]) {
-                        priorAdvAgg[d.advisor_id] = { gross: 0, ros: 0, labor: 0 };
-                    }
-                    priorAdvAgg[d.advisor_id].gross += d.total_gross || 0;
-                    priorAdvAgg[d.advisor_id].ros += d.ro_count || 0;
-                    priorAdvAgg[d.advisor_id].labor += d.labor_gross || 0;
-                });
+                // Cutover-aware aggregation (pre-June-2026 = summed dailies; after =
+                // latest MTD snapshot per advisor per month)
+                const priorAdvAgg = aggregateAdvisorEntries(priorAdvData);
 
-                // Aggregate daily entries per advisor for the week
-                const weeklyAdvAgg = {};
-                weeklyAdvData.forEach(d => {
-                    if (!weeklyAdvAgg[d.advisor_id]) {
-                        weeklyAdvAgg[d.advisor_id] = { labor: 0, parts: 0, gross: 0, ros: 0, cpRos: 0, hours: 0, csiSum: 0, csiCount: 0, mpviSum: 0, mpviCount: 0 };
-                    }
-                    const a = weeklyAdvAgg[d.advisor_id];
-                    a.labor += d.labor_gross || 0;
-                    a.parts += d.parts_gross || 0;
-                    a.gross += d.total_gross || 0;
-                    a.ros += d.ro_count || 0;
-                    a.cpRos += d.cp_ros || 0;
-                    a.hours += d.hours || 0;
-                    if (d.csi_score) { a.csiSum += d.csi_score; a.csiCount++; }
-                    if (d.mpvi_pct) { a.mpviSum += d.mpvi_pct; a.mpviCount++; }
-                });
+                // Aggregate daily entries per advisor for the period
+                const weeklyAdvAgg = aggregateAdvisorEntries(weeklyAdvData);
 
                 // CSI & MPVI are standing MTD figures — latest entry per advisor wins.
                 const csiLastMap = lastByAdvisor(weeklyAdvData, 'csi_score');
