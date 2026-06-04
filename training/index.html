@@ -268,7 +268,8 @@
     </div>
   </div>
 
-  <div style="text-align:right; margin-top:20px;">
+  <div style="text-align:right; margin-top:20px; display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+    <a href="admin.html" id="adminDashLink" class="btn" style="display:none; background:#1a1a1a; color:#fff; border-color:#1a1a1a;">Training Admin →</a>
     <a href="my-training.html" class="btn btn-secondary">My Training Dashboard →</a>
   </div>
 
@@ -361,5 +362,24 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/training/shared/training-auth.js"></script>
+<script>
+  // Reveal the Training Admin button only for admin accounts.
+  (function () {
+    function showAdminLink() {
+      var dt = window.dyerTraining;
+      var role = dt && dt.currentUser && dt.currentUser.role
+        ? String(dt.currentUser.role).toLowerCase() : "";
+      if (role === "admin") {
+        var link = document.getElementById("adminDashLink");
+        if (link) link.style.display = "inline-flex";
+      }
+    }
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", showAdminLink);
+    } else {
+      showAdminLink();
+    }
+  })();
+</script>
 </body>
 </html>

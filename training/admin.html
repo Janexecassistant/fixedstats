@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Training Admin | Dyer Automotive Fixed Operations</title>
+<link rel="stylesheet" href="walkaround/assets/styles.css">
+<style>
+  /* ---- KPI summary cards ---- */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin: 26px 0 30px;
+  }
+  .kpi-card {
+    background: #fff;
+    border: 1px solid var(--dyer-border);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    box-shadow: var(--shadow-sm);
+  }
+  .kpi-card .kpi-num {
+    font-size: 30px;
+    font-weight: 800;
+    color: var(--dyer-navy);
+    line-height: 1;
+  }
+  .kpi-card .kpi-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--dyer-text-muted);
+    font-weight: 700;
+    margin-top: 8px;
+  }
+  .kpi-card.accent .kpi-num { color: var(--dyer-red); }
+
+  /* ---- Controls ---- */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 18px;
+  }
+  .controls input[type="search"],
+  .controls select {
+    padding: 9px 12px;
+    border: 1px solid var(--dyer-border);
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    background: #fff;
+    color: var(--dyer-text);
+  }
+  .controls input[type="search"] { min-width: 220px; flex: 1; }
+  .controls .ctrl-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--dyer-text-muted);
+    font-weight: 700;
+  }
+
+  /* ---- Roster table ---- */
+  table.roster {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border: 1px solid var(--dyer-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  table.roster th, table.roster td {
+    padding: 11px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--dyer-border);
+    font-size: 13px;
+    vertical-align: middle;
+  }
+  table.roster th {
+    background: var(--dyer-navy);
+    color: #fff;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.6px;
+    white-space: nowrap;
+  }
+  table.roster tbody tr.user-row { cursor: pointer; }
+  table.roster tbody tr.user-row:hover td { background: #f4f6f9; }
+  table.roster td .uname { font-weight: 700; color: var(--dyer-navy); }
+  table.roster td .usub { font-size: 11px; color: var(--dyer-text-muted); }
+  .role-chip {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    background: var(--dyer-gray-soft);
+    color: var(--dyer-text-muted);
+    text-transform: capitalize;
+    white-space: nowrap;
+  }
+  /* mini progress bar in the rollup row */
+  .mini-bar {
+    height: 8px;
+    width: 90px;
+    background: var(--dyer-gray-soft);
+    border-radius: 999px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  .mini-bar > span {
+    display: block; height: 100%;
+    background: linear-gradient(90deg, var(--dyer-red), #ff5a4a);
+  }
+  .mini-bar.done > span { background: var(--dyer-green); }
+  .pct-text { font-size: 12px; color: var(--dyer-text-muted); font-weight: 700; }
+  .stale { color: #b45309; font-weight: 600; }
+  .never { color: var(--dyer-text-muted); font-style: italic; }
+  .caret { display:inline-block; transition: transform 0.15s ease; color: var(--dyer-text-muted); margin-right:6px; }
+  tr.expanded .caret { transform: rotate(90deg); }
+
+  /* ---- Detail sub-table ---- */
+  tr.detail-row > td { background: #fafbfc; padding: 0 14px 14px; border-bottom: 2px solid var(--dyer-border); }
+  table.detail {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 4px;
+  }
+  table.detail th, table.detail td {
+    padding: 7px 10px; text-align: left; font-size: 12px;
+    border-bottom: 1px solid #e7e9ee;
+  }
+  table.detail th {
+    background: transparent; color: var(--dyer-text-muted);
+    text-transform: uppercase; letter-spacing: 0.5px; font-size: 10px;
+  }
+  .pass-pill {
+    display: inline-block; padding: 2px 9px; border-radius: 999px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase;
+  }
+  .pass-pill.pass { background: var(--dyer-green-soft); color: var(--dyer-green); }
+  .pass-pill.fail { background: var(--dyer-red-soft); color: var(--dyer-red-dark); }
+  .pass-pill.none { background: var(--dyer-gray-soft); color: var(--dyer-text-muted); }
+
+  .loading { color: var(--dyer-text-muted); font-style: italic; padding: 16px 0; }
+  .empty-state {
+    background: #fff; border: 1px dashed var(--dyer-border); border-radius: var(--radius);
+    padding: 40px 24px; text-align: center; color: var(--dyer-text-muted);
+  }
+  .access-denied {
+    background: #fff; border: 1px solid var(--dyer-border); border-left: 6px solid var(--dyer-red);
+    border-radius: var(--radius); padding: 30px; margin-top: 30px;
+  }
+  .access-denied h2 { margin: 0 0 8px; color: var(--dyer-navy); }
+  .note {
+    font-size: 12px; color: var(--dyer-text-muted); margin: 6px 0 0;
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <div class="brand">
+      <div class="brand-mark">D</div>
+      <div>
+        <div class="brand-name">Dyer Automotive</div>
+        <div class="brand-sub">Fixed Operations Training</div>
+      </div>
+    </div>
+    <div class="module-tag">Training Admin</div>
+  </div>
+</header>
+
+<main class="page">
+
+  <div id="admin-content" style="display:none;">
+    <div class="eyebrow">Admin Dashboard</div>
+    <h1>Team Training Progress</h1>
+    <p class="lead">Where every team member stands across the six core modules, and the last time each was active in training. Click any row for the module-by-module breakdown.</p>
+
+    <div class="kpi-grid" id="kpi-grid"></div>
+
+    <div class="controls">
+      <input type="search" id="search" placeholder="Search by name or username…" aria-label="Search">
+      <span class="ctrl-label">Role</span>
+      <select id="role-filter"><option value="">All roles</option></select>
+      <span class="ctrl-label">Store</span>
+      <select id="store-filter"><option value="">All stores</option></select>
+      <span class="ctrl-label">Sort</span>
+      <select id="sort">
+        <option value="recent">Last active (newest)</option>
+        <option value="stale">Last active (oldest)</option>
+        <option value="name">Name (A–Z)</option>
+        <option value="most">Most lessons done</option>
+        <option value="least">Least progress</option>
+      </select>
+      <label style="font-size:12px;color:var(--dyer-text-muted);display:flex;align-items:center;gap:6px;">
+        <input type="checkbox" id="show-inactive"> Show inactive users
+      </label>
+    </div>
+
+    <div id="roster-wrap">
+      <div class="loading">Loading team training records…</div>
+    </div>
+
+    <p class="note">"Last training activity" = the most recent lesson completion or knowledge-check attempt. Lesson totals cover the six core modules (42 lessons). The Flat Rate Frenzy game tracks separately and isn't counted here.</p>
+
+    <div style="margin-top:36px; text-align:center;">
+      <a href="/training/" class="btn">← Back to Training Library</a>
+    </div>
+  </div>
+
+  <div id="denied" style="display:none;">
+    <div class="access-denied">
+      <h2>Admins only</h2>
+      <p>This training admin dashboard is restricted to administrator accounts. If you think you should have access, contact your system admin.</p>
+      <a href="/training/" class="btn" style="margin-top:10px;">← Back to Training Library</a>
+    </div>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  Dyer Automotive · Fixed Operations Training · Built for the team, by the team.
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/training/shared/training-auth.js"></script>
+<script>
+  // Roles allowed to view this dashboard. (Client-side gate, matching the
+  // rest of the app's role checks.)
+  const ADMIN_ROLES = ["admin"];
+
+  // Module metadata — keep in sync with my-training.html / module folders.
+  const MODULES = [
+    { id: "walkaround",     name: "Service Drive Customer Flow",     audience: "Advisor",    totalLessons: 7 },
+    { id: "mpvi",           name: "Technician Video MPVI",           audience: "Technician", totalLessons: 7 },
+    { id: "objections",     name: "Overcoming Customer Objections",  audience: "Advisor",    totalLessons: 7 },
+    { id: "menu-sales",     name: "Menu Sales",                      audience: "Advisor",    totalLessons: 7 },
+    { id: "phone-skills",   name: "Phone Skills",                    audience: "Advisor",    totalLessons: 7 },
+    { id: "customer-comms", name: "Customer Communication (Numa)",   audience: "Advisor",    totalLessons: 7 }
+  ];
+  const TOTAL_LESSONS = MODULES.reduce((s, m) => s + m.totalLessons, 0);
+  const MODULE_NAME = {}; MODULES.forEach(m => MODULE_NAME[m.id] = m.name);
+
+  const ROLE_LABELS = {
+    admin: "Admin", executive: "Executive", manager: "Service Manager",
+    parts_manager: "Parts Manager", collision_manager: "Collision Manager",
+    advisor: "Service Advisor", technician: "Technician", user: "Team Member"
+  };
+
+  let USERS = [];          // computed per-user records
+  const expanded = {};     // user_id -> bool
+
+  document.addEventListener("DOMContentLoaded", init);
+
+  async function init() {
+    const dt = window.dyerTraining;
+    // training-auth redirects to login if there's no session; if we're here
+    // with no session (e.g. file:// preview) just bail quietly.
+    if (!dt || !dt.currentUser) return;
+
+    const role = (dt.currentUser.role || "").toLowerCase();
+    if (!ADMIN_ROLES.includes(role)) {
+      document.getElementById("denied").style.display = "block";
+      return;
+    }
+    document.getElementById("admin-content").style.display = "block";
+
+    try {
+      await loadData(dt.db);
+    } catch (e) {
+      console.error("[training-admin] load failed", e);
+      document.getElementById("roster-wrap").innerHTML =
+        '<div class="empty-state">Couldn\'t load training data. Check your connection and reload.</div>';
+      return;
+    }
+
+    wireControls();
+    render();
+  }
+
+  async function loadData(db) {
+    const [usersRes, progRes, quizRes] = await Promise.all([
+      db.from("app_users").select("id,display_name,username,role,default_store,is_active,last_login"),
+      db.from("training_progress").select("user_id,module_id,lesson_id,completed_at"),
+      db.from("training_quiz_attempts").select("user_id,module_id,score,passed,attempted_at")
+    ]);
+    if (usersRes.error) throw usersRes.error;
+
+    const progress = (progRes.data) || [];
+    const quizzes  = (quizRes.data) || [];
+
+    // Group progress + quizzes by user
+    const progByUser = {}, quizByUser = {};
+    progress.forEach(r => { (progByUser[r.user_id] = progByUser[r.user_id] || []).push(r); });
+    quizzes.forEach(r => { (quizByUser[r.user_id] = quizByUser[r.user_id] || []).push(r); });
+
+    USERS = (usersRes.data || []).map(u => {
+      const myProg = progByUser[u.id] || [];
+      const myQuiz = quizByUser[u.id] || [];
+
+      // Per-module rollup
+      const perModule = MODULES.map(m => {
+        // unique lessons completed in this module
+        const lessons = new Set(myProg.filter(p => p.module_id === m.id).map(p => p.lesson_id));
+        const moduleProg = myProg.filter(p => p.module_id === m.id);
+        const lastLesson = moduleProg.reduce((acc, p) =>
+          (!acc || new Date(p.completed_at) > new Date(acc)) ? p.completed_at : acc, null);
+        // latest quiz attempt for this module
+        const moduleQuiz = myQuiz
+          .filter(q => q.module_id === m.id)
+          .sort((a, b) => new Date(b.attempted_at) - new Date(a.attempted_at))[0] || null;
+        const lastActivity = maxDate(lastLesson, moduleQuiz ? moduleQuiz.attempted_at : null);
+        return {
+          id: m.id, name: m.name, audience: m.audience, total: m.totalLessons,
+          done: Math.min(lessons.size, m.totalLessons),
+          latestQuiz: moduleQuiz, lastActivity: lastActivity
+        };
+      });
+
+      const lessonsDone = perModule.reduce((s, m) => s + m.done, 0);
+      const modulesStarted = perModule.filter(m => m.done > 0).length;
+      const modulesCompleted = perModule.filter(m => m.done >= m.total).length;
+      const quizzesPassed = perModule.filter(m => m.latestQuiz && m.latestQuiz.passed).length;
+      const lastActivity = perModule.reduce((acc, m) => maxDate(acc, m.lastActivity), null);
+
+      return {
+        id: u.id,
+        name: u.display_name || u.username || "Unknown",
+        username: u.username,
+        role: (u.role || "").toLowerCase(),
+        roleLabel: ROLE_LABELS[(u.role || "").toLowerCase()] || u.role || "—",
+        store: u.default_store || "",
+        isActive: u.is_active !== false,
+        lastLogin: u.last_login || null,
+        perModule, lessonsDone, modulesStarted, modulesCompleted,
+        quizzesPassed, lastActivity
+      };
+    });
+  }
+
+  function maxDate(a, b) {
+    if (!a) return b || null;
+    if (!b) return a;
+    return new Date(a) > new Date(b) ? a : b;
+  }
+
+  function wireControls() {
+    // Populate role + store filters from data
+    const roleSel = document.getElementById("role-filter");
+    const storeSel = document.getElementById("store-filter");
+    const roles = [...new Set(USERS.map(u => u.role).filter(Boolean))].sort();
+    roles.forEach(r => {
+      const o = document.createElement("option");
+      o.value = r; o.textContent = ROLE_LABELS[r] || r;
+      roleSel.appendChild(o);
+    });
+    const stores = [...new Set(USERS.map(u => u.store).filter(Boolean))].sort();
+    stores.forEach(s => {
+      const o = document.createElement("option");
+      o.value = s; o.textContent = s;
+      storeSel.appendChild(o);
+    });
+
+    ["search", "role-filter", "store-filter", "sort", "show-inactive"].forEach(id => {
+      document.getElementById(id).addEventListener("input", render);
+      document.getElementById(id).addEventListener("change", render);
+    });
+  }
+
+  function getFiltered() {
+    const q = document.getElementById("search").value.trim().toLowerCase();
+    const role = document.getElementById("role-filter").value;
+    const store = document.getElementById("store-filter").value;
+    const sort = document.getElementById("sort").value;
+    const showInactive = document.getElementById("show-inactive").checked;
+
+    let rows = USERS.filter(u => {
+      if (!showInactive && !u.isActive) return false;
+      if (role && u.role !== role) return false;
+      if (store && u.store !== store) return false;
+      if (q && !(u.name.toLowerCase().includes(q) || (u.username || "").toLowerCase().includes(q))) return false;
+      return true;
+    });
+
+    const t = x => x.lastActivity ? new Date(x.lastActivity).getTime() : 0;
+    rows.sort((a, b) => {
+      switch (sort) {
+        case "stale":  return t(a) - t(b);
+        case "name":   return a.name.localeCompare(b.name);
+        case "most":   return b.lessonsDone - a.lessonsDone || t(b) - t(a);
+        case "least":  return a.lessonsDone - b.lessonsDone || t(b) - t(a);
+        case "recent":
+        default:       return t(b) - t(a) || a.name.localeCompare(b.name);
+      }
+    });
+    return rows;
+  }
+
+  function render() {
+    renderKpis();
+    renderRoster(getFiltered());
+  }
+
+  function renderKpis() {
+    const active = USERS.filter(u => u.isActive);
+    const started = active.filter(u => u.modulesStarted > 0).length;
+    const finishedAll = active.filter(u => u.modulesCompleted === MODULES.length).length;
+    const now = Date.now();
+    const last7 = active.filter(u => u.lastActivity && (now - new Date(u.lastActivity).getTime()) <= 7 * 864e5).length;
+    const totalLessonsDone = active.reduce((s, u) => s + u.lessonsDone, 0);
+    const possible = active.length * TOTAL_LESSONS;
+    const teamPct = possible ? Math.round((totalLessonsDone / possible) * 100) : 0;
+
+    const cards = [
+      { num: active.length, label: "Team Members" },
+      { num: started, label: "Started Training", accent: true },
+      { num: finishedAll, label: "Completed All 6 Modules", accent: true },
+      { num: last7, label: "Active in Last 7 Days" },
+      { num: teamPct + "%", label: "Team Lessons Complete" }
+    ];
+    document.getElementById("kpi-grid").innerHTML = cards.map(c =>
+      '<div class="kpi-card' + (c.accent ? ' accent' : '') + '">' +
+      '<div class="kpi-num">' + c.num + '</div>' +
+      '<div class="kpi-label">' + c.label + '</div></div>'
+    ).join("");
+  }
+
+  function renderRoster(rows) {
+    const wrap = document.getElementById("roster-wrap");
+    if (!rows.length) {
+      wrap.innerHTML = '<div class="empty-state">No team members match these filters.</div>';
+      return;
+    }
+
+    let html = '<table class="roster"><thead><tr>' +
+      '<th>Name</th><th>Role</th><th>Store</th><th>Modules</th>' +
+      '<th>Lessons</th><th>Quizzes&nbsp;Passed</th><th>Last&nbsp;Training&nbsp;Activity</th>' +
+      '</tr></thead><tbody>';
+
+    rows.forEach(u => {
+      const pct = Math.round((u.lessonsDone / TOTAL_LESSONS) * 100);
+      const allDone = u.modulesCompleted === MODULES.length;
+      const isExpanded = !!expanded[u.id];
+      html +=
+        '<tr class="user-row' + (isExpanded ? ' expanded' : '') + '" data-uid="' + u.id + '">' +
+          '<td><span class="caret">▶</span><span class="uname">' + esc(u.name) + '</span>' +
+            (u.username ? '<div class="usub">@' + esc(u.username) + (u.isActive ? '' : ' · inactive') + '</div>' : '') + '</td>' +
+          '<td><span class="role-chip">' + esc(u.roleLabel) + '</span></td>' +
+          '<td>' + (u.store ? esc(u.store) : '—') + '</td>' +
+          '<td>' + u.modulesStarted + ' / ' + MODULES.length +
+            (u.modulesCompleted ? ' <span class="pct-text">(' + u.modulesCompleted + ' done)</span>' : '') + '</td>' +
+          '<td><span class="mini-bar' + (allDone ? ' done' : '') + '"><span style="width:' + pct + '%"></span></span>' +
+            '<span class="pct-text">' + u.lessonsDone + '/' + TOTAL_LESSONS + '</span></td>' +
+          '<td>' + u.quizzesPassed + ' / ' + MODULES.length + '</td>' +
+          '<td>' + activityCell(u.lastActivity) + '</td>' +
+        '</tr>';
+      if (isExpanded) html += detailRow(u);
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+
+    wrap.querySelectorAll("tr.user-row").forEach(tr => {
+      tr.addEventListener("click", () => {
+        const uid = tr.getAttribute("data-uid");
+        expanded[uid] = !expanded[uid];
+        renderRoster(getFiltered());
+      });
+    });
+  }
+
+  function detailRow(u) {
+    let inner = '<table class="detail"><thead><tr>' +
+      '<th>Module</th><th>For</th><th>Lessons</th><th>Knowledge Check</th><th>Last Activity</th>' +
+      '</tr></thead><tbody>';
+    u.perModule.forEach(m => {
+      const pct = Math.round((m.done / m.total) * 100);
+      const allDone = m.done >= m.total;
+      let quizCell = '<span class="pass-pill none">Not taken</span>';
+      if (m.latestQuiz) {
+        const cls = m.latestQuiz.passed ? "pass" : "fail";
+        quizCell = '<span class="pass-pill ' + cls + '">' + m.latestQuiz.score + '% · ' +
+          (m.latestQuiz.passed ? 'Passed' : 'Below 80%') + '</span>';
+      }
+      inner +=
+        '<tr>' +
+          '<td><strong>' + esc(m.name) + '</strong></td>' +
+          '<td>' + esc(m.audience) + '</td>' +
+          '<td><span class="mini-bar' + (allDone ? ' done' : '') + '" style="width:64px;"><span style="width:' + pct + '%"></span></span> ' +
+            m.done + '/' + m.total + '</td>' +
+          '<td>' + quizCell + '</td>' +
+          '<td>' + activityCell(m.lastActivity) + '</td>' +
+        '</tr>';
+    });
+    inner += '</tbody></table>';
+    return '<tr class="detail-row"><td colspan="7">' + inner + '</td></tr>';
+  }
+
+  function activityCell(iso) {
+    if (!iso) return '<span class="never">Never</span>';
+    const days = Math.floor((Date.now() - new Date(iso).getTime()) / 864e5);
+    const label = formatDate(iso) + ' <span style="color:var(--dyer-text-muted);font-size:11px;">(' + relTime(days) + ')</span>';
+    return days > 30 ? '<span class="stale">' + label + '</span>' : label;
+  }
+
+  function relTime(days) {
+    if (days <= 0) return "today";
+    if (days === 1) return "yesterday";
+    if (days < 7) return days + " days ago";
+    if (days < 30) return Math.floor(days / 7) + "w ago";
+    if (days < 365) return Math.floor(days / 30) + "mo ago";
+    return Math.floor(days / 365) + "y ago";
+  }
+
+  function formatDate(iso) {
+    try {
+      return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    } catch (_) { return iso; }
+  }
+
+  function esc(s) {
+    return String(s || "")
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+</script>
+</body>
+</html>
