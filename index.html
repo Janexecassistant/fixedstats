@@ -2740,6 +2740,7 @@
                                 <th>Name</th>
                                 <th>Employee ID</th>
                                 <th>Specialty</th>
+                                <th>Position</th>
                                 <th>Status</th>
                                 <th style="width:120px">Actions</th>
                             </tr>
@@ -2762,6 +2763,7 @@
                                 <th>Name</th>
                                 <th>Employee ID</th>
                                 <th>Pay Plan</th>
+                                <th>Position</th>
                                 <th>Status</th>
                                 <th style="width:120px">Actions</th>
                             </tr>
@@ -2784,6 +2786,7 @@
                                 <th>Name</th>
                                 <th>Employee ID</th>
                                 <th>Mentor/Supervisor</th>
+                                <th>Position</th>
                                 <th>Status</th>
                                 <th style="width:120px">Actions</th>
                             </tr>
@@ -11167,6 +11170,7 @@
                         <td><input type="text" class="staff-name" value="${tech.name}" style="font-weight:600"></td>
                         <td><input type="text" class="staff-empid" value="${tech.employee_id || ''}" placeholder="—"></td>
                         <td><input type="text" class="staff-specialty" value="${tech.specialty || ''}" placeholder="A/B/C"></td>
+                        <td>${positionSelect('technician')}</td>
                         <td>
                             <select class="staff-status">
                                 <option value="true" ${tech.is_active !== false ? 'selected' : ''}>Active</option>
@@ -11192,6 +11196,7 @@
                         <td><input type="text" class="staff-name" value="${tech.name}" style="font-weight:600"></td>
                         <td><input type="text" class="staff-empid" value="${tech.employee_id || ''}" placeholder="—"></td>
                         <td><input type="text" class="staff-payplan" value="${tech.pay_plan || ''}" placeholder="—"></td>
+                        <td>${positionSelect('tech')}</td>
                         <td>
                             <select class="staff-status">
                                 <option value="true" ${tech.is_active !== false ? 'selected' : ''}>Active</option>
@@ -11217,6 +11222,7 @@
                         <td><input type="text" class="staff-name" value="${app.name}" style="font-weight:600">${allMode ? ' <span style="color:#888;font-size:11px">'+getStoreName(app.store_id)+'</span>' : ''}</td>
                         <td><input type="text" class="staff-empid" value="${app.employee_id || ''}" placeholder="—"></td>
                         <td><input type="text" class="staff-mentor" value="${app.mentor || ''}" placeholder="—"></td>
+                        <td>${positionSelect('apprentice')}</td>
                         <td>
                             <select class="staff-status">
                                 <option value="true" ${app.is_active !== false ? 'selected' : ''}>Active</option>
@@ -11231,6 +11237,87 @@
                 `;
             });
             document.getElementById('staffApprenticeBody').innerHTML = apprenticeHtml;
+        }
+
+        // ── Position change (move between Technician / Lube Tech / Apprentice) ──────
+        const STAFF_POSITION_LABELS = { technician: 'Technician', tech: 'Lube Tech', apprentice: 'Apprentice' };
+        const STAFF_POSITION_PLURAL = { technician: 'Technicians', tech: 'Lube Techs', apprentice: 'Apprentices' };
+
+        function positionSelect(currentType) {
+            return `
+                <select class="staff-position" onchange="moveStaffCategory(this, '${currentType}')">
+                    ${Object.entries(STAFF_POSITION_LABELS).map(([val, label]) =>
+                        `<option value="${val}" ${val === currentType ? 'selected' : ''}>${label}</option>`).join('')}
+                </select>`;
+        }
+
+        // Move a person to a different staff category. The old row is deactivated
+        // (NOT deleted) so historical tech_weekly_entries keyed by tech_type+tech_id
+        // stay intact; a fresh row is added under the new category.
+        async function moveStaffCategory(sel, fromType) {
+            const row = sel.closest('tr');
+            const id = row.dataset.id;
+            const toType = sel.value;
+            if (toType === fromType) return;
+            const resetSel = () => { sel.value = fromType; };
+
+            if (!id || id === 'new') {
+                showToast('Save the new person first, then change their position', 'error');
+                resetSel();
+                return;
+            }
+            const arrOf = (t) => t === 'technician' ? technicians : t === 'apprentice' ? apprentices : lubeTechs;
+            const fromArr = arrOf(fromType);
+            const toArr = arrOf(toType);
+            const person = fromArr.find(p => String(p.id) === String(id));
+            if (!person) {
+                showToast('Could not find this person — reload the page and try again', 'error');
+                resetSel();
+                return;
+            }
+            const name = row.querySelector('.staff-name')?.value.trim() || person.name;
+            if (!confirm(`Move ${name} from ${STAFF_POSITION_PLURAL[fromType]} to ${STAFF_POSITION_PLURAL[toType]}?\n\nTheir history stays with the old role; they start fresh in the new list.`)) {
+                resetSel();
+                return;
+            }
+
+            try {
+                // Fresh numeric id in the target category (defensive against string/NaN ids)
+                const numericIds = toArr.map(p => parseInt(p.id)).filter(n => Number.isFinite(n));
+                const newId = (numericIds.length ? Math.max(...numericIds) : 0) + 1;
+                const storeId = person.store_id || (!isAllStores() ? getSelectedStore() : null);
+                if (!storeId) {
+                    showToast('Select a specific store before moving this person', 'error');
+                    resetSel();
+                    return;
+                }
+                const record = {
+                    id: newId,
+                    name,
+                    employee_id: row.querySelector('.staff-empid')?.value.trim() || person.employee_id || null,
+                    store_id: storeId,
+                    is_active: true
+                };
+                if (toType === 'technician') record.specialty = person.specialty || (fromType === 'apprentice' ? 'Apprentice' : '');
+                if (toType === 'tech')       record.pay_plan  = person.pay_plan || '';
+                if (toType === 'apprentice') record.mentor    = person.mentor || '';
+                record.updated_by = currentUser ? currentUser.id : null;
+                record.updated_at = new Date().toISOString();
+
+                // Add to new category first, then deactivate the old row
+                toArr.push(record);
+                await LS.recordStaffChange(toType, newId, record, 'add');
+                const oldRecord = { ...person, is_active: false, updated_by: currentUser ? currentUser.id : null, updated_at: new Date().toISOString() };
+                Object.assign(person, { is_active: false });
+                await LS.recordStaffChange(fromType, person.id, oldRecord, 'update');
+
+                showToast(`${name} moved to ${STAFF_POSITION_PLURAL[toType]}`);
+                loadStaffManagement();
+            } catch (error) {
+                console.error('moveStaffCategory error:', error);
+                showToast('Failed to move — please try again', 'error');
+                resetSel();
+            }
         }
 
         async function saveStaffRow(btn, type) {
@@ -11348,6 +11435,7 @@
                 <td><input type="text" class="staff-name" value="" placeholder="Enter name..." style="font-weight:600"></td>
                 <td><input type="text" class="staff-empid" value="" placeholder="Employee ID"></td>
                 <td><input type="text" class="staff-specialty" value="" placeholder="A/B/C"></td>
+                <td><span style="color:#94a3b8;font-size:12px;">Save first</span></td>
                 <td>
                     <select class="staff-status">
                         <option value="true" selected>Active</option>
@@ -11375,6 +11463,7 @@
                 <td><input type="text" class="staff-name" value="" placeholder="Enter name..." style="font-weight:600"></td>
                 <td><input type="text" class="staff-empid" value="" placeholder="Employee ID"></td>
                 <td><input type="text" class="staff-payplan" value="" placeholder="Pay plan"></td>
+                <td><span style="color:#94a3b8;font-size:12px;">Save first</span></td>
                 <td>
                     <select class="staff-status">
                         <option value="true" selected>Active</option>
@@ -11402,6 +11491,7 @@
                 <td><input type="text" class="staff-name" value="" placeholder="Enter name..." style="font-weight:600"></td>
                 <td><input type="text" class="staff-empid" value="" placeholder="Employee ID"></td>
                 <td><input type="text" class="staff-mentor" value="" placeholder="Mentor/Supervisor"></td>
+                <td><span style="color:#94a3b8;font-size:12px;">Save first</span></td>
                 <td>
                     <select class="staff-status">
                         <option value="true" selected>Active</option>
