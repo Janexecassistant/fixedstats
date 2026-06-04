@@ -1565,6 +1565,8 @@
                                 <th>Total Gross ($)</th>
                                 <th>Total ROs</th>
                                 <th>CP ROs</th>
+                                <th>CP Labor ($)</th>
+                                <th>CP Parts ($)</th>
                                 <th>Hours</th>
                                 <th>CSI</th>
                                 <th>MPVI %</th>
@@ -4254,6 +4256,8 @@
                             ro_count: entry.ro_count ?? entry.total_ros ?? 0,
                             total_ros: entry.total_ros ?? entry.ro_count ?? 0,
                             cp_ros: entry.cp_ros ?? entry.cp_ro ?? 0,
+                            cp_labor: entry.cp_labor ?? 0,
+                            cp_parts: entry.cp_parts ?? 0,
                             hours: entry.hours ?? 0, labor_gross: entry.labor_gross ?? 0,
                             parts_gross: entry.parts_gross ?? 0, total_gross: entry.total_gross ?? 0,
                             csi_score: entry.csi_score ?? entry.csi ?? 0,
@@ -5477,6 +5481,8 @@
                             <td class="input-gray advisor-gross" data-advisor="${advisor.id}" style="font-weight:700">-</td>
                             <td><input type="number" class="input-yellow advisor-total-ros" data-advisor="${advisor.id}" value="${entry?.total_ros ?? entry?.ro_count ?? ''}" placeholder="0"></td>
                             <td><input type="number" class="input-yellow advisor-cp" data-advisor="${advisor.id}" value="${entry?.cp_ros ?? ''}" placeholder="0"></td>
+                            <td><input type="number" class="input-yellow advisor-cp-labor" data-advisor="${advisor.id}" value="${entry?.cp_labor ?? ''}" placeholder="0"></td>
+                            <td><input type="number" class="input-yellow advisor-cp-parts" data-advisor="${advisor.id}" value="${entry?.cp_parts ?? ''}" placeholder="0"></td>
                             <td><input type="number" step="0.1" class="input-yellow advisor-hours" data-advisor="${advisor.id}" value="${entry?.hours ?? ''}" placeholder="0"></td>
                             <td><input type="number" step="0.1" class="input-yellow advisor-csi" data-advisor="${advisor.id}" value="${entry?.csi_score ?? ''}" placeholder="0"></td>
                             <td><input type="number" step="0.1" class="input-yellow advisor-mpvi" data-advisor="${advisor.id}" value="${entry?.mpvi_pct ?? ''}" placeholder="0"></td>
@@ -5674,7 +5680,7 @@
                 Object.keys(storeGroups).forEach(sid => {
                     const store = stores.find(s => s.id === sid) || FALLBACK_STORES.find(s => s.id === sid);
                     const storeName = store ? store.code : sid;
-                    html += `<tr style="background:#e2e8f0;"><td colspan="13" style="font-weight:700;padding:8px 12px;color:#334155;">${storeName}</td></tr>`;
+                    html += `<tr style="background:#e2e8f0;"><td colspan="15" style="font-weight:700;padding:8px 12px;color:#334155;">${storeName}</td></tr>`;
 
                     storeGroups[sid].forEach(advisor => {
                         const entry = dayAdvisors.find(e => e.advisor_id === advisor.id);
@@ -5683,6 +5689,8 @@
                         const gross = labor + parts;
                         const ros = parseInt(entry?.total_ros || entry?.ro_count) || 0;
                         const cpRos = parseInt(entry?.cp_ros) || 0;
+                        const cpLabor = parseFloat(entry?.cp_labor) || 0;
+                        const cpParts = parseFloat(entry?.cp_parts) || 0;
                         const hours = parseFloat(entry?.hours) || 0;
                         const csi = entry?.csi_score || '';
                         const mpvi = entry?.mpvi_pct || '';
@@ -5699,6 +5707,8 @@
                                 <td class="input-gray" style="font-weight:700">${gross ? formatCurrency(gross) : '—'}</td>
                                 <td class="input-gray" style="background:#f0f0f0;">${ros || '—'}</td>
                                 <td class="input-gray" style="background:#f0f0f0;">${cpRos || '—'}</td>
+                                <td class="input-gray" style="background:#f0f0f0;">${cpLabor ? formatCurrency(cpLabor) : '—'}</td>
+                                <td class="input-gray" style="background:#f0f0f0;">${cpParts ? formatCurrency(cpParts) : '—'}</td>
                                 <td class="input-gray" style="background:#f0f0f0;">${hours || '—'}</td>
                                 <td class="input-gray" style="background:#f0f0f0;">${csi || '—'}</td>
                                 <td class="input-gray" style="background:#f0f0f0;">${mpvi || '—'}</td>
@@ -7473,6 +7483,8 @@
                     const totalGross = laborGross + partsGross;
                     const totalRos = parseFloat(row.querySelector('.advisor-total-ros').value) || 0;
                     const cpRos = parseFloat(row.querySelector('.advisor-cp').value) || 0;
+                    const cpLabor = parseFloat(row.querySelector('.advisor-cp-labor')?.value) || 0;
+                    const cpParts = parseFloat(row.querySelector('.advisor-cp-parts')?.value) || 0;
                     const hours = parseFloat(row.querySelector('.advisor-hours').value) || 0;
                     const csiRaw = row.querySelector('.advisor-csi').value;
                     const mpviRaw = row.querySelector('.advisor-mpvi').value;
@@ -7484,7 +7496,8 @@
                     // with zeros (the Vero Beach "numbers reset to zero" bug). A row with
                     // even one filled field (incl. CSI or MPVI only) still saves normally.
                     if (laborGross === 0 && partsGross === 0 && totalRos === 0 &&
-                        cpRos === 0 && hours === 0 && csiScore === null && mpviPct === null) {
+                        cpRos === 0 && cpLabor === 0 && cpParts === 0 &&
+                        hours === 0 && csiScore === null && mpviPct === null) {
                         continue;
                     }
 
@@ -7498,6 +7511,8 @@
                         ro_count: totalRos,
                         total_ros: totalRos,
                         cp_ros: cpRos,
+                        cp_labor: cpLabor,
+                        cp_parts: cpParts,
                         hours: hours,
                         csi_score: csiScore,
                         mpvi_pct: mpviPct
@@ -9453,7 +9468,7 @@
             const out = {};
             Object.values(byAdvMonth).forEach(rows => {
                 const id = rows[0].advisor_id;
-                if (!out[id]) out[id] = { labor: 0, parts: 0, gross: 0, ros: 0, totalRos: 0, cpRos: 0, hours: 0, days: 0 };
+                if (!out[id]) out[id] = { labor: 0, parts: 0, gross: 0, ros: 0, totalRos: 0, cpRos: 0, cpLabor: 0, cpParts: 0, hours: 0, days: 0 };
                 const a = out[id];
                 const use = advisorEntriesAreMtd(rows[0].entry_date)
                     ? [rows.reduce((best, r) => (!best || (r.entry_date || '') >= (best.entry_date || '')) ? r : best, null)]
@@ -9465,6 +9480,8 @@
                     a.ros      += parseInt(d.ro_count)      || 0;
                     a.totalRos += parseInt(d.total_ros ?? d.ro_count) || 0;
                     a.cpRos    += parseInt(d.cp_ros)        || 0;
+                    a.cpLabor  += parseFloat(d.cp_labor)    || 0;
+                    a.cpParts  += parseFloat(d.cp_parts)    || 0;
                     a.hours    += parseFloat(d.hours)       || 0;
                 });
                 a.days += rows.length; // days reported = entry count under both models
@@ -9496,6 +9513,8 @@
                         ro_count:    f(d.ro_count)    - (prev ? f(prev.ro_count)    : 0),
                         total_ros:   f(d.total_ros ?? d.ro_count) - (prev ? f(prev.total_ros ?? prev.ro_count) : 0),
                         cp_ros:      f(d.cp_ros)      - (prev ? f(prev.cp_ros)      : 0),
+                        cp_labor:    f(d.cp_labor)    - (prev ? f(prev.cp_labor)    : 0),
+                        cp_parts:    f(d.cp_parts)    - (prev ? f(prev.cp_parts)    : 0),
                         hours:       f(d.hours)       - (prev ? f(prev.hours)       : 0)
                     }));
                     prev = d;
@@ -10311,9 +10330,40 @@
                 const periodLaborGross = Object.values(weeklyAdvAgg)
                     .reduce((s, a) => s + (a.labor || 0), 0);
 
+                // Advisor-level period totals for the NCM reference panel.
+                // Counts only advisors with activity so vacant roster slots don't
+                // dilute the per-advisor averages.
+                const advNcm = (() => {
+                    const vals = Object.values(weeklyAdvAgg).filter(a =>
+                        (a.totalRos || 0) > 0 || (a.hours || 0) > 0 || (a.gross || 0) > 0);
+                    const t = { totalRos: 0, cpRos: 0, cpLabor: 0, cpParts: 0, hours: 0, labor: 0 };
+                    vals.forEach(a => {
+                        t.totalRos += a.totalRos || 0;
+                        t.cpRos    += a.cpRos    || 0;
+                        t.cpLabor  += a.cpLabor  || 0;
+                        t.cpParts  += a.cpParts  || 0;
+                        t.hours    += a.hours    || 0;
+                        t.labor    += a.labor    || 0;
+                    });
+                    // Working days (Mon–Sat) elapsed in the aggregation range, capped at today —
+                    // matches the goal-pacing working-day math used elsewhere.
+                    const endCap = new Date(Math.min(aggEnd.getTime(), Date.now()));
+                    let wdElapsed = 0;
+                    for (let d = new Date(aggStart); d <= endCap; d.setDate(d.getDate() + 1)) {
+                        const dow = d.getDay();
+                        if (dow >= 1 && dow <= 6) wdElapsed++;
+                    }
+                    const wdMonth = getWorkingDaysInMonth(endCap.getFullYear(), endCap.getMonth() + 1).totalDays;
+                    return Object.assign(t, {
+                        advisorsWithData: vals.length,
+                        workingDaysElapsed: wdElapsed,
+                        workingDaysInMonth: wdMonth
+                    });
+                })();
+
                 // Load tech perf MTD/YTD and capacity analysis
                 loadTechPerformance(storeId, fc);
-                loadCapacityAnalysis(storeId, fc, storeTechs, storeLubes, storeAdvisors, techTotals, lubeTotals, periodAvailPerTech, periodLabelTech, advPeriod, periodLaborGross);
+                loadCapacityAnalysis(storeId, fc, storeTechs, storeLubes, storeAdvisors, techTotals, lubeTotals, periodAvailPerTech, periodLabelTech, advPeriod, periodLaborGross, advNcm);
                 loadGoalForecast(storeId, allMode, now, currentYear, currentMonth);
             } catch (error) {
                 console.error('Roster load error:', error);
@@ -10804,7 +10854,7 @@
             }
         }
 
-        function loadCapacityAnalysis(storeId, fc, storeTechs, storeLubes, storeAdvisors, techTotals, lubeTotals, periodAvailPerTech, periodLabel, advPeriod, periodLaborGross) {
+        function loadCapacityAnalysis(storeId, fc, storeTechs, storeLubes, storeAdvisors, techTotals, lubeTotals, periodAvailPerTech, periodLabel, advPeriod, periodLaborGross, advNcm) {
             const bays = fc.bays || 0;
             periodLaborGross = periodLaborGross || 0;
             const totalTechs = storeTechs.length + storeLubes.length;
@@ -10992,7 +11042,8 @@
                 activeTechs,
                 periodIsWeek,
                 bays,
-                periodLaborGross
+                periodLaborGross,
+                advNcm
             });
         }
 
@@ -11047,18 +11098,43 @@
                     : (periodLaborGross / bays))
                 : null;
 
+            // Advisor-derived KPIs — from advisor daily entries aggregated over the
+            // selected period (cutover-aware). Per-advisor averages count only
+            // advisors with activity; "daily" = per working day (Mon–Sat) elapsed.
+            const adv = ctx.advNcm || {};
+            const nAdv = adv.advisorsWithData || 0;
+            const wdElapsed = adv.workingDaysElapsed || 0;
+            const dailyRosPerAdvisor = (nAdv > 0 && wdElapsed > 0 && (adv.totalRos || 0) > 0)
+                ? adv.totalRos / wdElapsed / nAdv
+                : null;
+            // Monthly labor hours per advisor — normalize the period's per-working-day
+            // rate to a full month so week/MTD/YTD views all read as a monthly figure.
+            const monthlyHoursPerAdvisor = (nAdv > 0 && wdElapsed > 0 && (adv.hours || 0) > 0)
+                ? (adv.hours / nAdv / wdElapsed) * (adv.workingDaysInMonth || 26)
+                : null;
+            const cpLaborPerRo = ((adv.cpRos || 0) > 0 && (adv.cpLabor || 0) > 0)
+                ? adv.cpLabor / adv.cpRos
+                : null;
+            const cpPartsPerRo = ((adv.cpRos || 0) > 0 && (adv.cpParts || 0) > 0)
+                ? adv.cpParts / adv.cpRos
+                : null;
+            // CP hours per CP RO — derived per the benchmark's own note:
+            // CP labor $ ÷ ELR ÷ CP ROs, using the store's period ELR (labor gross / sold hours).
+            const periodElr = ((adv.hours || 0) > 0 && (adv.labor || 0) > 0) ? adv.labor / adv.hours : null;
+            const cpHoursPerCpRo = (periodElr && (adv.cpRos || 0) > 0 && (adv.cpLabor || 0) > 0)
+                ? (adv.cpLabor / periodElr) / adv.cpRos
+                : null;
+
             // KPIs to display, in the order they appear in the NCM sheet.
-            // The "actual" key is computed inline; some are intentionally null
-            // until we add the input (CP labor $ split, RO counts per advisor, etc).
             const rows = [
                 { code: 'hours_billed_per_tech',           actual: hoursPerTech, unit: 'hours' },
-                { code: 'cp_hours_per_cp_ro',              actual: null,         unit: 'hours', note: 'Needs CP labor $ + ELR' },
+                { code: 'cp_hours_per_cp_ro',              actual: cpHoursPerCpRo, unit: 'hours', note: 'Needs CP Labor $ in daily entry' },
                 { code: 'techs_per_advisor',               actual: ratio,        unit: 'ratio' },
-                { code: 'daily_ros_per_advisor',           actual: null,         unit: 'count', note: 'Needs daily RO count by advisor' },
-                { code: 'daily_customers_per_advisor',     actual: null,         unit: 'count', note: 'From route sheet' },
-                { code: 'monthly_labor_hours_per_advisor', actual: null,         unit: 'hours', note: 'Needs monthly advisor hours' },
-                { code: 'cp_labor_per_ro',                 actual: null,         unit: 'dollars', note: 'Needs CP labor $ per RO' },
-                { code: 'cp_parts_per_ro',                 actual: null,         unit: 'dollars', note: 'Needs CP parts $ per RO' },
+                { code: 'daily_ros_per_advisor',           actual: dailyRosPerAdvisor, unit: 'count', note: 'Needs advisor Total ROs in daily entry' },
+                { code: 'daily_customers_per_advisor',     actual: dailyRosPerAdvisor, unit: 'count', note: 'Needs advisor Total ROs in daily entry' },
+                { code: 'monthly_labor_hours_per_advisor', actual: monthlyHoursPerAdvisor, unit: 'hours', note: 'Needs advisor Hours in daily entry' },
+                { code: 'cp_labor_per_ro',                 actual: cpLaborPerRo, unit: 'dollars', note: 'Needs CP Labor $ in daily entry' },
+                { code: 'cp_parts_per_ro',                 actual: cpPartsPerRo, unit: 'dollars', note: 'Needs CP Parts $ in daily entry' },
                 { code: 'tech_proficiency',                actual: profPct,      unit: 'percent' },
                 { code: 'techs_to_total_employees_pct',    actual: techsPctOfDept, unit: 'percent', note: 'Excludes parts/managers for now' },
                 { code: 'labor_gross_per_stall',           actual: laborGrossPerStall, unit: 'dollars',
@@ -11111,7 +11187,7 @@
                         <tbody>${rowHtml}</tbody>
                     </table>
                     <div style="margin-top:10px;font-size:11px;color:#6b7280;line-height:1.5;">
-                        Rows marked with a gray tag need additional inputs before they auto-calculate. As more daily fields land (CP labor split, RO counts per advisor) the dashes turn into live values. NCM's "stall" = our Total Service Bays — same metric, different label.
+                        Rows marked with a gray tag need additional inputs before they auto-calculate. Advisor-based rows use working days (Mon–Sat) elapsed in the selected period and count only advisors with activity. Daily Customer Count uses Total ROs written per day (same basis as Daily R.O.'s). CP $/RO rows divide by CP ROs; C/P Hours per C/P RO is estimated via the period ELR. NCM's "stall" = our Total Service Bays — same metric, different label.
                     </div>
                 </div>
             `;
