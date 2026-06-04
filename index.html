@@ -1791,17 +1791,53 @@
             <!-- The "Collision-eligible store" banner / form switches in/out via JS into #collisionDailyContent -->
             <div id="collisionDailyContent">
 
+                <!-- Sales panel — body shop revenue breakdown (running MTD, latest entry = the month) -->
+                <div class="card">
+                    <h3 class="card-title">Collision Sales — Month-to-Date</h3>
+                    <p style="font-size:12px;color:#666;margin:-6px 0 14px 0;">
+                        Enter <strong>running month-to-date</strong> sales per channel — same model as Gross and Parts:
+                        the latest saved entry IS the month's number. Total Sales sums automatically.
+                    </p>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
+                        <div class="control-group">
+                            <label>Labor Sales $ (MTD)</label>
+                            <input type="number" id="collisionLaborSalesDay" class="input-yellow" placeholder="0">
+                        </div>
+                        <div class="control-group">
+                            <label>Parts Sales $ (MTD)</label>
+                            <input type="number" id="collisionPartsSalesDay" class="input-yellow" placeholder="0">
+                        </div>
+                        <div class="control-group">
+                            <label>Sublet Sales $ (MTD)</label>
+                            <input type="number" id="collisionSubletSalesDay" class="input-yellow" placeholder="0">
+                        </div>
+                        <div class="control-group">
+                            <label>Paint &amp; Materials Sales $ (MTD)</label>
+                            <input type="number" id="collisionPaintMaterialsSalesDay" class="input-yellow" placeholder="0">
+                        </div>
+                        <div class="control-group">
+                            <label>Total Sales $ (auto)</label>
+                            <input type="text" id="collisionTotalSalesDay" class="input-gray" readonly value="$0" style="background:#f0f0f0;font-weight:700;">
+                        </div>
+                        <div class="control-group">
+                            <label>Gross % of Sales (auto)</label>
+                            <input type="text" id="collisionGrossPctDay" class="input-gray" readonly value="—" style="background:#f0f0f0;font-weight:700;">
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Money panel — collision gross + the 6 health-watch dollars + WIP -->
                 <div class="card">
                     <h3 class="card-title">Collision Money Panel</h3>
                     <p style="font-size:12px;color:#666;margin:-6px 0 14px 0;">
-                        Daily Collision Gross plus the cash-flow watch numbers. Aging thresholds are baked in — only enter dollars
+                        MTD Collision Gross plus the cash-flow watch numbers. Gross is a <strong>running month-to-date</strong> figure —
+                        the latest entry is the month's number. Aging thresholds are baked in — only enter dollars
                         <strong>at or beyond</strong> each threshold. Receivables = account #22002 ≥15 days. Cash Clearing ≥4 days.
                         Sublet ≥30 days. Labor WIP = account #24701.
                     </p>
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">
                         <div class="control-group">
-                            <label>Collision Gross $ (today)</label>
+                            <label>Collision Gross $ (MTD)</label>
                             <input type="number" id="collisionGrossDay" class="input-yellow" placeholder="0">
                         </div>
                         <div class="control-group">
@@ -1828,6 +1864,46 @@
                             <label>Labor WIP $ (#24701)</label>
                             <input type="number" id="collisionLaborWipDay" class="input-yellow" placeholder="0">
                         </div>
+                    </div>
+
+                    <!-- MTD pace vs goal summary (mirrors Parts MTD & Pace) -->
+                    <h3 class="card-title" style="margin-top:24px;">MTD &amp; Pace vs Goal</h3>
+                    <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Pace projects month-end from working day # ÷ working days in month. Goals are set in <strong>Goals &amp; Settings → Collision Department Goals</strong>.</p>
+                    <div style="overflow-x:auto;">
+                        <table style="max-width:760px;">
+                            <thead>
+                                <tr style="background-color:#f8fafc;">
+                                    <th style="text-align:left;">Metric</th>
+                                    <th>MTD</th>
+                                    <th>Pace</th>
+                                    <th>Goal</th>
+                                    <th>Pace vs Goal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="background-color:#f3f4f6;">
+                                    <td style="font-weight:600;">Total Sales $</td>
+                                    <td class="input-gray" id="collisionSalesMtdCell" style="text-align:right;">$0</td>
+                                    <td class="input-gray" id="collisionSalesPaceCell" style="text-align:right;">$0</td>
+                                    <td class="input-gray" id="collisionSalesGoalCell" style="text-align:right;">—</td>
+                                    <td class="input-gray" id="collisionSalesVsGoalCell" style="text-align:center;font-weight:700;">—</td>
+                                </tr>
+                                <tr style="background-color:#f3f4f6;">
+                                    <td style="font-weight:600;">Collision Gross $</td>
+                                    <td class="input-gray" id="collisionGrossMtdCell" style="text-align:right;">$0</td>
+                                    <td class="input-gray" id="collisionGrossPaceCell" style="text-align:right;">$0</td>
+                                    <td class="input-gray" id="collisionGrossGoalCell" style="text-align:right;">—</td>
+                                    <td class="input-gray" id="collisionGrossVsGoalCell" style="text-align:center;font-weight:700;">—</td>
+                                </tr>
+                                <tr style="background-color:#f3f4f6;">
+                                    <td style="font-weight:600;">Gross % of Sales</td>
+                                    <td class="input-gray" id="collisionGrossPctMtdCell" style="text-align:right;">—</td>
+                                    <td class="input-gray" style="text-align:right;color:#94a3b8;">—</td>
+                                    <td class="input-gray" id="collisionGrossPctGoalCell" style="text-align:right;">—</td>
+                                    <td class="input-gray" id="collisionGrossPctVsGoalCell" style="text-align:center;font-weight:700;">—</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -1947,10 +2023,10 @@
                 <h2 class="card-title">Collision Dashboard <span style="font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-left:8px;">DCVB / DCFP</span></h2>
                 <div id="collisionDashboardContent">
                     <div style="padding:30px 16px;text-align:center;color:#475569;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;">
-                        <div style="font-size:42px;margin-bottom:10px;">🚧</div>
-                        <div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:6px;">Coming Next</div>
+                        <div style="font-size:42px;margin-bottom:10px;">⏳</div>
+                        <div style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:6px;">Loading…</div>
                         <div style="max-width:560px;margin:0 auto;font-size:13px;line-height:1.55;">
-                            The Collision dashboard is wired up after the Collision daily entry form. It will show CVB Collision gross trend, body shop receivables aging, cash clearing aging, sublet aging, parts inventory variance, labor WIP, and the three estimator scorecards — all DCVB-scoped.
+                            Sales &amp; gross vs goal pacing, cash-flow health vs ceilings, MTD gross trend, estimator leaderboard, and production hours.
                         </div>
                     </div>
                 </div>
@@ -2338,6 +2414,33 @@
                             </tr>
                         </thead>
                         <tbody id="partsGoalsBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">Collision Department Goals <span style="font-size:12px;font-weight:600;color:#888;">DCVB / DCFP only</span></h3>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">
+                    Sales and Gross goals drive MTD pacing on the Collision entry form and dashboard.
+                    <strong>Gross %</strong> is a floor — hit when actual ≥ goal. <strong>K2K Target</strong> is a ceiling in days — hit when avg Keys-to-Keys ≤ target.
+                    The three <strong>aging ceilings</strong> flag red on the dashboard when the latest reported dollars exceed them (leave 0 for "any dollars = red").
+                </p>
+                <div style="overflow-x: auto;">
+                    <table id="collisionGoalsTable">
+                        <thead>
+                            <tr>
+                                <th>Store</th>
+                                <th>Sales Goal ($)</th>
+                                <th>Gross Goal ($)</th>
+                                <th>Gross % Goal (≥)</th>
+                                <th>K2K Target (≤ days)</th>
+                                <th>Receivables Ceiling ($)</th>
+                                <th>Cash Clearing Ceiling ($)</th>
+                                <th>Sublet Ceiling ($)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="collisionGoalsBody">
                         </tbody>
                     </table>
                 </div>
@@ -4265,6 +4368,47 @@
                 return { ok: true };
             },
 
+            // --- Collision Department goals (collision_goals table; DCVB/DCFP only) ---
+            // $ goals (sales, gross) drive MTD pacing. % + threshold goals:
+            // gross % is a floor (hit when ≥), K2K target is a ceiling in days (hit when ≤),
+            // and the three aging ceilings flag red when the latest reported $ exceeds them.
+            async getCollisionGoals() {
+                if (useSupabase) {
+                    try {
+                        const { data, error } = await db.from('collision_goals').select('*');
+                        if (!error && data) { this._set('dyer_collision_goals', data); return data; }
+                    } catch(e) { console.warn('Supabase getCollisionGoals failed, using cache', e); }
+                }
+                return this._get('dyer_collision_goals');
+            },
+            async saveCollisionGoal(goal) {
+                const all = this._get('dyer_collision_goals');
+                const idx = all.findIndex(g => g.store_id === goal.store_id && g.month === goal.month && g.year === goal.year);
+                if (idx >= 0) all[idx] = goal; else all.push(goal);
+                this._set('dyer_collision_goals', all);
+                if (useSupabase) {
+                    try {
+                        const row = {
+                            store_id: goal.store_id,
+                            month: goal.month,
+                            year: goal.year,
+                            collision_sales_goal:     goal.collision_sales_goal     || 0,
+                            collision_gross_goal:     goal.collision_gross_goal     || 0,
+                            collision_gross_pct_goal: goal.collision_gross_pct_goal || 0,
+                            k2k_target:               goal.k2k_target               || 0,
+                            receivables_ceiling:      goal.receivables_ceiling      || 0,
+                            cash_clearing_ceiling:    goal.cash_clearing_ceiling    || 0,
+                            sublet_ceiling:           goal.sublet_ceiling           || 0,
+                            updated_at: new Date().toISOString(),
+                            updated_by: currentUser ? currentUser.id : null
+                        };
+                        const { error } = await db.from('collision_goals').upsert(row, { onConflict: 'store_id,month,year' });
+                        if (error) { console.warn('Supabase saveCollisionGoal failed', error); return { ok: false, error }; }
+                    } catch(e) { console.warn('Supabase saveCollisionGoal threw', e); return { ok: false, error: e }; }
+                }
+                return { ok: true };
+            },
+
             // --- Goal carry-forward ---
             // Goals are meant to persist month-to-month: if no row exists for the
             // requested (month, year), fall back to the most recent prior month that
@@ -4283,6 +4427,7 @@
                     if (k === 'month' || k === 'year' || k === 'store_id'
                         || k === 'updated_at' || k === 'updated_by' || k === 'id'
                         || k === 'parts_counter_gp_goal' || k === 'parts_obso_pct_goal'
+                        || k === 'collision_gross_pct_goal' || k === 'k2k_target'
                         || k.startsWith('_')) continue;
                     const v = parseFloat(g[k]);
                     if (Number.isFinite(v)) sum += Math.abs(v);
@@ -4329,6 +4474,10 @@
             },
             async getEffectivePartsGoals(month, year) {
                 const all = (await this.getPartsGoals()) || [];
+                return this._carryForwardGoals(all, month, year);
+            },
+            async getEffectiveCollisionGoals(month, year) {
+                const all = (await this.getCollisionGoals()) || [];
                 return this._carryForwardGoals(all, month, year);
             },
 
@@ -4430,6 +4579,12 @@
                             entry_date: entry.entry_date,
                             day_number: entry.day_number || 0,
                             days_in_month: entry.days_in_month || 0,
+                            // Sales (running MTD per channel + rollup)
+                            labor_sales:              entry.labor_sales              || 0,
+                            parts_sales:              entry.parts_sales              || 0,
+                            sublet_sales:             entry.sublet_sales             || 0,
+                            paint_materials_sales:    entry.paint_materials_sales    || 0,
+                            total_sales:              entry.total_sales              || 0,
                             // Money
                             collision_gross:          entry.collision_gross          || 0,
                             body_shop_receivables:    entry.body_shop_receivables    || 0,
@@ -4981,17 +5136,22 @@
             // Static collision inputs — money panel + cert + notes. Per-staff rows are dynamic; their
             // listeners are wired inside renderCollisionEstimatorRows / BodyTechRows / PainterRows.
             const collisionStaticIds = [
+                'collisionLaborSalesDay', 'collisionPartsSalesDay', 'collisionSubletSalesDay',
+                'collisionPaintMaterialsSalesDay',
                 'collisionGrossDay', 'collisionReceivablesDay', 'collisionCashClearingDay',
                 'collisionSubletDay', 'collisionPartsCreditDay', 'collisionInventoryVarianceDay',
                 'collisionLaborWipDay',
                 'collisionIcarCert', 'collisionIcarExpiry', 'collisionOemCert', 'collisionOemExpiry',
                 'collisionDailyNotes'
             ];
+            const collisionRecalcIds = ['collisionLaborSalesDay', 'collisionPartsSalesDay',
+                'collisionSubletSalesDay', 'collisionPaintMaterialsSalesDay', 'collisionGrossDay'];
             collisionStaticIds.forEach(id => {
                 const el = document.getElementById(id);
                 if (!el) return;
-                el.addEventListener('input', () => markDirty('collisionDaily'));
-                el.addEventListener('change', () => markDirty('collisionDaily'));
+                const recalc = collisionRecalcIds.includes(id);
+                el.addEventListener('input', () => { markDirty('collisionDaily'); if (recalc) updateCollisionDailyCalculations(); });
+                el.addEventListener('change', () => { markDirty('collisionDaily'); if (recalc) updateCollisionDailyCalculations(); });
             });
 
             // Dashboard month picker
@@ -6248,6 +6408,61 @@
             if (t) t.textContent = sum.toFixed(1);
         }
 
+        // Cache of the current store's effective collision goals (set in loadCollisionDailyEntry)
+        let collisionEntryGoals = null;
+
+        // Derived totals + MTD/pace/goal pacing for the Collision daily entry form.
+        // Sales + Gross are running MTD snapshots, so MTD = what's typed in the form;
+        // pace projects month-end as (MTD / working day #) × working days in month.
+        function updateCollisionDailyCalculations() {
+            const num = (id) => parseFloat(document.getElementById(id)?.value) || 0;
+            const setTxt = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+            const totalSales = num('collisionLaborSalesDay') + num('collisionPartsSalesDay')
+                + num('collisionSubletSalesDay') + num('collisionPaintMaterialsSalesDay');
+            const gross = num('collisionGrossDay');
+            const grossPct = totalSales > 0 ? (gross / totalSales) * 100 : null;
+            const totalEl = document.getElementById('collisionTotalSalesDay');
+            if (totalEl) totalEl.value = formatCurrency(totalSales);
+            const pctEl = document.getElementById('collisionGrossPctDay');
+            if (pctEl) pctEl.value = grossPct === null ? '—' : grossPct.toFixed(1) + '%';
+
+            const dayNum = parseInt(document.getElementById('collisionDailyDayNumber')?.value) || 0;
+            const daysInMonth = parseInt(document.getElementById('collisionDailyDaysInMonth')?.value) || 0;
+            const pace = (v) => (dayNum > 0 && daysInMonth > 0) ? (v / dayNum) * daysInMonth : 0;
+            const g = collisionEntryGoals || {};
+            const salesGoal = parseFloat(g.collision_sales_goal) || 0;
+            const grossGoal = parseFloat(g.collision_gross_goal) || 0;
+            const grossPctGoal = parseFloat(g.collision_gross_pct_goal) || 0;
+
+            const vsCell = (id, paceVal, goal) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (!goal) { el.textContent = '—'; el.style.color = '#94a3b8'; return; }
+                const pct = (paceVal / goal) * 100;
+                el.textContent = pct.toFixed(0) + '%';
+                el.style.color = pct >= 100 ? '#16a34a' : (pct >= 90 ? '#d97706' : '#dc2626');
+            };
+            setTxt('collisionSalesMtdCell', formatCurrency(totalSales));
+            setTxt('collisionSalesPaceCell', formatCurrency(pace(totalSales)));
+            setTxt('collisionSalesGoalCell', salesGoal ? formatCurrency(salesGoal) : '—');
+            vsCell('collisionSalesVsGoalCell', pace(totalSales), salesGoal);
+            setTxt('collisionGrossMtdCell', formatCurrency(gross));
+            setTxt('collisionGrossPaceCell', formatCurrency(pace(gross)));
+            setTxt('collisionGrossGoalCell', grossGoal ? formatCurrency(grossGoal) : '—');
+            vsCell('collisionGrossVsGoalCell', pace(gross), grossGoal);
+            setTxt('collisionGrossPctMtdCell', grossPct === null ? '—' : grossPct.toFixed(1) + '%');
+            setTxt('collisionGrossPctGoalCell', grossPctGoal ? grossPctGoal.toFixed(1) + '%' : '—');
+            const pctVs = document.getElementById('collisionGrossPctVsGoalCell');
+            if (pctVs) {
+                if (!grossPctGoal || grossPct === null) { pctVs.textContent = '—'; pctVs.style.color = '#94a3b8'; }
+                else {
+                    const hit = grossPct >= grossPctGoal; // floor: hit when actual ≥ goal
+                    pctVs.textContent = hit ? '✓ On target' : (grossPct - grossPctGoal).toFixed(1) + ' pts';
+                    pctVs.style.color = hit ? '#16a34a' : '#dc2626';
+                }
+            }
+        }
+
         // Read the entire form into a structured snapshot (used by save + derived totals)
         function readCollisionDailyForm() {
             const num = (id) => parseFloat(document.getElementById(id)?.value) || 0;
@@ -6278,7 +6493,13 @@
                 });
                 return out;
             };
+            const labor_sales = num('collisionLaborSalesDay');
+            const parts_sales = num('collisionPartsSalesDay');
+            const sublet_sales = num('collisionSubletSalesDay');
+            const paint_materials_sales = num('collisionPaintMaterialsSalesDay');
             return {
+                labor_sales, parts_sales, sublet_sales, paint_materials_sales,
+                total_sales: labor_sales + parts_sales + sublet_sales + paint_materials_sales,
                 collision_gross:          num('collisionGrossDay'),
                 body_shop_receivables:    num('collisionReceivablesDay'),
                 cash_clearing:            num('collisionCashClearingDay'),
@@ -6353,6 +6574,10 @@
                         entry = null;
                     } else {
                         entry = {
+                            labor_sales:              dayEntries.reduce((s, e) => s + (parseFloat(e.labor_sales)||0), 0),
+                            parts_sales:              dayEntries.reduce((s, e) => s + (parseFloat(e.parts_sales)||0), 0),
+                            sublet_sales:             dayEntries.reduce((s, e) => s + (parseFloat(e.sublet_sales)||0), 0),
+                            paint_materials_sales:    dayEntries.reduce((s, e) => s + (parseFloat(e.paint_materials_sales)||0), 0),
                             collision_gross:          dayEntries.reduce((s, e) => s + (parseFloat(e.collision_gross)||0), 0),
                             body_shop_receivables:    dayEntries.reduce((s, e) => s + (parseFloat(e.body_shop_receivables)||0), 0),
                             cash_clearing:            dayEntries.reduce((s, e) => s + (parseFloat(e.cash_clearing)||0), 0),
@@ -6377,6 +6602,10 @@
                 // Money panel — fmtAmt washes float drift out of cross-store sums in allMode.
                 // For single-store entries the value is whatever the user typed, which is also
                 // safe to round to 2 decimals (cents are the smallest unit anyone enters).
+                document.getElementById('collisionLaborSalesDay').value          = fmtAmt(entry?.labor_sales);
+                document.getElementById('collisionPartsSalesDay').value          = fmtAmt(entry?.parts_sales);
+                document.getElementById('collisionSubletSalesDay').value         = fmtAmt(entry?.sublet_sales);
+                document.getElementById('collisionPaintMaterialsSalesDay').value = fmtAmt(entry?.paint_materials_sales);
                 document.getElementById('collisionGrossDay').value             = fmtAmt(entry?.collision_gross);
                 document.getElementById('collisionReceivablesDay').value       = fmtAmt(entry?.body_shop_receivables);
                 document.getElementById('collisionCashClearingDay').value      = fmtAmt(entry?.cash_clearing);
@@ -6398,7 +6627,9 @@
                 renderCollisionHoursRows('painter',   'collisionPainterRowsBody',   'collisionPainterHoursTotal',   entry?.painter_breakdown   || null);
 
                 // All Stores — lock everything read-only
-                const allStaticIds = ['collisionGrossDay','collisionReceivablesDay','collisionCashClearingDay',
+                const allStaticIds = ['collisionLaborSalesDay','collisionPartsSalesDay','collisionSubletSalesDay',
+                    'collisionPaintMaterialsSalesDay',
+                    'collisionGrossDay','collisionReceivablesDay','collisionCashClearingDay',
                     'collisionSubletDay','collisionPartsCreditDay','collisionInventoryVarianceDay','collisionLaborWipDay',
                     'collisionIcarCert','collisionIcarExpiry','collisionOemCert','collisionOemExpiry','collisionDailyNotes'];
                 allStaticIds.forEach(id => {
@@ -6419,6 +6650,25 @@
                 });
                 const saveBtn = document.getElementById('saveCollisionDailyBtn');
                 if (saveBtn) saveBtn.style.display = allMode ? 'none' : '';
+
+                // Effective collision goals for this store/month (carry-forward aware),
+                // then refresh derived totals + MTD/pace/goal pacing.
+                try {
+                    const { month, year } = getMonthYear(date);
+                    const cg = await LS.getEffectiveCollisionGoals(month, year);
+                    if (allMode) {
+                        // Sum dollar goals across collision stores for the all-stores view
+                        const rows = cg.filter(g => COLLISION_STORE_IDS.includes(g.store_id));
+                        collisionEntryGoals = {
+                            collision_sales_goal: rows.reduce((s, g) => s + (parseFloat(g.collision_sales_goal)||0), 0),
+                            collision_gross_goal: rows.reduce((s, g) => s + (parseFloat(g.collision_gross_goal)||0), 0),
+                            collision_gross_pct_goal: 0
+                        };
+                    } else {
+                        collisionEntryGoals = cg.find(g => g.store_id === storeId) || null;
+                    }
+                } catch(e) { collisionEntryGoals = null; }
+                updateCollisionDailyCalculations();
             } catch(e) {
                 console.error('loadCollisionDailyEntry error', e);
             }
@@ -6445,7 +6695,7 @@
             const daysInMonth = parseInt(document.getElementById('collisionDailyDaysInMonth').value) || 0;
             const snap = readCollisionDailyForm();
 
-            const anyValue = snap.collision_gross || snap.body_shop_receivables || snap.cash_clearing
+            const anyValue = snap.total_sales || snap.collision_gross || snap.body_shop_receivables || snap.cash_clearing
                 || snap.body_shop_sublet || snap.pending_parts_credit || snap.parts_inventory_variance
                 || snap.labor_wip || Object.keys(snap.estimator_breakdown).length
                 || Object.keys(snap.body_tech_breakdown).length || Object.keys(snap.painter_breakdown).length
@@ -6518,9 +6768,68 @@
                 const sorted = [...entries].sort((a, b) => (a.entry_date < b.entry_date ? 1 : -1));
                 const latest = sorted[0] || null;
 
-                // MTD totals
-                const sum = (key) => entries.reduce((s, e) => s + (parseFloat(e[key]) || 0), 0);
-                const mtdGross = sum('collision_gross');
+                // MTD totals — collision money fields are RUNNING MTD SNAPSHOTS (same
+                // model as Parts): the latest entry per store IS the month-to-date.
+                // Sum the latest entry across in-scope stores; NEVER sum every entry.
+                const latestByStore = {};
+                entries.forEach(e => {
+                    const cur = latestByStore[e.store_id];
+                    if (!cur || e.entry_date > cur.entry_date) latestByStore[e.store_id] = e;
+                });
+                const latestRows = Object.values(latestByStore);
+                const mtdOf = (key) => latestRows.reduce((s, e) => s + (parseFloat(e[key]) || 0), 0);
+                const mtdGross = mtdOf('collision_gross');
+                const mtdSales = mtdOf('total_sales');
+                const mtdGrossPct = mtdSales > 0 ? (mtdGross / mtdSales) * 100 : null;
+                // Month-end projection — project each store off its own working-day position, then sum
+                const projOf = (key) => latestRows.reduce((s, e) => {
+                    const v = parseFloat(e[key]) || 0;
+                    const dn = parseInt(e.day_number) || 0, dim = parseInt(e.days_in_month) || 0;
+                    return s + ((dn > 0 && dim > 0) ? (v / dn) * dim : v);
+                }, 0);
+                const projGross = projOf('collision_gross');
+                const projSales = projOf('total_sales');
+
+                // Effective collision goals (carry-forward aware) for the in-scope stores
+                const cgAll = await LS.getEffectiveCollisionGoals(month, year);
+                const cgRows = cgAll.filter(g => COLLISION_STORE_IDS.includes(g.store_id) && (allMode || g.store_id === storeId));
+                const goalSum = (key) => cgRows.reduce((s, g) => s + (parseFloat(g[key]) || 0), 0);
+                const salesGoal = goalSum('collision_sales_goal');
+                const grossGoal = goalSum('collision_gross_goal');
+                const grossPctGoal = allMode ? 0 : (parseFloat(cgRows[0]?.collision_gross_pct_goal) || 0);
+                const k2kTarget = allMode
+                    ? (cgRows.length ? Math.max(...cgRows.map(g => parseFloat(g.k2k_target) || 0)) : 0)
+                    : (parseFloat(cgRows[0]?.k2k_target) || 0);
+                const ceilOf = (key) => allMode ? goalSum(key) : (parseFloat(cgRows[0]?.[key]) || 0);
+
+                // Goal pacing tile — MTD + projection vs monthly goal
+                const goalCard = (label, mtd, proj, goal) => {
+                    const projPct = goal > 0 ? (proj / goal) * 100 : null;
+                    const color = projPct === null ? '#64748b' : (projPct >= 100 ? '#16a34a' : (projPct >= 90 ? '#d97706' : '#dc2626'));
+                    const bg    = projPct === null ? '#f1f5f9' : (projPct >= 100 ? '#dcfce7' : (projPct >= 90 ? '#fef3c7' : '#fee2e2'));
+                    return `
+                        <div class="kpi-card" style="background:${bg};border:2px solid ${color};">
+                            <div class="kpi-label" style="color:#475569;">${label}</div>
+                            <div class="kpi-value" style="color:${color};font-size:26px;">${formatCurrency(mtd)}</div>
+                            <div class="kpi-subtext" style="color:#475569;font-weight:500;">
+                                ${goal > 0
+                                    ? `Goal ${formatCurrency(goal)} • Pace ${formatCurrency(proj)} (${projPct.toFixed(0)}%)`
+                                    : 'No goal set — add one in Goals & Settings'}
+                            </div>
+                        </div>`;
+                };
+                const grossPctCard = () => {
+                    const has = mtdGrossPct !== null;
+                    const hit = has && grossPctGoal > 0 ? mtdGrossPct >= grossPctGoal : null;
+                    const color = !has ? '#64748b' : (hit === null ? '#475569' : (hit ? '#16a34a' : '#dc2626'));
+                    const bg    = !has ? '#f1f5f9' : (hit === null ? '#f8fafc' : (hit ? '#dcfce7' : '#fee2e2'));
+                    return `
+                        <div class="kpi-card" style="background:${bg};border:2px solid ${color};">
+                            <div class="kpi-label" style="color:#475569;">Gross % of Sales</div>
+                            <div class="kpi-value" style="color:${color};font-size:26px;">${has ? mtdGrossPct.toFixed(1) + '%' : '—'}</div>
+                            <div class="kpi-subtext" style="color:#475569;font-weight:500;">${grossPctGoal > 0 ? `Goal ≥ ${grossPctGoal.toFixed(1)}%` : (has ? 'No % goal set' : 'Needs sales + gross entered')}</div>
+                        </div>`;
+                };
 
                 // Money snapshot card builder (point-in-time values for the latest day)
                 const moneyCard = (label, val, threshold, dir, sub) => {
@@ -6578,16 +6887,25 @@
 
                 target.innerHTML = `
                     <div class="card">
+                        <h3 class="card-title">Sales &amp; Gross vs Goal — ${monthLabel}${allMode ? ' • All Stores' : ''}</h3>
+                        <p style="font-size:12px;color:#666;margin:-6px 0 14px 0;">Running MTD (latest entry per store). Pace projects month-end from each store's working-day position. Green = pacing ≥ 100% of goal, amber ≥ 90%, red below.</p>
+                        <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));">
+                            ${goalCard('Total Sales MTD', mtdSales, projSales, salesGoal)}
+                            ${goalCard('Collision Gross MTD', mtdGross, projGross, grossGoal)}
+                            ${grossPctCard()}
+                        </div>
+                    </div>
+
+                    <div class="card">
                         <h3 class="card-title">Collision Health — ${monthLabel}${allMode ? ' • All Stores' : ''}</h3>
-                        <p style="font-size:12px;color:#666;margin:-6px 0 14px 0;">Money panel uses the most recent reported day. Aging dollars are shown as red when above the threshold and green when at zero.</p>
+                        <p style="font-size:12px;color:#666;margin:-6px 0 14px 0;">Aging dollars use each store's most recent reported day. Red when above the store's ceiling (set in Goals &amp; Settings; ceiling 0 = any dollars show red), green when at or under.</p>
                         <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));">
-                            ${moneyCard('MTD Collision Gross', mtdGross, 0, 'up', `${entries.length} day${entries.length===1?'':'s'} reported`)}
-                            ${moneyCard('Receivables ≥15d (#22002)', latest?.body_shop_receivables ?? null, 0, 'down', latest ? `As of ${latest.entry_date}` : 'No data')}
-                            ${moneyCard('Cash Clearing ≥4d',        latest?.cash_clearing            ?? null, 0, 'down', latest ? `As of ${latest.entry_date}` : 'No data')}
-                            ${moneyCard('Body Shop Sublet ≥30d',    latest?.body_shop_sublet         ?? null, 0, 'down', latest ? `As of ${latest.entry_date}` : 'No data')}
-                            ${moneyCard('Pending Parts Credit',     latest?.pending_parts_credit     ?? null, 0, 'down', latest ? `As of ${latest.entry_date}` : 'No data')}
-                            ${moneyCard('Parts Inventory Variance', latest?.parts_inventory_variance ?? null, 0, 'down', latest ? `As of ${latest.entry_date}` : 'No data')}
-                            ${moneyCard('Labor WIP (#24701)',       latest?.labor_wip                ?? null, 0, 'down', latest ? `As of ${latest.entry_date}` : 'No data')}
+                            ${moneyCard('Receivables ≥15d (#22002)', latest ? mtdOf('body_shop_receivables')    : null, ceilOf('receivables_ceiling'),   'down', latest ? `As of ${latest.entry_date}${ceilOf('receivables_ceiling')   ? ' • Ceiling ' + formatCurrency(ceilOf('receivables_ceiling'))   : ''}` : 'No data')}
+                            ${moneyCard('Cash Clearing ≥4d',        latest ? mtdOf('cash_clearing')             : null, ceilOf('cash_clearing_ceiling'), 'down', latest ? `As of ${latest.entry_date}${ceilOf('cash_clearing_ceiling') ? ' • Ceiling ' + formatCurrency(ceilOf('cash_clearing_ceiling')) : ''}` : 'No data')}
+                            ${moneyCard('Body Shop Sublet ≥30d',    latest ? mtdOf('body_shop_sublet')          : null, ceilOf('sublet_ceiling'),        'down', latest ? `As of ${latest.entry_date}${ceilOf('sublet_ceiling')        ? ' • Ceiling ' + formatCurrency(ceilOf('sublet_ceiling'))        : ''}` : 'No data')}
+                            ${moneyCard('Pending Parts Credit',     latest ? mtdOf('pending_parts_credit')      : null, 0, 'down', latest ? `As of ${latest.entry_date}` : 'No data')}
+                            ${moneyCard('Parts Inventory Variance', latest ? mtdOf('parts_inventory_variance')  : null, 0, 'down', latest ? `As of ${latest.entry_date}` : 'No data')}
+                            ${moneyCard('Labor WIP (#24701)',       latest ? mtdOf('labor_wip')                 : null, 0, 'down', latest ? `As of ${latest.entry_date}` : 'No data')}
                         </div>
                         <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;">
                             <div style="font-size:13px;color:#475569;"><strong>ICAR:</strong> ${latest?.icar_certified ? '✅ Certified' : '⚠️ Not certified'}${latest?.icar_expiry ? ` <span style="color:#888;">(exp. ${latest.icar_expiry})</span>` : ''}</div>
@@ -6596,8 +6914,16 @@
                     </div>
 
                     <div class="card">
+                        <h3 class="card-title">Collision Gross Trend — ${monthLabel}</h3>
+                        <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Running MTD gross by entry date — the line should climb through the month. A flat stretch means days without entries or no added gross.</p>
+                        <div class="chart-container">
+                            <canvas id="collisionGrossTrendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
                         <h3 class="card-title">Estimator Leaderboard — MTD</h3>
-                        <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Ranked by $ ROs delivered (not closed). Lower Keys-to-Keys is better.</p>
+                        <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Ranked by $ ROs delivered (not closed). Lower Keys-to-Keys is better.${k2kTarget ? ` Target: <strong>≤ ${k2kTarget.toFixed(1)} days</strong> — green at or under, red over.` : ''}</p>
                         <div style="overflow-x:auto;">
                             <table>
                                 <thead><tr style="background:#f8fafc;">
@@ -6610,7 +6936,7 @@
                                             <tr style="${i===0?'background:#fef3c7;':''}">
                                                 <td style="font-weight:700;text-align:center;">${i+1}</td>
                                                 <td style="font-weight:600;">${r.name}</td>
-                                                <td>${r.k2k === null ? '—' : r.k2k.toFixed(1) + ' days'}</td>
+                                                <td>${r.k2k === null ? '—' : (k2kTarget ? `<span style="font-weight:700;color:${r.k2k <= k2kTarget ? '#16a34a' : '#dc2626'};">${r.k2k.toFixed(1)} days</span>` : r.k2k.toFixed(1) + ' days')}</td>
                                                 <td>${r.rosCount}</td>
                                                 <td style="font-weight:700;">${formatCurrency(r.rosDollars)}</td>
                                                 <td>${r.days}</td>
@@ -6668,6 +6994,34 @@
                         </div>
                     </div>
                 `;
+
+                // Gross trend — running MTD snapshots by entry date, one line per store
+                const trendDates = [...new Set(entries.map(e => e.entry_date))].sort();
+                if (trendDates.length) {
+                    const scopeIds = allMode ? COLLISION_STORE_IDS : [storeId];
+                    const palette = [
+                        { line: '#cc0000', fill: 'rgba(204,0,0,0.08)' },
+                        { line: '#2563eb', fill: 'rgba(37,99,235,0.08)' }
+                    ];
+                    const datasets = scopeIds.map((sid, i) => ({
+                        label: `${(stores.find(s => s.id === sid)?.name || sid.toUpperCase())} Gross MTD`,
+                        data: trendDates.map(d => {
+                            const e = entries.find(x => x.store_id === sid && x.entry_date === d);
+                            return e ? (parseFloat(e.collision_gross) || 0) : null;
+                        }),
+                        borderColor: palette[i % palette.length].line,
+                        backgroundColor: palette[i % palette.length].fill,
+                        tension: 0.3,
+                        spanGaps: true,
+                        fill: true
+                    })).filter(ds => ds.data.some(v => v !== null));
+                    if (datasets.length) {
+                        loadChart('collisionGrossTrendChart', 'line', {
+                            labels: trendDates.map(d => parseInt(d.slice(8), 10)),
+                            datasets
+                        });
+                    }
+                }
             } catch(e) {
                 console.error('loadCollisionDashboard error', e);
                 target.innerHTML = `<div class="card"><div style="color:#dc2626;">Error loading collision dashboard. Try reloading.</div></div>`;
@@ -9216,9 +9570,11 @@
                 // current month).
                 const goalsData = await LS.getEffectiveGoals(month, year);
                 const partsGoalsData = await LS.getEffectivePartsGoals(month, year);
+                const collisionGoalsData = await LS.getEffectiveCollisionGoals(month, year);
 
                 let html = '';
                 let partsHtml = '';
+                let collisionHtml = '';
                 let anyCarried = false;
                 stores.forEach(store => {
                     const goal = goalsData.find(g => g.store_id === store.id) || {};
@@ -9247,10 +9603,29 @@
                             <td><input type="number" step="0.1" class="goal-parts-obso-pct" data-store="${store.id}" value="${obsoPctGoal}" placeholder="9"></td>
                         </tr>
                     `;
+                    // Collision goals — collision stores only (DCVB / DCFP)
+                    if (COLLISION_STORE_IDS.includes(store.id)) {
+                        const cgRow = collisionGoalsData.find(g => g.store_id === store.id) || {};
+                        if (cgRow._carriedForward) anyCarried = true;
+                        collisionHtml += `
+                            <tr>
+                                <td>${store.name}</td>
+                                <td><input type="number" class="goal-collision-sales" data-store="${store.id}" value="${cgRow.collision_sales_goal || ''}" placeholder="0"></td>
+                                <td><input type="number" class="goal-collision-gross" data-store="${store.id}" value="${cgRow.collision_gross_goal || ''}" placeholder="0"></td>
+                                <td><input type="number" step="0.1" class="goal-collision-gross-pct" data-store="${store.id}" value="${cgRow.collision_gross_pct_goal || ''}" placeholder="0"></td>
+                                <td><input type="number" step="0.1" class="goal-collision-k2k" data-store="${store.id}" value="${cgRow.k2k_target || ''}" placeholder="0"></td>
+                                <td><input type="number" class="goal-collision-receivables" data-store="${store.id}" value="${cgRow.receivables_ceiling || ''}" placeholder="0"></td>
+                                <td><input type="number" class="goal-collision-cash-clearing" data-store="${store.id}" value="${cgRow.cash_clearing_ceiling || ''}" placeholder="0"></td>
+                                <td><input type="number" class="goal-collision-sublet" data-store="${store.id}" value="${cgRow.sublet_ceiling || ''}" placeholder="0"></td>
+                            </tr>
+                        `;
+                    }
                 });
                 document.getElementById('goalsBody').innerHTML = html;
                 const partsBody = document.getElementById('partsGoalsBody');
                 if (partsBody) partsBody.innerHTML = partsHtml;
+                const collisionBody = document.getElementById('collisionGoalsBody');
+                if (collisionBody) collisionBody.innerHTML = collisionHtml;
 
                 // Surface a small banner when values were carried forward from a prior
                 // month so Jay knows they're inherited but not yet committed to the
@@ -9327,6 +9702,30 @@
                         parts_counter_gp_goal: parseFloat(row.querySelector('.goal-parts-counter-gp').value) || 42,
                         parts_obso_pct_goal:   parseFloat(row.querySelector('.goal-parts-obso-pct').value)   || 9
                     });
+                }
+
+                // Save Collision Department goals (collision_goals table — DCVB/DCFP rows only).
+                // Skip all-zero rows so they don't shadow carried-forward prior months.
+                const collisionRows = document.querySelectorAll('#collisionGoalsBody tr');
+                for (const row of collisionRows) {
+                    const storeId = row.querySelector('.goal-collision-sales')?.dataset.store;
+                    if (!storeId) continue;
+                    const cg = {
+                        store_id: storeId,
+                        month,
+                        year,
+                        collision_sales_goal:     parseFloat(row.querySelector('.goal-collision-sales').value) || 0,
+                        collision_gross_goal:     parseFloat(row.querySelector('.goal-collision-gross').value) || 0,
+                        collision_gross_pct_goal: parseFloat(row.querySelector('.goal-collision-gross-pct').value) || 0,
+                        k2k_target:               parseFloat(row.querySelector('.goal-collision-k2k').value) || 0,
+                        receivables_ceiling:      parseFloat(row.querySelector('.goal-collision-receivables').value) || 0,
+                        cash_clearing_ceiling:    parseFloat(row.querySelector('.goal-collision-cash-clearing').value) || 0,
+                        sublet_ceiling:           parseFloat(row.querySelector('.goal-collision-sublet').value) || 0
+                    };
+                    const anyVal = cg.collision_sales_goal || cg.collision_gross_goal || cg.collision_gross_pct_goal
+                        || cg.k2k_target || cg.receivables_ceiling || cg.cash_clearing_ceiling || cg.sublet_ceiling;
+                    if (!anyVal) continue;
+                    await LS.saveCollisionGoal(cg);
                 }
 
                 showToast('Goals saved successfully');
