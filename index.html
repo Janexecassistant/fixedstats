@@ -1432,9 +1432,40 @@
                 <span id="navbarUserName">User</span>
                 <span class="role-badge" id="navbarUserRole">user</span>
             </div>
+            <button class="btn btn-secondary" id="changePwBtn" style="padding: 8px 12px; font-size: 13px;" title="Change your password">Change Password</button>
             <button class="btn btn-secondary" id="logoutBtn" style="padding: 8px 12px; font-size: 13px;">Logout</button>
         </div>
     </header>
+
+    <!-- Change Password modal — opened from the navbar button, or forced after
+         first login / admin reset (must_change_password flag on app_users). -->
+    <div id="changePwModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:12px;padding:26px 28px;width:380px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,0.35);">
+            <h3 style="margin:0 0 4px 0;font-size:18px;">Change Password</h3>
+            <p id="changePwForcedNote" style="display:none;font-size:13px;color:#92400e;background:#fef3c7;padding:8px 12px;border-radius:6px;margin:10px 0 0 0;">
+                Please set a new password before continuing. Enter the temporary password you just logged in with, then choose your own.
+            </p>
+            <form id="changePwForm">
+                <div class="control-group" style="margin-top:14px;">
+                    <label>Current password</label>
+                    <input type="password" id="cpwCurrent" required autocomplete="current-password">
+                </div>
+                <div class="control-group" style="margin-top:10px;">
+                    <label>New password (min 4 characters)</label>
+                    <input type="password" id="cpwNew" required minlength="4" autocomplete="new-password">
+                </div>
+                <div class="control-group" style="margin-top:10px;">
+                    <label>Confirm new password</label>
+                    <input type="password" id="cpwConfirm" required autocomplete="new-password">
+                </div>
+                <div id="changePwError" style="display:none;color:#dc2626;font-size:13px;margin-top:10px;"></div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">
+                    <button type="button" class="btn btn-secondary" id="cpwCancelBtn">Cancel</button>
+                    <button type="submit" class="btn">Update Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <div class="container">
         <!-- TAB 1: SERVICE DAILY ENTRY (Service Manager) -->
@@ -2647,10 +2678,10 @@
                     <table id="userManagementTable">
                         <thead>
                             <tr>
-                                <th>Display Name</th>
-                                <th>Username</th>
+                                <th data-usort="display_name" style="cursor:pointer;user-select:none;" title="Click to sort A–Z / Z–A">Display Name <span data-usort-arrow="display_name" style="font-size:10px;"></span></th>
+                                <th data-usort="username" style="cursor:pointer;user-select:none;" title="Click to sort A–Z / Z–A">Username <span data-usort-arrow="username" style="font-size:10px;"></span></th>
                                 <th>Email</th>
-                                <th>Role</th>
+                                <th data-usort="role" style="cursor:pointer;user-select:none;" title="Click to sort A–Z / Z–A">Role <span data-usort-arrow="role" style="font-size:10px;"></span></th>
                                 <th>Store Access</th>
                                 <th>Default Store</th>
                                 <th>Status</th>
@@ -3077,6 +3108,11 @@
                 hideLoginScreen();
                 showToast('Logged in successfully');
 
+                // First login (or admin reset): force the user to set their own password
+                if (data.must_change_password) {
+                    openChangePasswordModal(true);
+                }
+
                 // Load initial data
                 await initialize();
 
@@ -3128,6 +3164,12 @@
                 updateNavbarUser();
                 applyRoleAccess();
                 hideLoginScreen();
+
+                // Restored a session that still owes a password change (e.g. user
+                // closed the tab before completing the forced change at first login)
+                if (data.must_change_password) {
+                    openChangePasswordModal(true);
+                }
                 return true;
             } catch (error) {
                 console.error('Session validation error:', error);
@@ -3136,6 +3178,59 @@
                 currentUser = null;
                 showLoginScreen();
                 return false;
+            }
+        }
+
+        // ============================================================================
+        // SELF-SERVICE PASSWORD CHANGE
+        // The change_password RPC validates the session token + current password
+        // server-side and clears must_change_password. Forced mode (first login /
+        // after an admin reset) hides Cancel so the user has to set their own.
+        // ============================================================================
+        let changePwForced = false;
+
+        function openChangePasswordModal(forced) {
+            changePwForced = !!forced;
+            document.getElementById('changePwForcedNote').style.display = forced ? 'block' : 'none';
+            document.getElementById('cpwCancelBtn').style.display = forced ? 'none' : '';
+            const errDiv = document.getElementById('changePwError');
+            errDiv.style.display = 'none';
+            ['cpwCurrent', 'cpwNew', 'cpwConfirm'].forEach(id => { document.getElementById(id).value = ''; });
+            document.getElementById('changePwModal').style.display = 'flex';
+            setTimeout(() => document.getElementById('cpwCurrent').focus(), 50);
+        }
+
+        function closeChangePasswordModal() {
+            document.getElementById('changePwModal').style.display = 'none';
+        }
+
+        async function submitChangePassword(event) {
+            event.preventDefault();
+            const errDiv = document.getElementById('changePwError');
+            const showErr = (msg) => { errDiv.textContent = msg; errDiv.style.display = 'block'; };
+            const cur = document.getElementById('cpwCurrent').value;
+            const nw = document.getElementById('cpwNew').value;
+            const cf = document.getElementById('cpwConfirm').value;
+
+            if (nw.length < 4) { showErr('New password must be at least 4 characters'); return; }
+            if (nw !== cf) { showErr('New passwords do not match'); return; }
+            if (nw === cur) { showErr('New password must be different from the current one'); return; }
+            if (!currentUser || !currentUser.token) { showErr('Session expired — please log in again'); return; }
+
+            try {
+                const { data, error } = await db.rpc('change_password', {
+                    p_token: currentUser.token,
+                    p_current_password: cur,
+                    p_new_password: nw
+                });
+                if (error) { showErr(formatDbError ? formatDbError(error) : (error.message || 'Password change failed')); return; }
+                if (!data || data.ok === false) { showErr(data?.error || 'Password change failed'); return; }
+                changePwForced = false;
+                closeChangePasswordModal();
+                showToast('Password updated successfully');
+            } catch (err) {
+                console.error('Change password error:', err);
+                showErr(err.message || 'Password change failed');
             }
         }
 
@@ -3523,6 +3618,8 @@
                     };
                     if (passwordHash) {
                         updateData.password_hash = passwordHash;
+                        // Admin set this password — user should pick their own at next login
+                        updateData.must_change_password = true;
                     }
 
                     const { error: updateError } = await db.from('app_users')
@@ -3558,7 +3655,9 @@
                         role: role,
                         default_store: defaultStore,
                         is_active: true,
-                        last_login: null
+                        last_login: null,
+                        // New users log in with the admin-set temp password, then must choose their own
+                        must_change_password: true
                     }).select();
 
                     if (userError) {
@@ -3619,6 +3718,24 @@
                     });
                 }
 
+                // Alphabetical sort on the clicked column (Display Name by default)
+                visibleUsers = [...visibleUsers].sort((a, b) => {
+                    const av = String(a[userSortKey] || '').toLowerCase();
+                    const bv = String(b[userSortKey] || '').toLowerCase();
+                    return av.localeCompare(bv) * userSortDir;
+                });
+                // Update header arrows + (re)bind click handlers
+                document.querySelectorAll('#userManagementTable th[data-usort]').forEach(th => {
+                    const key = th.dataset.usort;
+                    const arrow = th.querySelector('[data-usort-arrow]');
+                    if (arrow) arrow.textContent = key === userSortKey ? (userSortDir === 1 ? '▲' : '▼') : '';
+                    th.onclick = () => {
+                        if (userSortKey === key) { userSortDir = -userSortDir; }
+                        else { userSortKey = key; userSortDir = 1; }
+                        loadAdminUsers();
+                    };
+                });
+
                 visibleUsers.forEach(user => {
                     const storeIds = (user.user_store_access || []).map(a => a.store_id);
                     const storeLabels = storeIds.map(sid => {
@@ -3656,6 +3773,9 @@
         }
 
         let editingUserId = null;
+        // User Accounts table sort state — alphabetical, toggled by header clicks
+        let userSortKey = 'display_name';
+        let userSortDir = 1; // 1 = A→Z, -1 = Z→A
 
         function editUser(userId) {
             const user = allUsers.find(u => u.id === userId);
@@ -3725,8 +3845,9 @@
                     showToast('Failed to process password', 'error');
                     return;
                 }
-                await db.from('app_users').update({ password_hash: hashResult }).eq('id', userId);
-                showToast(`Password reset for ${userName}`);
+                // Flag forces the user to set their own password at next login
+                await db.from('app_users').update({ password_hash: hashResult, must_change_password: true }).eq('id', userId);
+                showToast(`Password reset for ${userName} — they'll be asked to choose their own at next login`);
             } catch (error) {
                 console.error('Reset password error:', error);
                 showToast('Failed to reset password', 'error');
@@ -5293,6 +5414,15 @@
         // ============================================================================
         // Setup logout button
         document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+
+        // Change Password — navbar button opens the modal; forced mode hides Cancel
+        document.getElementById('changePwBtn').addEventListener('click', () => openChangePasswordModal(false));
+        document.getElementById('changePwForm').addEventListener('submit', submitChangePassword);
+        document.getElementById('cpwCancelBtn').addEventListener('click', closeChangePasswordModal);
+        // Clicking the dark backdrop closes it — unless the change is mandatory
+        document.getElementById('changePwModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget && !changePwForced) closeChangePasswordModal();
+        });
         
         // Setup admin console tab click
         document.querySelectorAll('.nav-btn').forEach(btn => {
