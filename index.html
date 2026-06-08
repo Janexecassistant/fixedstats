@@ -7935,10 +7935,10 @@
                         const sAdvGross = sAdvAgg.reduce((s, a) => s + a.gross, 0);
                         const sAdvRo = sAdvAgg.reduce((s, a) => s + a.ros, 0);
                         const sGpr = sAdvRo > 0 ? sAdvGross / sAdvRo : 0;
-                        laborBreakdowns.push({ code: store.code, tracking: sLaborTrack, pct: sLaborGoal > 0 ? (sLaborTrack / sLaborGoal) * 100 : 0 });
-                        partsBreakdowns.push({ code: store.code, tracking: sPartsTrack, pct: sPartsGoal > 0 ? (sPartsTrack / sPartsGoal) * 100 : 0 });
-                        grossBreakdowns.push({ code: store.code, tracking: sGrossTrack, pct: sGrossGoal > 0 ? (sGrossTrack / sGrossGoal) * 100 : 0 });
-                        gprBreakdowns.push({ code: store.code, tracking: sGpr, pct: sGprGoal > 0 ? (sGpr / sGprGoal) * 100 : 0 });
+                        laborBreakdowns.push({ code: store.code, tracking: sLaborTrack, goal: sLaborGoal, pct: sLaborGoal > 0 ? (sLaborTrack / sLaborGoal) * 100 : 0 });
+                        partsBreakdowns.push({ code: store.code, tracking: sPartsTrack, goal: sPartsGoal, pct: sPartsGoal > 0 ? (sPartsTrack / sPartsGoal) * 100 : 0 });
+                        grossBreakdowns.push({ code: store.code, tracking: sGrossTrack, goal: sGrossGoal, pct: sGrossGoal > 0 ? (sGrossTrack / sGrossGoal) * 100 : 0 });
+                        gprBreakdowns.push({ code: store.code, tracking: sGpr, goal: sGprGoal, pct: sGprGoal > 0 ? (sGpr / sGprGoal) * 100 : 0 });
                     });
                 }
 
@@ -8238,12 +8238,13 @@
             }
         }
 
-        function createMiniStoreCircle(code, pct, tracking) {
+        function createMiniStoreCircle(code, pct, tracking, goal) {
             const hasGoal = pct > 0;
             const pctVal = Math.min(Math.max(pct, 0), 100);
             const color = pct >= 95 ? '#4ade80' : pct >= 80 ? '#facc15' : '#f97316';
             const colorGlow = pct >= 95 ? '#22c55e' : pct >= 80 ? '#eab308' : '#ea580c';
             const trackingLabel = tracking == null ? '' : formatCurrency(tracking);
+            const goalLabel = goal > 0 ? formatCurrency(goal) : '';
             const cx = 36, cy = 36;
             const progressR = 26;
             const circumference = 2 * Math.PI * progressR;
@@ -8289,7 +8290,10 @@
                         </div>
                     </div>
                     <div style="font-size:10px;color:#555;text-transform:uppercase;letter-spacing:0.4px;font-weight:700;margin-top:3px;">${code}</div>
-                    ${trackingLabel ? `<div style="font-size:11px;color:#111;font-weight:800;line-height:1.15;margin-top:2px;">${trackingLabel}</div>` : ''}
+                    ${trackingLabel ? `
+                        <div style="font-size:11px;color:#111;font-weight:800;line-height:1.15;margin-top:2px;">${trackingLabel}</div>
+                        <div style="font-size:10px;color:#555;font-weight:700;line-height:1.15;">/ ${goalLabel || 'No goal'}</div>
+                    ` : ''}
                 </div>
             `;
         }
@@ -8402,7 +8406,7 @@
                     </div>
                     ${(breakdowns && breakdowns.length > 0) ? `
                         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.12);">
-                            ${breakdowns.map(b => createMiniStoreCircle(b.code, b.pct, b.tracking)).join('')}
+                            ${breakdowns.map(b => createMiniStoreCircle(b.code, b.pct, b.tracking, b.goal)).join('')}
                         </div>
                     ` : ''}
                 </div>
