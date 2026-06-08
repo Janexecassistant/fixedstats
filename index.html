@@ -3552,10 +3552,69 @@
             }
         }
 
+        function isManagerScopedUser(user) {
+            if (!currentUser || !['manager', 'parts_manager', 'collision_manager'].includes(currentUser.role)) return true;
+            if (!user || (user.role !== 'advisor' && user.role !== 'technician')) return false;
+            const myStores = new Set((currentUser.store_access || []).map(String));
+            const theirStores = (user.user_store_access || []).map(a => String(a.store_id));
+            return theirStores.some(storeId => myStores.has(storeId));
+        }
+
+        function getHiddenUserReason(user) {
+            if (!currentUser || !['manager', 'parts_manager', 'collision_manager'].includes(currentUser.role)) return '';
+            if (user && user.role !== 'advisor' && user.role !== 'technician') {
+                return 'Manager accounts are only visible to admin users.';
+            }
+            return 'This account is not assigned to one of your stores.';
+        }
+
+        async function findUserByUsername(username) {
+            const { data, error } = await db.from('app_users')
+                .select('*, user_store_access(store_id)')
+                .eq('username', username)
+                .limit(1);
+            if (error) throw error;
+            return data && data.length ? data[0] : null;
+        }
+
+        function roleLabel(role) {
+            const labels = {
+                admin: 'Admin',
+                manager: 'Manager',
+                parts_manager: 'Parts Manager',
+                collision_manager: 'Collision Manager',
+                executive: 'Executive',
+                advisor: 'Advisor',
+                technician: 'Technician'
+            };
+            return labels[role] || role || 'User';
+        }
+
+        async function handleExistingUser(username) {
+            const existingUser = await findUserByUsername(username);
+            if (!existingUser) return false;
+
+            allUsers = allUsers.some(u => u.id === existingUser.id)
+                ? allUsers.map(u => u.id === existingUser.id ? existingUser : u)
+                : [...allUsers, existingUser];
+
+            const name = existingUser.display_name || existingUser.username || username;
+            const visibilityNote = isManagerScopedUser(existingUser)
+                ? 'I opened the existing account so you can review it.'
+                : getHiddenUserReason(existingUser);
+            showToast(`That username already exists as ${name} (${roleLabel(existingUser.role)}). ${visibilityNote}`, 'error');
+
+            await loadAdminUsers();
+            if (isManagerScopedUser(existingUser)) {
+                editUser(existingUser.id);
+            }
+            return true;
+        }
+
         async function saveNewUser(event) {
             event.preventDefault();
             const displayName = document.getElementById('formDisplayName').value.trim();
-            const email = document.getElementById('formEmail').value.trim();
+            const email = document.getElementById('formEmail').value.trim().toLowerCase();
             const role = document.getElementById('formRole').value;
             const password = document.getElementById('formPassword').value.trim();
 
@@ -3570,7 +3629,7 @@
             }
 
             // Username is set to lowercase email
-            const username = email.toLowerCase().trim();
+            const username = email;
 
             const storeAccess = Array.from(document.querySelectorAll('.storeAccessCheckbox:checked'))
                 .map(cb => cb.value);
@@ -3594,6 +3653,10 @@
             }
 
             try {
+                if (!editingUserId && await handleExistingUser(username)) {
+                    return;
+                }
+
                 // Hash password if provided
                 let passwordHash = null;
                 if (password) {
@@ -3662,6 +3725,9 @@
 
                     if (userError) {
                         console.error('Create user error:', userError);
+                        if (userError.code === '23505' && await handleExistingUser(username)) {
+                            return;
+                        }
                         showToast('Failed to create user: ' + formatDbError(userError), 'error');
                         return;
                     }
@@ -7869,10 +7935,10 @@
                         const sAdvGross = sAdvAgg.reduce((s, a) => s + a.gross, 0);
                         const sAdvRo = sAdvAgg.reduce((s, a) => s + a.ros, 0);
                         const sGpr = sAdvRo > 0 ? sAdvGross / sAdvRo : 0;
-                        laborBreakdowns.push({ code: store.code, pct: sLaborGoal > 0 ? (sLaborTrack / sLaborGoal) * 100 : 0 });
-                        partsBreakdowns.push({ code: store.code, pct: sPartsGoal > 0 ? (sPartsTrack / sPartsGoal) * 100 : 0 });
-                        grossBreakdowns.push({ code: store.code, pct: sGrossGoal > 0 ? (sGrossTrack / sGrossGoal) * 100 : 0 });
-                        gprBreakdowns.push({ code: store.code, pct: sGprGoal > 0 ? (sGpr / sGprGoal) * 100 : 0 });
+                        laborBreakdowns.push({ code: store.code, actual: sLabor, pct: sLaborGoal > 0 ? (sLaborTrack / sLaborGoal) * 100 : 0 });
+                        partsBreakdowns.push({ code: store.code, actual: sParts, pct: sPartsGoal > 0 ? (sPartsTrack / sPartsGoal) * 100 : 0 });
+                        grossBreakdowns.push({ code: store.code, actual: sGross, pct: sGrossGoal > 0 ? (sGrossTrack / sGrossGoal) * 100 : 0 });
+                        gprBreakdowns.push({ code: store.code, actual: sGpr, pct: sGprGoal > 0 ? (sGpr / sGprGoal) * 100 : 0 });
                     });
                 }
 
@@ -8172,11 +8238,12 @@
             }
         }
 
-        function createMiniStoreCircle(code, pct) {
+        function createMiniStoreCircle(code, pct, actual) {
             const hasGoal = pct > 0;
             const pctVal = Math.min(Math.max(pct, 0), 100);
             const color = pct >= 95 ? '#4ade80' : pct >= 80 ? '#facc15' : '#f97316';
             const colorGlow = pct >= 95 ? '#22c55e' : pct >= 80 ? '#eab308' : '#ea580c';
+            const actualLabel = actual == null ? '' : formatCurrency(actual);
             const cx = 36, cy = 36;
             const progressR = 26;
             const circumference = 2 * Math.PI * progressR;
@@ -8222,6 +8289,7 @@
                         </div>
                     </div>
                     <div style="font-size:10px;color:#555;text-transform:uppercase;letter-spacing:0.4px;font-weight:700;margin-top:3px;">${code}</div>
+                    ${actualLabel ? `<div style="font-size:11px;color:#111;font-weight:800;line-height:1.15;margin-top:2px;">${actualLabel}</div>` : ''}
                 </div>
             `;
         }
@@ -8334,7 +8402,7 @@
                     </div>
                     ${(breakdowns && breakdowns.length > 0) ? `
                         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.12);">
-                            ${breakdowns.map(b => createMiniStoreCircle(b.code, b.pct)).join('')}
+                            ${breakdowns.map(b => createMiniStoreCircle(b.code, b.pct, b.actual)).join('')}
                         </div>
                     ` : ''}
                 </div>
