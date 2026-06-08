@@ -2330,7 +2330,7 @@
                             <li style="margin-bottom:4px;"><strong>33%</strong> &nbsp;—&nbsp; <strong>CSI</strong> vs the manufacturer's regional NPS target. (Hit the region target = full credit on this axis.)</li>
                             <li style="margin-bottom:4px;"><strong>13.4%</strong> &nbsp;—&nbsp; <strong>Gross / RO</strong> vs the top advisor in the group.</li>
                             <li style="margin-bottom:4px;"><strong>13.4%</strong> &nbsp;—&nbsp; <strong>ELR</strong> (Effective Labor Rate) vs the top advisor.</li>
-                            <li style="margin-bottom:4px;"><strong>13.4%</strong> &nbsp;—&nbsp; <strong>HRO</strong> (Hours per RO) — <em>lower is better</em>, scored against the lowest HRO in the group.</li>
+                            <li style="margin-bottom:4px;"><strong>13.4%</strong> &nbsp;—&nbsp; <strong>HRO</strong> (Hours per RO) vs the top advisor.</li>
                             <li style="margin-bottom:4px;"><strong>13.4%</strong> &nbsp;—&nbsp; <strong>MPVI %</strong> (Multi-Point Vehicle Inspection completion) vs a 75% target.</li>
                             <li style="margin-bottom:4px;"><strong>13.4%</strong> &nbsp;—&nbsp; <strong>CP %</strong> (Customer-Pay mix) vs the top advisor.</li>
                         </ul>
@@ -9215,22 +9215,19 @@
                 // 33% CSI vs region NPS  +  13.4% × 5 peer-top axes
                 // Goals:  CSI ≥ store's region NPS  ·  MPVI ≥ 75%
                 // Peer-top metrics (Gross/RO, ELR, HRO, CP %): top performer = 100% on that axis.
-                // HRO is inverted (lower hours-per-RO is better).
                 const activeForScore = ranked.filter(r => r.gross > 0 || r.ros > 0);
                 const topGrossRo = Math.max(0, ...activeForScore.map(r => r.grossRo));
                 const topElr     = Math.max(0, ...activeForScore.map(r => r.elr));
+                const topHro     = Math.max(0, ...activeForScore.map(r => r.hro));
                 const topCpPct   = Math.max(0, ...activeForScore.map(r => r.cpPct));
-                const hroPositive = activeForScore.map(r => r.hro).filter(v => v > 0);
-                const minHro     = hroPositive.length ? Math.min(...hroPositive) : 0;
 
                 const axis = (val, target) => (target > 0 && val > 0) ? Math.min(100, (val / target) * 100) : 0;
-                const axisInv = (val, best) => (best > 0 && val > 0) ? Math.min(100, (best / val) * 100) : 0;
 
                 ranked.forEach(r => {
                     const csiAxis    = axis(r.csi,     r.regionNps);  // CSI / region NPS
                     const gprAxis    = axis(r.grossRo, topGrossRo);
                     const elrAxis    = axis(r.elr,     topElr);
-                    const hroAxis    = axisInv(r.hro,  minHro);        // lower HRO is better
+                    const hroAxis    = axis(r.hro,     topHro);
                     const mpviAxis   = axis(r.mpvi,    75);            // MPVI ≥ 75 = 100
                     const cpPctAxis  = axis(r.cpPct,   topCpPct);
 
@@ -9273,7 +9270,7 @@
                 assignRanks(ranked, 'csi', true);
                 assignRanks(ranked, 'mpvi', true);
                 assignRanks(ranked, 'cpPct', true);
-                assignRanks(ranked, 'hro', false); // lower HRO is better (fewer hrs per RO)
+                assignRanks(ranked, 'hro', true);
 
                 // Store for sort callbacks
                 window._rankedAdvisors = ranked;
