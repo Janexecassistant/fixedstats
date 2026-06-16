@@ -10224,8 +10224,9 @@
                             below ? accountabilityBadge(`Below · ${below}`, 'below') : '',
                             watch ? accountabilityBadge(`Watch · ${watch}`, 'watch') : '',
                             low ? accountabilityBadge(`Low data · ${low}`, 'low') : ''
-                        ].filter(Boolean).join(' ');
-                        return `${accountabilityBadge(`Above · ${above} of ${total}`, 'above')}${issueBadges ? `<div style="margin-top:5px;">${issueBadges}</div>` : ''}`;
+                        ].filter(Boolean);
+                        const badges = [accountabilityBadge(`Above · ${above} of ${total}`, 'above')].concat(issueBadges).join('');
+                        return `<span style="display:inline-flex;align-items:center;gap:5px;white-space:nowrap;">${badges}</span>`;
                     };
                     const storeLine = accountabilityAdvisorLine(store.id, month, year, rawGoals);
                     const belowCount = sAdv.concat(sTech).filter(r => r.status.tone === 'below').length;
