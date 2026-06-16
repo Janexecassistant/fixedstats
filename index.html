@@ -936,6 +936,66 @@
             font-size: 12px;
         }
 
+        .line-rules-card {
+            padding: 16px 18px;
+            border-left-color: #111111;
+        }
+
+        .line-rules-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .line-rules-header .card-title {
+            margin-bottom: 0;
+        }
+
+        .line-rules-note {
+            color: #666;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .line-rules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(235px, 1fr));
+            gap: 10px;
+        }
+
+        .line-rule-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 42px;
+            padding: 8px 10px;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            color: #333;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .line-rule-label {
+            flex: 0 0 auto;
+            min-width: 78px;
+            padding: 4px 7px;
+            border-radius: 6px;
+            background: #111111;
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 900;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
         .accountability-badge {
             display: inline-flex;
             align-items: center;
@@ -988,6 +1048,18 @@
         @media (max-width: 1000px) {
             .accountability-two-col {
                 grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .line-rules-header {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .line-rules-note {
+                white-space: normal;
             }
         }
 
@@ -2289,14 +2361,17 @@
             <div class="accountability-summary" id="accountabilitySummaryCards">
             </div>
 
-            <div class="card" style="padding:14px 18px;">
-                <h3 class="card-title" style="margin-bottom:10px;">Line Rules</h3>
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px 14px;font-size:12px;color:#333;">
-                    <div><strong>Advisor:</strong> Labor Gross + Parts Gross per RO. Store target first; fallback $355.</div>
-                    <div><strong>Main line tech:</strong> 85% productivity / 100% efficiency.</div>
-                    <div><strong>Lube tech:</strong> 70% productivity / 90% efficiency.</div>
-                    <div><strong>Watch:</strong> Near the line; inspect before it turns below.</div>
-                    <div><strong>Low data:</strong> Not enough volume to judge fairly.</div>
+            <div class="card line-rules-card">
+                <div class="line-rules-header">
+                    <h3 class="card-title">Line Rules</h3>
+                    <div class="line-rules-note">Targets used for above / below status</div>
+                </div>
+                <div class="line-rules-grid">
+                    <div class="line-rule-item"><span class="line-rule-label">Advisor</span><span>Labor + parts gross per RO. Store target first; fallback $355.</span></div>
+                    <div class="line-rule-item"><span class="line-rule-label">Main tech</span><span>85% productivity and 100% efficiency.</span></div>
+                    <div class="line-rule-item"><span class="line-rule-label">Lube tech</span><span>70% productivity and 90% efficiency.</span></div>
+                    <div class="line-rule-item"><span class="line-rule-label">Watch</span><span>Near the line; inspect before it turns below.</span></div>
+                    <div class="line-rule-item"><span class="line-rule-label">Low data</span><span>Not enough volume to judge fairly.</span></div>
                 </div>
             </div>
 
