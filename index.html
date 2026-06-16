@@ -2320,6 +2320,7 @@
                                     <th>Role</th>
                                     <th>Status</th>
                                     <th>Why</th>
+                                    <th>Training</th>
                                     <th>Next Step</th>
                                 </tr>
                             </thead>
@@ -2342,6 +2343,27 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">Improvement Plans</h3>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Below-line people get a simple plan: training, manager review, practice, and a due date.</p>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Person</th>
+                                <th>Role</th>
+                                <th>Gap</th>
+                                <th>Assigned Training</th>
+                                <th>Manager Plan</th>
+                                <th>Due</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accountabilityImprovementPlanBody">
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -9839,6 +9861,58 @@
             return 'No action. Maintain current workload.';
         }
 
+        function accountabilityTrainingRecommendations(row) {
+            if (!row) return [];
+            if (row.kind === 'advisor') {
+                if (row.status?.tone === 'below') {
+                    return [
+                        { label: 'Menu Sales', url: '/training/menu-sales/' },
+                        { label: 'Objections', url: '/training/objections/' }
+                    ];
+                }
+                if (row.status?.tone === 'watch') {
+                    return [
+                        { label: 'Service Flow', url: '/training/walkaround/' },
+                        { label: 'Menu Sales', url: '/training/menu-sales/' }
+                    ];
+                }
+                return [{ label: 'Service Flow', url: '/training/walkaround/' }];
+            }
+            if (row.kind === 'tech') {
+                if (row.status?.tone === 'below') {
+                    return [
+                        { label: 'Tech MPVI', url: '/training/mpvi/' },
+                        { label: 'Flat Rate Frenzy', url: '/walkaround-training/flat-rate-frenzy/' }
+                    ];
+                }
+                return [{ label: 'Tech MPVI', url: '/training/mpvi/' }];
+            }
+            return [];
+        }
+
+        function accountabilityTrainingLinks(row) {
+            const modules = accountabilityTrainingRecommendations(row);
+            if (!modules.length) return '—';
+            return modules.map(m =>
+                `<a href="${m.url}" target="_blank" rel="noopener" style="color:#cc0000;font-weight:700;text-decoration:none;">${accountabilityEscape(m.label)}</a>`
+            ).join('<br>');
+        }
+
+        function accountabilityPlanDueDate() {
+            const due = new Date();
+            const daysUntilFriday = (5 - due.getDay() + 7) % 7 || 7;
+            due.setDate(due.getDate() + daysUntilFriday);
+            return due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function accountabilityImprovementPlan(row) {
+            if (!row) return '';
+            if (row.kind === 'advisor') {
+                return 'Complete training, manager reviews 5 closed ROs, then roleplay menu/objection presentation.';
+            }
+            return 'Complete training, manager reviews dispatch and 3 recent jobs, then set next-week productivity target.';
+        }
+
         async function loadAccountability() {
             try {
                 const picker = document.getElementById('accountabilityMonthPicker');
@@ -9995,6 +10069,11 @@
                         return (rank[a.status.tone] - rank[b.status.tone]) || (b.streak - a.streak);
                     })
                     .slice(0, 8);
+                const improvementPlans = allPeople
+                    .filter(r => r.status.tone === 'below')
+                    .sort((a, b) => (b.streak - a.streak) || String(a.person).localeCompare(String(b.person)))
+                    .slice(0, 12);
+                const planDueDate = accountabilityPlanDueDate();
 
                 document.getElementById('accountabilitySummaryCards').innerHTML = `
                     <div class="accountability-card"><div class="label">Above Line</div><div class="value">${counts.above || 0}</div><div class="note">Meeting or beating the line</div></div>
@@ -10047,10 +10126,24 @@
                             <td>${row.kind === 'advisor' ? 'Advisor' : accountabilityEscape(row.role)}</td>
                             <td>${accountabilityBadge(row.statusLabel, row.status.tone)}</td>
                             <td class="accountability-action">${accountabilityEscape(row.why)}</td>
+                            <td class="accountability-action">${accountabilityTrainingLinks(row)}</td>
                             <td class="accountability-action">${accountabilityEscape(row.action)}</td>
                         </tr>
                     `).join('')
-                    : '<tr><td colspan="5" class="empty-state">No below-line or watch items for this month.</td></tr>';
+                    : '<tr><td colspan="6" class="empty-state">No below-line or watch items for this month.</td></tr>';
+
+                document.getElementById('accountabilityImprovementPlanBody').innerHTML = improvementPlans.length
+                    ? improvementPlans.map(row => `
+                        <tr>
+                            <td style="font-weight:700;">${accountabilityEscape(row.person)}<br><span style="font-size:11px;color:#777;">${accountabilityEscape(row.store)}</span></td>
+                            <td>${row.kind === 'advisor' ? 'Advisor' : accountabilityEscape(row.role)}</td>
+                            <td class="accountability-action">${accountabilityEscape(row.why)}</td>
+                            <td class="accountability-action">${accountabilityTrainingLinks(row)}</td>
+                            <td class="accountability-action">${accountabilityEscape(accountabilityImprovementPlan(row))}</td>
+                            <td>${accountabilityEscape(planDueDate)}</td>
+                        </tr>
+                    `).join('')
+                    : '<tr><td colspan="6" class="empty-state">No below-line improvement plans needed for this month.</td></tr>';
 
                 document.getElementById('accountabilityAdvisorBody').innerHTML = advisorRows.length
                     ? advisorRows.sort((a, b) => {
