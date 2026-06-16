@@ -2356,8 +2356,10 @@
                                 <th>Person</th>
                                 <th>Role</th>
                                 <th>Gap</th>
+                                <th>Likely Cause</th>
                                 <th>Assigned Training</th>
                                 <th>Manager Plan</th>
+                                <th>Coaching Form</th>
                                 <th>Due</th>
                             </tr>
                         </thead>
@@ -9861,13 +9863,102 @@
             return 'No action. Maintain current workload.';
         }
 
+        function accountabilityDiagnose(row) {
+            if (!row) {
+                return { label: 'Needs review', detail: 'Not enough data to diagnose the pattern.', track: 'review' };
+            }
+            if (row.kind === 'advisor') {
+                if ((row.ros || 0) < 8) {
+                    return {
+                        label: 'Low volume / not enough data',
+                        detail: 'RO count is too low to fairly judge sales behavior yet.',
+                        track: 'advisor-volume'
+                    };
+                }
+                const line = parseFloat(row.line?.target) || 0;
+                const grossRo = parseFloat(row.grossRo) || 0;
+                const hro = parseFloat(row.hro) || 0;
+                if (line > 0 && grossRo < line * 0.85 && hro < 1.5) {
+                    return {
+                        label: 'Maintenance capture gap',
+                        detail: 'Gross/RO and HRO are both low, which usually points to missed maintenance presentation or weak menu use.',
+                        track: 'advisor-menu'
+                    };
+                }
+                if (line > 0 && grossRo < line * 0.9) {
+                    return {
+                        label: 'Estimate presentation gap',
+                        detail: 'Gross/RO is under the line; likely needs stronger value explanation, objection handling, or close discipline.',
+                        track: 'advisor-objections'
+                    };
+                }
+                if (hro < 1.5) {
+                    return {
+                        label: 'HRO / inspection follow-through gap',
+                        detail: 'Hours per RO are light, so inspect walkaround, MPVI handoff, and maintenance recommendation consistency.',
+                        track: 'advisor-flow'
+                    };
+                }
+                return {
+                    label: 'Consistency gap',
+                    detail: 'Performance is close enough that manager should review deal mix and repeatable habits.',
+                    track: 'advisor-review'
+                };
+            }
+            if (row.kind === 'tech') {
+                const productivity = parseFloat(row.productivity) || 0;
+                const efficiency = parseFloat(row.efficiency) || 0;
+                const lineProd = parseFloat(row.line?.productivity) || 0;
+                const lineEff = parseFloat(row.line?.efficiency) || 0;
+                if ((row.flagged || 0) <= 0) {
+                    return {
+                        label: 'Missing production data',
+                        detail: 'No flagged hours are showing for the month, so verify entry, attendance, and dispatch first.',
+                        track: 'tech-data'
+                    };
+                }
+                if (lineProd > 0 && productivity < lineProd && lineEff > 0 && efficiency >= lineEff) {
+                    return {
+                        label: 'Shop loading / dispatch gap',
+                        detail: 'Efficiency is acceptable but productivity is low, which often means not enough sold work or uneven dispatch.',
+                        track: 'tech-loading'
+                    };
+                }
+                if (lineEff > 0 && efficiency < lineEff && lineProd > 0 && productivity >= lineProd) {
+                    return {
+                        label: 'Efficiency / execution gap',
+                        detail: 'Productivity is there but efficiency is low, so review job execution, comebacks, and time discipline.',
+                        track: 'tech-efficiency'
+                    };
+                }
+                return {
+                    label: 'Productivity and efficiency gap',
+                    detail: 'Both productivity and efficiency are under the line, so review dispatch, skill fit, attendance, and work habits together.',
+                    track: 'tech-core'
+                };
+            }
+            return { label: 'Needs review', detail: 'Review the pattern before assigning training.', track: 'review' };
+        }
+
         function accountabilityTrainingRecommendations(row) {
             if (!row) return [];
+            const diagnosis = row.diagnosis || accountabilityDiagnose(row);
             if (row.kind === 'advisor') {
-                if (row.status?.tone === 'below') {
+                if (diagnosis.track === 'advisor-menu') {
                     return [
                         { label: 'Menu Sales', url: '/training/menu-sales/' },
+                        { label: 'Service Flow', url: '/training/walkaround/' }
+                    ];
+                }
+                if (diagnosis.track === 'advisor-objections') {
+                    return [
                         { label: 'Objections', url: '/training/objections/' }
+                    ];
+                }
+                if (diagnosis.track === 'advisor-flow') {
+                    return [
+                        { label: 'Service Flow', url: '/training/walkaround/' },
+                        { label: 'Customer Comms', url: '/training/customer-comms/' }
                     ];
                 }
                 if (row.status?.tone === 'watch') {
@@ -9879,10 +9970,21 @@
                 return [{ label: 'Service Flow', url: '/training/walkaround/' }];
             }
             if (row.kind === 'tech') {
-                if (row.status?.tone === 'below') {
+                if (diagnosis.track === 'tech-loading') {
+                    return [
+                        { label: 'Flat Rate Frenzy', url: '/walkaround-training/flat-rate-frenzy/' }
+                    ];
+                }
+                if (diagnosis.track === 'tech-efficiency') {
                     return [
                         { label: 'Tech MPVI', url: '/training/mpvi/' },
                         { label: 'Flat Rate Frenzy', url: '/walkaround-training/flat-rate-frenzy/' }
+                    ];
+                }
+                if (row.status?.tone === 'below') {
+                    return [
+                        { label: 'Flat Rate Frenzy', url: '/walkaround-training/flat-rate-frenzy/' },
+                        { label: 'Tech MPVI', url: '/training/mpvi/' }
                     ];
                 }
                 return [{ label: 'Tech MPVI', url: '/training/mpvi/' }];
@@ -9898,6 +10000,12 @@
             ).join('<br>');
         }
 
+        const ACCOUNTABILITY_COACHING_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSeXxPawDrz4H6Dk0FEuZqtpUeB_ss9sgUYK_I8rFo7ZZbACkA/viewform';
+
+        function accountabilityCoachingFormLink() {
+            return `<a href="${ACCOUNTABILITY_COACHING_FORM_URL}" target="_blank" rel="noopener" style="color:#cc0000;font-weight:700;text-decoration:none;">Document Coaching</a>`;
+        }
+
         function accountabilityPlanDueDate() {
             const due = new Date();
             const daysUntilFriday = (5 - due.getDay() + 7) % 7 || 7;
@@ -9907,10 +10015,26 @@
 
         function accountabilityImprovementPlan(row) {
             if (!row) return '';
+            const diagnosis = row.diagnosis || accountabilityDiagnose(row);
             if (row.kind === 'advisor') {
-                return 'Complete training, manager reviews 5 closed ROs, then roleplay menu/objection presentation.';
+                if (diagnosis.track === 'advisor-menu') {
+                    return 'Review 5 closed ROs, confirm menu was presented, then roleplay Good/Better/Best maintenance presentation.';
+                }
+                if (diagnosis.track === 'advisor-objections') {
+                    return 'Review 5 declined estimates, identify the common objection, then roleplay the LARR response.';
+                }
+                if (diagnosis.track === 'advisor-flow') {
+                    return 'Inspect write-up, walkaround, MPVI handoff, and first update timing for the next 5 ROs.';
+                }
+                return 'Complete assigned module, manager reviews 5 closed ROs, then sets one measurable behavior target.';
             }
-            return 'Complete training, manager reviews dispatch and 3 recent jobs, then set next-week productivity target.';
+            if (diagnosis.track === 'tech-loading') {
+                return 'Review dispatch mix and available hours, then set a daily sold-hours target for next week.';
+            }
+            if (diagnosis.track === 'tech-efficiency') {
+                return 'Review 3 recent jobs for book-time misses, quality issues, and time discipline.';
+            }
+            return 'Review dispatch, attendance, and 3 recent jobs, then set next-week productivity and efficiency targets.';
         }
 
         async function loadAccountability() {
@@ -9983,7 +10107,7 @@
                     });
                     const streak = accountabilityStreak(status.tone, tones);
                     const statusLabel = accountabilityStatusLabel(status, streak);
-                    return {
+                    const row = {
                         kind: 'advisor',
                         person: advisor.name,
                         storeId: advisor.store_id,
@@ -10000,6 +10124,8 @@
                             ? `${ros} ROs this month`
                             : `${formatCurrency(metrics.grossRo)} Gross/RO vs ${formatCurrency(line.target)} line`
                     };
+                    row.diagnosis = accountabilityDiagnose(row);
+                    return row;
                 });
 
                 const currentTechAgg = aggregateTechData(techWeeklyData, allMode, selectedStore, currentRange.start, currentRange.end);
@@ -10033,7 +10159,7 @@
                     });
                     const streak = accountabilityStreak(status.tone, tones);
                     const statusLabel = accountabilityStatusLabel(status, streak);
-                    return {
+                    const row = {
                         kind: 'tech',
                         person: tech.name,
                         role: tech.roleLabel,
@@ -10052,6 +10178,8 @@
                             ? 'No month-end tech entry yet'
                             : `${metrics.productivity.toFixed(1)}% productivity / ${metrics.efficiency.toFixed(1)}% efficiency`
                     };
+                    row.diagnosis = accountabilityDiagnose(row);
+                    return row;
                 });
 
                 const allPeople = advisorRows.concat(techRows);
@@ -10138,12 +10266,14 @@
                             <td style="font-weight:700;">${accountabilityEscape(row.person)}<br><span style="font-size:11px;color:#777;">${accountabilityEscape(row.store)}</span></td>
                             <td>${row.kind === 'advisor' ? 'Advisor' : accountabilityEscape(row.role)}</td>
                             <td class="accountability-action">${accountabilityEscape(row.why)}</td>
+                            <td class="accountability-action"><strong>${accountabilityEscape(row.diagnosis?.label || 'Needs review')}</strong><br><span style="font-size:11px;color:#777;">${accountabilityEscape(row.diagnosis?.detail || '')}</span></td>
                             <td class="accountability-action">${accountabilityTrainingLinks(row)}</td>
                             <td class="accountability-action">${accountabilityEscape(accountabilityImprovementPlan(row))}</td>
+                            <td class="accountability-action">${accountabilityCoachingFormLink()}</td>
                             <td>${accountabilityEscape(planDueDate)}</td>
                         </tr>
                     `).join('')
-                    : '<tr><td colspan="6" class="empty-state">No below-line improvement plans needed for this month.</td></tr>';
+                    : '<tr><td colspan="8" class="empty-state">No below-line improvement plans needed for this month.</td></tr>';
 
                 document.getElementById('accountabilityAdvisorBody').innerHTML = advisorRows.length
                     ? advisorRows.sort((a, b) => {
