@@ -10011,6 +10011,12 @@
                         : rows.some(r => r.status.tone === 'above') ? 'above'
                         : 'low';
                     const toneToLabel = tone => tone === 'above' ? 'Above' : tone === 'below' ? 'Below' : tone === 'watch' ? 'Watch' : 'Low data';
+                    const statusCountBadge = (rows, tone) => {
+                        const total = rows.length;
+                        if (!total) return accountabilityBadge('No staff', 'low');
+                        const count = rows.filter(r => r.status.tone === tone).length;
+                        return accountabilityBadge(`${toneToLabel(tone)} · ${count} of ${total}`, tone);
+                    };
                     const advTone = worstTone(sAdv);
                     const techTone = worstTone(sTech);
                     const storeLine = accountabilityAdvisorLine(store.id, month, year, rawGoals);
@@ -10024,8 +10030,8 @@
                     return `
                         <tr>
                             <td style="font-weight:700;">${accountabilityEscape(store.code || store.name)}</td>
-                            <td>${accountabilityBadge(toneToLabel(advTone), advTone)}</td>
-                            <td>${accountabilityBadge(toneToLabel(techTone), techTone)}</td>
+                            <td>${statusCountBadge(sAdv, advTone)}</td>
+                            <td>${statusCountBadge(sTech, techTone)}</td>
                             <td>${accountabilityEscape(storeLine.source)} · ${formatCurrency(storeLine.target)}</td>
                             <td class="accountability-action">${accountabilityEscape(action)}</td>
                         </tr>
