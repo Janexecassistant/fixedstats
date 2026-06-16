@@ -1468,7 +1468,19 @@
                         <li><button class="nav-dropdown-item" data-tab="executive" data-group="dashboard" data-sub="All">All Departments</button></li>
                     </ul>
                 </li>
-                <li class="nav-tab"><button class="nav-btn" id="accountabilityTab" data-tab="accountability">Accountability</button></li>
+                <!-- Accountability group -->
+                <li class="nav-tab nav-dropdown" id="navGroupAccountability" data-group="accountability">
+                    <button class="nav-btn nav-dropdown-toggle" type="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="nav-label">Accountability</span>
+                        <span class="nav-sub" id="navAccountabilitySub">Service</span>
+                        <span class="nav-caret">▾</span>
+                    </button>
+                    <ul class="nav-dropdown-menu">
+                        <li><button class="nav-dropdown-item active" data-tab="accountability" data-group="accountability" data-sub="Service">Service</button></li>
+                        <li><button class="nav-dropdown-item" data-tab="partsAccountability" data-group="accountability" data-sub="Parts">Parts</button></li>
+                        <li><button class="nav-dropdown-item" data-tab="collisionAccountability" data-group="accountability" data-sub="Collision">Collision</button></li>
+                    </ul>
+                </li>
                 <!-- Advisors group -->
                 <li class="nav-tab nav-dropdown" id="navGroupAdvisor" data-group="advisor">
                     <button class="nav-btn nav-dropdown-toggle" type="button" aria-haspopup="true" aria-expanded="false">
@@ -2376,6 +2388,148 @@
                         <tbody id="accountabilityTechBody">
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: PARTS ACCOUNTABILITY -->
+        <div id="partsAccountability" class="tab-content">
+            <div class="controls" style="margin-bottom:16px;">
+                <div class="control-group">
+                    <label>Month / Year</label>
+                    <input type="month" id="partsAccountabilityMonthPicker">
+                </div>
+            </div>
+
+            <div class="accountability-summary" id="partsAccountabilitySummaryCards">
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">Parts Accountability Snapshot</h3>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Same live data as the Parts dashboard. Lines come from Goals &amp; Settings → Parts Department Goals.</p>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Store</th>
+                                <th>Overall</th>
+                                <th>Total Parts</th>
+                                <th>Wholesale</th>
+                                <th>Counter</th>
+                                <th>GP / Obso</th>
+                                <th>Action by Friday</th>
+                            </tr>
+                        </thead>
+                        <tbody id="partsAccountabilityStoreBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="accountability-two-col">
+                <div class="card">
+                    <h3 class="card-title">Parts Follow-Up</h3>
+                    <div style="overflow-x:auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Store</th>
+                                    <th>Metric</th>
+                                    <th>Status</th>
+                                    <th>Why</th>
+                                    <th>Next Step</th>
+                                </tr>
+                            </thead>
+                            <tbody id="partsAccountabilityFollowupBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">Parts Line Rules</h3>
+                    <div style="overflow-x:auto;">
+                        <table>
+                            <tbody>
+                                <tr><td><strong>Total / Wholesale / Counter</strong></td><td>Projected month-end dollars vs Parts goals</td></tr>
+                                <tr><td><strong>Counter Gross %</strong></td><td>At or above the GP% goal, default 42%</td></tr>
+                                <tr><td><strong>Obsolescence %</strong></td><td>At or below the obso% goal, default 9%</td></tr>
+                                <tr><td><strong>Watch</strong></td><td>Close to the line and worth manager attention</td></tr>
+                                <tr><td><strong>Low data</strong></td><td>No current Parts entry or no usable goal</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: COLLISION ACCOUNTABILITY -->
+        <div id="collisionAccountability" class="tab-content">
+            <div class="controls" style="margin-bottom:16px;">
+                <div class="control-group">
+                    <label>Month / Year</label>
+                    <input type="month" id="collisionAccountabilityMonthPicker">
+                </div>
+            </div>
+
+            <div class="accountability-summary" id="collisionAccountabilitySummaryCards">
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">Collision Accountability Snapshot</h3>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Same live data as the Collision dashboard. Lines come from Goals &amp; Settings → Collision Department Goals.</p>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Store</th>
+                                <th>Overall</th>
+                                <th>Sales</th>
+                                <th>Gross</th>
+                                <th>Gross %</th>
+                                <th>K2K / Aging</th>
+                                <th>Action by Friday</th>
+                            </tr>
+                        </thead>
+                        <tbody id="collisionAccountabilityStoreBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="accountability-two-col">
+                <div class="card">
+                    <h3 class="card-title">Collision Follow-Up</h3>
+                    <div style="overflow-x:auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Store</th>
+                                    <th>Metric</th>
+                                    <th>Status</th>
+                                    <th>Why</th>
+                                    <th>Next Step</th>
+                                </tr>
+                            </thead>
+                            <tbody id="collisionAccountabilityFollowupBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">Collision Line Rules</h3>
+                    <div style="overflow-x:auto;">
+                        <table>
+                            <tbody>
+                                <tr><td><strong>Sales / Gross</strong></td><td>Projected month-end dollars vs Collision goals</td></tr>
+                                <tr><td><strong>Gross %</strong></td><td>At or above the store's gross % goal</td></tr>
+                                <tr><td><strong>Keys-to-Keys</strong></td><td>At or below the K2K target</td></tr>
+                                <tr><td><strong>Aging money</strong></td><td>Receivables, cash clearing, and sublet at or below ceilings</td></tr>
+                                <tr><td><strong>Low data</strong></td><td>No current Collision entry or no usable goal</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -4282,6 +4436,8 @@
             else if (tabId === 'collisionDaily') loadCollisionDailyEntry();
             else if (tabId === 'dashboard') loadDashboard();
             else if (tabId === 'accountability') loadAccountability();
+            else if (tabId === 'partsAccountability') loadPartsAccountability();
+            else if (tabId === 'collisionAccountability') loadCollisionAccountability();
             else if (tabId === 'parts') loadPartsDashboard();
             else if (tabId === 'collisionDashboard') loadCollisionDashboard();
             else if (tabId === 'executive') loadExecutive();
@@ -5415,9 +5571,14 @@
                 else if (activeTab === 'collisionDaily') loadCollisionDailyEntry();
                 else if (activeTab === 'dashboard') loadDashboard();
                 else if (activeTab === 'accountability') loadAccountability();
+                else if (activeTab === 'partsAccountability') loadPartsAccountability();
+                else if (activeTab === 'collisionAccountability') loadCollisionAccountability();
                 else if (activeTab === 'parts') loadPartsDashboard();
+                else if (activeTab === 'collisionDashboard') loadCollisionDashboard();
                 else if (activeTab === 'executive') loadExecutive();
                 else if (activeTab === 'advisor') loadAdvisor();
+                else if (activeTab === 'partsRoster') { if (typeof loadPartsRosterPerf === 'function') loadPartsRosterPerf(); }
+                else if (activeTab === 'collisionRoster') loadCollisionRoster();
                 else if (activeTab === 'goals') loadGoals();
                 else if (activeTab === 'roster') loadRoster();
                 else if (activeTab === 'admin') loadStaffManagement();
@@ -5591,6 +5752,16 @@
             if (accountabilityMP) {
                 accountabilityMP.value = currentMonthStr;
                 accountabilityMP.addEventListener('change', loadAccountability);
+            }
+            const partsAccountabilityMP = document.getElementById('partsAccountabilityMonthPicker');
+            if (partsAccountabilityMP) {
+                partsAccountabilityMP.value = currentMonthStr;
+                partsAccountabilityMP.addEventListener('change', loadPartsAccountability);
+            }
+            const collisionAccountabilityMP = document.getElementById('collisionAccountabilityMonthPicker');
+            if (collisionAccountabilityMP) {
+                collisionAccountabilityMP.value = currentMonthStr;
+                collisionAccountabilityMP.addEventListener('change', loadCollisionAccountability);
             }
 
             // Parts Roster month picker — defaults to current month, re-renders on change
@@ -9915,6 +10086,407 @@
             } catch (error) {
                 console.error('Accountability load error:', error);
                 showToast('Failed to load accountability data', 'error');
+            }
+        }
+
+        function accountabilityParseMonth(pickerId) {
+            const picker = document.getElementById(pickerId);
+            const now = new Date();
+            if (picker && !picker.value) {
+                picker.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            }
+            const [year, month] = (picker?.value || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`)
+                .split('-').map(Number);
+            return { year, month };
+        }
+
+        function accountabilityScopedStores(onlyCollision) {
+            const selectedStore = getSelectedStore();
+            const allMode = selectedStore === 'all';
+            let scoped = allMode ? stores : stores.filter(s => s.id === selectedStore);
+            if (onlyCollision) scoped = scoped.filter(s => COLLISION_STORE_IDS.includes(s.id));
+            return { selectedStore, allMode, scoped };
+        }
+
+        function accountabilityLatestByStore(entries) {
+            const latest = {};
+            (entries || []).forEach(entry => {
+                const prev = latest[entry.store_id];
+                if (!prev || entry.entry_date > prev.entry_date) latest[entry.store_id] = entry;
+            });
+            return latest;
+        }
+
+        function accountabilityProjectedMonthEnd(actual, entry, year, month) {
+            const value = parseFloat(actual) || 0;
+            if (isClosedMonth(year, month)) return value;
+            const entryDate = entry?.entry_date ? new Date(entry.entry_date + 'T12:00:00') : new Date(year, month - 1, 1);
+            const dayNum = parseInt(entry?.day_number) || getWorkingDayOfMonth(entryDate);
+            const daysInMonth = parseInt(entry?.days_in_month) || getWorkingDaysInMonth(year, month).totalDays;
+            return (dayNum > 0 && daysInMonth > 0) ? (value / dayNum) * daysInMonth : value;
+        }
+
+        function accountabilityMetricStatus(value, line, direction) {
+            const actual = parseFloat(value);
+            const target = parseFloat(line);
+            if (!Number.isFinite(actual)) return { tone: 'low', label: 'Low data' };
+            if (!Number.isFinite(target) || target <= 0) {
+                if (direction === 'down' && target === 0) {
+                    return actual <= 0 ? { tone: 'above', label: 'Above' } : { tone: 'below', label: 'Below' };
+                }
+                return { tone: 'low', label: 'No line' };
+            }
+            if (direction === 'down') {
+                if (actual <= target) return { tone: 'above', label: 'Above' };
+                if (actual <= target * 1.1) return { tone: 'watch', label: 'Watch' };
+                return { tone: 'below', label: 'Below' };
+            }
+            if (actual >= target) return { tone: 'above', label: 'Above' };
+            if (actual >= target * 0.9) return { tone: 'watch', label: 'Watch' };
+            return { tone: 'below', label: 'Below' };
+        }
+
+        function accountabilityWorstStatus(statuses) {
+            const rank = { below: 0, watch: 1, low: 2, above: 3 };
+            return (statuses || [])
+                .filter(Boolean)
+                .sort((a, b) => (rank[a.tone] ?? 9) - (rank[b.tone] ?? 9))[0] || { tone: 'low', label: 'Low data' };
+        }
+
+        function accountabilitySimpleSummary(rows, targetId) {
+            const counts = (rows || []).reduce((acc, row) => {
+                const tone = row.overall?.tone || 'low';
+                acc[tone] = (acc[tone] || 0) + 1;
+                return acc;
+            }, { above: 0, watch: 0, below: 0, low: 0 });
+            const el = document.getElementById(targetId);
+            if (!el) return;
+            el.innerHTML = `
+                <div class="accountability-card"><div class="label">Above Line</div><div class="value">${counts.above || 0}</div><div class="note">Store is meeting the line</div></div>
+                <div class="accountability-card"><div class="label">Watch</div><div class="value">${counts.watch || 0}</div><div class="note">Close, but needs attention</div></div>
+                <div class="accountability-card"><div class="label">Below Line</div><div class="value">${counts.below || 0}</div><div class="note">Needs manager follow-up</div></div>
+                <div class="accountability-card"><div class="label">Low Data</div><div class="value">${counts.low || 0}</div><div class="note">Missing entry or line</div></div>
+            `;
+        }
+
+        function accountabilityLineSource(goal, label) {
+            if (!goal) return 'No goal set';
+            if (goal._carriedForward) return `${label} carried from ${goal._carriedFromMonth}/${goal._carriedFromYear}`;
+            return `${label} current month`;
+        }
+
+        function partsAccountabilityAction(row) {
+            if (!row.entry) return 'Enter current Parts numbers or confirm the store has no report yet.';
+            const worst = row.followups.find(f => f.status.tone === 'below') || row.followups.find(f => f.status.tone === 'watch');
+            if (!worst) return 'Recognize consistency and keep checking pace weekly.';
+            if (worst.status.tone === 'below') return `Review ${worst.metric} gap with Parts Manager and set a recovery target.`;
+            return `Inspect ${worst.metric} now while the month can still be corrected.`;
+        }
+
+        function partsMetricNextStep(metric) {
+            if (metric === 'Counter Gross %') return 'Review discounting, matrix discipline, and counter quote habits.';
+            if (metric === 'Obsolescence %') return 'Assign aging cleanup and review obsolete return/write-off plan.';
+            if (metric === 'Counter') return 'Check counter person pace, daily quote follow-up, and walk-in capture.';
+            if (metric === 'Wholesale') return 'Review wholesale call cadence, account activity, and fill-rate barriers.';
+            return 'Review daily pace, open opportunities, and what must change this week.';
+        }
+
+        function buildPartsAccountabilityRow(store, month, year, entries, goals) {
+            const storeEntries = entries.filter(e => e.store_id === store.id);
+            const entry = accountabilityLatestByStore(storeEntries)[store.id] || null;
+            const goal = goals.find(g => g.store_id === store.id) || null;
+            if (!entry) {
+                const overall = { tone: 'low', label: 'Low data' };
+                return { store, entry, goal, overall, metrics: [], followups: [], action: partsAccountabilityAction({ entry, followups: [] }) };
+            }
+
+            const breakdown = counterBreakdownForEntry(entry) || {};
+            let counterSales = 0, counterGross = 0;
+            Object.values(breakdown).forEach(v => {
+                counterSales += parseFloat(v.sales) || 0;
+                counterGross += parseFloat(v.gross) || 0;
+            });
+            const serviceSales = parseFloat(entry.service_parts) || 0;
+            const wholesaleSales = parseFloat(entry.wholesale) || 0;
+            const totalSales = parseFloat(entry.total_parts_sales) || (serviceSales + wholesaleSales + counterSales);
+            const inventory = parseFloat(entry.inventory) || 0;
+            const obso = parseFloat(entry.obso) || 0;
+
+            const totalProjected = accountabilityProjectedMonthEnd(totalSales, entry, year, month);
+            const wholesaleProjected = accountabilityProjectedMonthEnd(wholesaleSales, entry, year, month);
+            const counterProjected = accountabilityProjectedMonthEnd(counterSales, entry, year, month);
+            const counterGpPct = counterSales > 0 ? (counterGross / counterSales) * 100 : NaN;
+            const obsoPct = inventory > 0 ? (obso / inventory) * 100 : NaN;
+
+            const counterGpGoal = goal?.parts_counter_gp_goal != null ? parseFloat(goal.parts_counter_gp_goal) : 42;
+            const obsoPctGoal = goal?.parts_obso_pct_goal != null ? parseFloat(goal.parts_obso_pct_goal) : 9;
+            const metrics = [
+                {
+                    metric: 'Total Parts',
+                    value: totalProjected,
+                    line: parseFloat(goal?.parts_total_goal) || 0,
+                    status: accountabilityMetricStatus(totalProjected, goal?.parts_total_goal, 'up'),
+                    why: `${formatCurrency(totalProjected)} projected vs ${formatCurrency(goal?.parts_total_goal || 0)} line`
+                },
+                {
+                    metric: 'Wholesale',
+                    value: wholesaleProjected,
+                    line: parseFloat(goal?.parts_wholesale_goal) || 0,
+                    status: accountabilityMetricStatus(wholesaleProjected, goal?.parts_wholesale_goal, 'up'),
+                    why: `${formatCurrency(wholesaleProjected)} projected vs ${formatCurrency(goal?.parts_wholesale_goal || 0)} line`
+                },
+                {
+                    metric: 'Counter',
+                    value: counterProjected,
+                    line: parseFloat(goal?.parts_counter_goal) || 0,
+                    status: accountabilityMetricStatus(counterProjected, goal?.parts_counter_goal, 'up'),
+                    why: `${formatCurrency(counterProjected)} projected vs ${formatCurrency(goal?.parts_counter_goal || 0)} line`
+                },
+                {
+                    metric: 'Counter Gross %',
+                    value: counterGpPct,
+                    line: counterGpGoal,
+                    status: accountabilityMetricStatus(counterGpPct, counterGpGoal, 'up'),
+                    why: `${Number.isFinite(counterGpPct) ? counterGpPct.toFixed(1) + '%' : 'No counter sales'} vs ${counterGpGoal}% line`
+                },
+                {
+                    metric: 'Obsolescence %',
+                    value: obsoPct,
+                    line: obsoPctGoal,
+                    status: accountabilityMetricStatus(obsoPct, obsoPctGoal, 'down'),
+                    why: `${Number.isFinite(obsoPct) ? obsoPct.toFixed(1) + '%' : 'No inventory'} vs ${obsoPctGoal}% ceiling`
+                }
+            ];
+            const overall = accountabilityWorstStatus(metrics.map(m => m.status));
+            const followups = metrics
+                .filter(m => m.status.tone === 'below' || m.status.tone === 'watch')
+                .map(m => ({ store, metric: m.metric, status: m.status, why: m.why, next: partsMetricNextStep(m.metric) }));
+            const row = { store, entry, goal, overall, metrics, followups };
+            row.action = partsAccountabilityAction(row);
+            row.source = accountabilityLineSource(goal, 'Parts goals');
+            return row;
+        }
+
+        async function loadPartsAccountability() {
+            try {
+                const { month, year } = accountabilityParseMonth('partsAccountabilityMonthPicker');
+                const { scoped } = accountabilityScopedStores(false);
+                const range = accountabilityMonthRange(year, month);
+                const goals = await LS.getEffectivePartsGoals(month, year);
+                const entries = (await LS.getPartsEntries()).filter(e =>
+                    e.entry_date >= range.start && e.entry_date <= range.end
+                );
+                const rows = scoped.map(store => buildPartsAccountabilityRow(store, month, year, entries, goals));
+                accountabilitySimpleSummary(rows, 'partsAccountabilitySummaryCards');
+
+                const body = document.getElementById('partsAccountabilityStoreBody');
+                if (body) {
+                    body.innerHTML = rows.length ? rows.map(row => {
+                        const byMetric = Object.fromEntries(row.metrics.map(m => [m.metric, m]));
+                        const metricBadge = (name, display) => byMetric[name]
+                            ? `${accountabilityBadge(display, byMetric[name].status.tone)}<br><span style="font-size:11px;color:#777;">${accountabilityEscape(byMetric[name].why)}</span>`
+                            : accountabilityBadge('Low data', 'low');
+                        const gp = byMetric['Counter Gross %'];
+                        const obso = byMetric['Obsolescence %'];
+                        const gpObso = row.entry
+                            ? `${accountabilityBadge('GP ' + (Number.isFinite(gp.value) ? gp.value.toFixed(1) + '%' : '—'), gp.status.tone)} ${accountabilityBadge('Obso ' + (Number.isFinite(obso.value) ? obso.value.toFixed(1) + '%' : '—'), obso.status.tone)}`
+                            : accountabilityBadge('Low data', 'low');
+                        return `
+                            <tr>
+                                <td style="font-weight:700;">${accountabilityEscape(row.store.code || row.store.name)}<br><span style="font-size:11px;color:#777;">${accountabilityEscape(row.source || 'No current entry')}</span></td>
+                                <td>${accountabilityBadge(row.overall.label, row.overall.tone)}</td>
+                                <td>${metricBadge('Total Parts', 'Total')}</td>
+                                <td>${metricBadge('Wholesale', 'Wholesale')}</td>
+                                <td>${metricBadge('Counter', 'Counter')}</td>
+                                <td>${gpObso}</td>
+                                <td class="accountability-action">${accountabilityEscape(row.action)}</td>
+                            </tr>
+                        `;
+                    }).join('') : '<tr><td colspan="7" class="empty-state">No stores available for this scope.</td></tr>';
+                }
+
+                const followups = rows.flatMap(r => r.followups).slice(0, 10);
+                const followupBody = document.getElementById('partsAccountabilityFollowupBody');
+                if (followupBody) {
+                    followupBody.innerHTML = followups.length ? followups.map(f => `
+                        <tr>
+                            <td style="font-weight:700;">${accountabilityEscape(f.store.code || f.store.name)}</td>
+                            <td>${accountabilityEscape(f.metric)}</td>
+                            <td>${accountabilityBadge(f.status.label, f.status.tone)}</td>
+                            <td class="accountability-action">${accountabilityEscape(f.why)}</td>
+                            <td class="accountability-action">${accountabilityEscape(f.next)}</td>
+                        </tr>
+                    `).join('') : '<tr><td colspan="5" class="empty-state">No Parts follow-up items for this month.</td></tr>';
+                }
+            } catch (error) {
+                console.error('Parts accountability load error:', error);
+                showToast('Failed to load parts accountability', 'error');
+            }
+        }
+
+        function collisionAccountabilityAction(row) {
+            if (!row.entry) return 'Enter current Collision numbers or switch to DCVB / DCFP.';
+            const worst = row.followups.find(f => f.status.tone === 'below') || row.followups.find(f => f.status.tone === 'watch');
+            if (!worst) return 'Recognize consistency and keep checking pace weekly.';
+            if (worst.status.tone === 'below') return `Assign owner for ${worst.metric} and review recovery plan.`;
+            return `Inspect ${worst.metric} before it turns into a below-line issue.`;
+        }
+
+        function collisionMetricNextStep(metric) {
+            if (metric === 'Keys-to-Keys') return 'Review parts delays, estimator handoffs, and delivery bottlenecks.';
+            if (metric === 'Gross %') return 'Review estimate quality, supplement capture, sublet, and material mix.';
+            if (metric === 'Aging Money') return 'Assign owners for receivables, cash clearing, and sublet cleanup.';
+            if (metric === 'Gross') return 'Review repair mix, supplement capture, and production flow.';
+            return 'Review daily pace, delivered-not-closed work, and what must change this week.';
+        }
+
+        function buildCollisionAccountabilityRow(store, month, year, entries, goals) {
+            const storeEntries = entries.filter(e => e.store_id === store.id);
+            const entry = accountabilityLatestByStore(storeEntries)[store.id] || null;
+            const goal = goals.find(g => g.store_id === store.id) || null;
+            if (!entry) {
+                const overall = { tone: 'low', label: 'Low data' };
+                return { store, entry, goal, overall, metrics: [], followups: [], action: collisionAccountabilityAction({ entry, followups: [] }) };
+            }
+
+            const sales = parseFloat(entry.total_sales) || 0;
+            const gross = parseFloat(entry.collision_gross) || 0;
+            const projectedSales = accountabilityProjectedMonthEnd(sales, entry, year, month);
+            const projectedGross = accountabilityProjectedMonthEnd(gross, entry, year, month);
+            const grossPct = sales > 0 ? (gross / sales) * 100 : NaN;
+            let k2kSum = 0, k2kSamples = 0;
+            storeEntries.forEach(e => {
+                Object.values(e.estimator_breakdown || {}).forEach(v => {
+                    const k = parseFloat(v.keys_to_keys);
+                    if (Number.isFinite(k)) { k2kSum += k; k2kSamples++; }
+                });
+            });
+            const k2k = k2kSamples > 0 ? k2kSum / k2kSamples : NaN;
+            const agingTotal =
+                (parseFloat(entry.body_shop_receivables) || 0) +
+                (parseFloat(entry.cash_clearing) || 0) +
+                (parseFloat(entry.body_shop_sublet) || 0);
+            const agingCeiling =
+                (parseFloat(goal?.receivables_ceiling) || 0) +
+                (parseFloat(goal?.cash_clearing_ceiling) || 0) +
+                (parseFloat(goal?.sublet_ceiling) || 0);
+            const agingStatus = agingCeiling > 0
+                ? accountabilityMetricStatus(agingTotal, agingCeiling, 'down')
+                : accountabilityMetricStatus(agingTotal, 0, 'down');
+
+            const grossPctGoal = parseFloat(goal?.collision_gross_pct_goal) || 0;
+            const k2kTarget = parseFloat(goal?.k2k_target) || 0;
+            const metrics = [
+                {
+                    metric: 'Sales',
+                    value: projectedSales,
+                    line: parseFloat(goal?.collision_sales_goal) || 0,
+                    status: accountabilityMetricStatus(projectedSales, goal?.collision_sales_goal, 'up'),
+                    why: `${formatCurrency(projectedSales)} projected vs ${formatCurrency(goal?.collision_sales_goal || 0)} line`
+                },
+                {
+                    metric: 'Gross',
+                    value: projectedGross,
+                    line: parseFloat(goal?.collision_gross_goal) || 0,
+                    status: accountabilityMetricStatus(projectedGross, goal?.collision_gross_goal, 'up'),
+                    why: `${formatCurrency(projectedGross)} projected vs ${formatCurrency(goal?.collision_gross_goal || 0)} line`
+                },
+                {
+                    metric: 'Gross %',
+                    value: grossPct,
+                    line: grossPctGoal,
+                    status: accountabilityMetricStatus(grossPct, grossPctGoal, 'up'),
+                    why: `${Number.isFinite(grossPct) ? grossPct.toFixed(1) + '%' : 'No sales'} vs ${grossPctGoal || 0}% line`
+                },
+                {
+                    metric: 'Keys-to-Keys',
+                    value: k2k,
+                    line: k2kTarget,
+                    status: accountabilityMetricStatus(k2k, k2kTarget, 'down'),
+                    why: `${Number.isFinite(k2k) ? k2k.toFixed(1) + ' days' : 'No K2K data'} vs ${k2kTarget || 0} day target`
+                },
+                {
+                    metric: 'Aging Money',
+                    value: agingTotal,
+                    line: agingCeiling,
+                    status: agingStatus,
+                    why: `${formatCurrency(agingTotal)} aging vs ${agingCeiling > 0 ? formatCurrency(agingCeiling) + ' ceiling' : '$0 clean standard'}`
+                }
+            ];
+            const scoredMetrics = metrics.filter(m => m.status.tone !== 'low');
+            const overall = accountabilityWorstStatus(scoredMetrics.length ? scoredMetrics.map(m => m.status) : metrics.map(m => m.status));
+            const followups = metrics
+                .filter(m => m.status.tone === 'below' || m.status.tone === 'watch')
+                .map(m => ({ store, metric: m.metric, status: m.status, why: m.why, next: collisionMetricNextStep(m.metric) }));
+            const row = { store, entry, goal, overall, metrics, followups };
+            row.action = collisionAccountabilityAction(row);
+            row.source = accountabilityLineSource(goal, 'Collision goals');
+            return row;
+        }
+
+        async function loadCollisionAccountability() {
+            try {
+                const { month, year } = accountabilityParseMonth('collisionAccountabilityMonthPicker');
+                const { selectedStore, allMode, scoped } = accountabilityScopedStores(true);
+                const summaryTarget = document.getElementById('collisionAccountabilitySummaryCards');
+                const body = document.getElementById('collisionAccountabilityStoreBody');
+                const followupBody = document.getElementById('collisionAccountabilityFollowupBody');
+                if (!allMode && !COLLISION_STORE_IDS.includes(selectedStore)) {
+                    if (summaryTarget) summaryTarget.innerHTML = '';
+                    if (body) body.innerHTML = '<tr><td colspan="7" class="empty-state">Collision accountability is for DCVB and DCFP. Switch the store selector to a Collision store or All Stores.</td></tr>';
+                    if (followupBody) followupBody.innerHTML = '<tr><td colspan="5" class="empty-state">No Collision store selected.</td></tr>';
+                    return;
+                }
+
+                const range = accountabilityMonthRange(year, month);
+                const goals = await LS.getEffectiveCollisionGoals(month, year);
+                const entries = (await LS.getCollisionEntries()).filter(e =>
+                    e.entry_date >= range.start && e.entry_date <= range.end &&
+                    COLLISION_STORE_IDS.includes(e.store_id)
+                );
+                const rows = scoped.map(store => buildCollisionAccountabilityRow(store, month, year, entries, goals));
+                accountabilitySimpleSummary(rows, 'collisionAccountabilitySummaryCards');
+
+                if (body) {
+                    body.innerHTML = rows.length ? rows.map(row => {
+                        const byMetric = Object.fromEntries(row.metrics.map(m => [m.metric, m]));
+                        const metricBadge = (name, label) => byMetric[name]
+                            ? `${accountabilityBadge(label, byMetric[name].status.tone)}<br><span style="font-size:11px;color:#777;">${accountabilityEscape(byMetric[name].why)}</span>`
+                            : accountabilityBadge('Low data', 'low');
+                        const k2k = byMetric['Keys-to-Keys'];
+                        const aging = byMetric['Aging Money'];
+                        const k2kAging = row.entry
+                            ? `${accountabilityBadge('K2K ' + (Number.isFinite(k2k.value) ? k2k.value.toFixed(1) : '—'), k2k.status.tone)} ${accountabilityBadge('Aging', aging.status.tone)}`
+                            : accountabilityBadge('Low data', 'low');
+                        return `
+                            <tr>
+                                <td style="font-weight:700;">${accountabilityEscape(row.store.code || row.store.name)}<br><span style="font-size:11px;color:#777;">${accountabilityEscape(row.source || 'No current entry')}</span></td>
+                                <td>${accountabilityBadge(row.overall.label, row.overall.tone)}</td>
+                                <td>${metricBadge('Sales', 'Sales')}</td>
+                                <td>${metricBadge('Gross', 'Gross')}</td>
+                                <td>${metricBadge('Gross %', 'Gross %')}</td>
+                                <td>${k2kAging}</td>
+                                <td class="accountability-action">${accountabilityEscape(row.action)}</td>
+                            </tr>
+                        `;
+                    }).join('') : '<tr><td colspan="7" class="empty-state">No Collision stores available for this scope.</td></tr>';
+                }
+
+                const followups = rows.flatMap(r => r.followups).slice(0, 10);
+                if (followupBody) {
+                    followupBody.innerHTML = followups.length ? followups.map(f => `
+                        <tr>
+                            <td style="font-weight:700;">${accountabilityEscape(f.store.code || f.store.name)}</td>
+                            <td>${accountabilityEscape(f.metric)}</td>
+                            <td>${accountabilityBadge(f.status.label, f.status.tone)}</td>
+                            <td class="accountability-action">${accountabilityEscape(f.why)}</td>
+                            <td class="accountability-action">${accountabilityEscape(f.next)}</td>
+                        </tr>
+                    `).join('') : '<tr><td colspan="5" class="empty-state">No Collision follow-up items for this month.</td></tr>';
+                }
+            } catch (error) {
+                console.error('Collision accountability load error:', error);
+                showToast('Failed to load collision accountability', 'error');
             }
         }
 
