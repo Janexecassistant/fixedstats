@@ -1045,8 +1045,437 @@
             color: #333;
         }
 
+        .daily-pulse-hero {
+            display: grid;
+            grid-template-columns: minmax(280px, 0.95fr) minmax(320px, 1.35fr);
+            gap: 18px;
+            align-items: stretch;
+        }
+
+        .daily-pulse-panel {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .daily-pulse-panel.dark {
+            background:
+                radial-gradient(circle at 22% 26%, rgba(204, 0, 0, 0.12), transparent 34%),
+                linear-gradient(180deg, #ffffff 0%, #fff7f7 54%, #f8fafc 100%);
+            color: #111827;
+            border-color: rgba(204, 0, 0, 0.18);
+            border-left: 4px solid #cc0000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .daily-pulse-panel.dark .daily-pulse-eyebrow,
+        .daily-pulse-panel.dark .daily-pulse-muted {
+            color: #667085;
+        }
+
+        .daily-pulse-panel.dark .card-title {
+            color: #111827 !important;
+        }
+
+        .daily-pulse-visual {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 14px;
+        }
+
+        .pulse-heart {
+            --pulse-color: #cc0000;
+            --pulse-speed: 1.55s;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            background: #fff1f2;
+            color: var(--pulse-color);
+            box-shadow: inset 0 0 0 1px rgba(204, 0, 0, 0.16);
+            flex: 0 0 auto;
+            transition: color 0.25s ease, background-color 0.25s ease, opacity 0.25s ease;
+        }
+
+        .pulse-heart::before,
+        .pulse-heart::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            border: 1px solid rgba(204, 0, 0, 0.34);
+            animation: pulseRing 2.2s ease-out infinite;
+        }
+
+        .pulse-heart::after {
+            animation-delay: 0.72s;
+        }
+
+        .pulse-heart svg {
+            width: 30px;
+            height: 30px;
+            fill: currentColor;
+            filter: drop-shadow(0 4px 8px rgba(204, 0, 0, 0.22));
+            animation: heartBeat var(--pulse-speed) ease-in-out infinite;
+            position: relative;
+            z-index: 1;
+        }
+
+        .pulse-line {
+            --pulse-color: #cc0000;
+            --pulse-speed: 2.4s;
+            width: min(210px, 48vw);
+            height: 42px;
+            color: var(--pulse-color);
+            opacity: 0.9;
+            transition: color 0.25s ease, opacity 0.25s ease;
+        }
+
+        .pulse-line polyline {
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-dasharray: 180;
+            stroke-dashoffset: 180;
+            animation: pulseTrace var(--pulse-speed) linear infinite;
+            transition: stroke-width 0.25s ease;
+        }
+
+        .daily-pulse-panel.pulse-no-data .pulse-heart,
+        .daily-pulse-panel.pulse-no-data .pulse-line {
+            --pulse-color: #94a3b8;
+            opacity: 0.72;
+        }
+
+        .daily-pulse-panel.pulse-flatline .pulse-heart,
+        .daily-pulse-panel.pulse-flatline .pulse-line {
+            --pulse-color: #6b7280;
+            opacity: 0.58;
+        }
+
+        .daily-pulse-panel.pulse-flatline .pulse-heart svg,
+        .daily-pulse-panel.pulse-flatline .pulse-heart::before,
+        .daily-pulse-panel.pulse-flatline .pulse-heart::after,
+        .daily-pulse-panel.pulse-flatline .pulse-line polyline {
+            animation: none;
+        }
+
+        .daily-pulse-panel.pulse-flatline .pulse-line polyline {
+            stroke-width: 2.5;
+            stroke-dasharray: none;
+            stroke-dashoffset: 0;
+        }
+
+        .daily-pulse-panel.pulse-critical .pulse-heart,
+        .daily-pulse-panel.pulse-critical .pulse-line {
+            --pulse-color: #dc2626;
+            --pulse-speed: 2.6s;
+        }
+
+        .daily-pulse-panel.pulse-watch .pulse-heart,
+        .daily-pulse-panel.pulse-watch .pulse-line {
+            --pulse-color: #f59e0b;
+            --pulse-speed: 2s;
+        }
+
+        .daily-pulse-panel.pulse-healthy .pulse-heart,
+        .daily-pulse-panel.pulse-healthy .pulse-line {
+            --pulse-color: #16a34a;
+            --pulse-speed: 1.45s;
+        }
+
+        .daily-pulse-panel.pulse-strong .pulse-heart,
+        .daily-pulse-panel.pulse-strong .pulse-line {
+            --pulse-color: #059669;
+            --pulse-speed: 1.12s;
+        }
+
+        .daily-pulse-panel.pulse-strong .pulse-line polyline {
+            stroke-width: 3.5;
+        }
+
+        @keyframes heartBeat {
+            0%, 42%, 70%, 100% { transform: scale(1); }
+            16% { transform: scale(1.13); }
+            28% { transform: scale(0.97); }
+            54% { transform: scale(1.08); }
+        }
+
+        @keyframes pulseRing {
+            0% { transform: scale(0.88); opacity: 0.45; }
+            76%, 100% { transform: scale(1.62); opacity: 0; }
+        }
+
+        @keyframes pulseTrace {
+            0% { stroke-dashoffset: 180; opacity: 0.1; }
+            18% { opacity: 1; }
+            58% { stroke-dashoffset: 0; opacity: 1; }
+            100% { stroke-dashoffset: -180; opacity: 0.18; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .pulse-heart::before,
+            .pulse-heart::after,
+            .pulse-heart svg,
+            .pulse-line polyline {
+                animation: none;
+            }
+        }
+
+        .daily-pulse-eyebrow {
+            color: #666;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .daily-pulse-score {
+            font-size: 44px;
+            font-weight: 950;
+            line-height: 1;
+            margin: 8px 0;
+        }
+
+        .daily-pulse-muted {
+            color: #666;
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        .daily-pulse-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .daily-pulse-question {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            min-height: 58px;
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #f8fafc;
+        }
+
+        .daily-pulse-question input {
+            width: 18px;
+            height: 18px;
+            margin-top: 1px;
+            accent-color: #cc0000;
+            flex: 0 0 auto;
+        }
+
+        .daily-pulse-question span {
+            color: #1f2937;
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+
+        .daily-pulse-risk-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .daily-pulse-risk-grid .control-group input,
+        .daily-pulse-risk-grid .control-group textarea {
+            min-width: 0;
+            width: 100%;
+        }
+
+        .daily-pulse-risk-grid textarea {
+            min-height: 76px;
+            resize: vertical;
+            border: 1px solid #c0c0c0;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        .daily-pulse-store-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 14px;
+        }
+
+        .daily-pulse-store-card {
+            border: 1px solid #e6e8ec;
+            border-radius: 10px;
+            padding: 16px;
+            background: #ffffff;
+            box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06);
+        }
+
+        .daily-pulse-store-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .daily-pulse-store-card .store-name {
+            color: #111827;
+            font-size: 15px;
+            font-weight: 900;
+            line-height: 1.2;
+        }
+
+        .daily-pulse-store-card .store-meta {
+            color: #667085;
+            font-size: 12px;
+            line-height: 1.4;
+            margin-top: 4px;
+        }
+
+        .pulse-score-pill {
+            min-width: 64px;
+            border-radius: 999px;
+            padding: 6px 10px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        .pulse-score-pill.above {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .pulse-score-pill.watch {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .pulse-score-pill.below {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .pulse-score-pill.low {
+            background: #eef2f7;
+            color: #475467;
+        }
+
+        .daily-pulse-store-card .store-risks {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .pulse-risk-stat {
+            border: 1px solid #eef2f7;
+            border-radius: 8px;
+            background: #f8fafc;
+            padding: 9px 8px;
+            min-width: 0;
+        }
+
+        .pulse-risk-stat .risk-value {
+            color: #111827;
+            font-size: 18px;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .pulse-risk-stat .risk-label {
+            color: #667085;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            margin-top: 5px;
+            white-space: nowrap;
+        }
+
+        .pulse-risk-stat.risk-alert {
+            background: #fff7ed;
+            border-color: #fed7aa;
+        }
+
+        .pulse-risk-stat.risk-alert .risk-value {
+            color: #c2410c;
+        }
+
+        .pulse-risk-stat.risk-danger {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+
+        .pulse-risk-stat.risk-danger .risk-value {
+            color: #b91c1c;
+        }
+
+        .daily-pulse-table {
+            margin-bottom: 0;
+        }
+
+        .daily-pulse-table th {
+            background: #f8fafc;
+            color: #475467;
+            border-color: #e5e7eb;
+            border-bottom: 1px solid #d0d5dd;
+            font-size: 11px;
+        }
+
+        .daily-pulse-table td {
+            border-left: none;
+            border-right: none;
+            border-color: #eef2f7;
+            vertical-align: top;
+        }
+
+        .daily-pulse-table tr:nth-child(even) {
+            background: #ffffff;
+        }
+
+        .pulse-person-name {
+            color: #111827;
+            font-weight: 900;
+        }
+
+        .pulse-person-meta {
+            color: #667085;
+            font-size: 11px;
+            margin-top: 3px;
+        }
+
+        .pulse-risk-line {
+            color: #344054;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .pulse-note {
+            display: block;
+            color: #667085;
+            font-size: 11px;
+            margin-top: 4px;
+            line-height: 1.35;
+        }
+
         @media (max-width: 1000px) {
             .accountability-two-col {
+                grid-template-columns: 1fr;
+            }
+
+            .daily-pulse-hero {
                 grid-template-columns: 1fr;
             }
         }
@@ -2351,17 +2780,111 @@
 
         <!-- TAB: ACCOUNTABILITY -->
         <div id="accountability" class="tab-content">
-            <div class="controls" style="margin-bottom:16px;">
+            <div class="card" id="dailyPulseCard">
+                <div class="daily-pulse-hero">
+                    <div class="daily-pulse-panel dark">
+                        <div class="daily-pulse-visual" aria-hidden="true">
+                            <span class="pulse-heart">
+                                <svg viewBox="0 0 24 24" focusable="false">
+                                    <path d="M12 21s-6.8-4.3-9.4-8.2C.7 10 .9 6.6 3.2 4.7c2.1-1.8 5.1-1.3 6.8.7 1.7-2 4.7-2.5 6.8-.7 2.3 1.9 2.5 5.3.6 8.1C18.8 16.7 12 21 12 21z"></path>
+                                </svg>
+                            </span>
+                            <svg class="pulse-line" viewBox="0 0 220 44" focusable="false">
+                                <polyline id="dailyPulseWave" points="4,23 34,23 46,23 55,10 67,34 80,23 105,23 117,15 130,30 143,23 216,23"></polyline>
+                            </svg>
+                        </div>
+                        <div class="daily-pulse-eyebrow">Leading Indicators</div>
+                        <h3 class="card-title" style="margin-bottom:6px;">Daily Pulse</h3>
+                        <div class="daily-pulse-muted">
+                            A short end-of-shift check-in that catches customer contact, Numa backlog, MPI follow-through, and survey risk before those behaviors turn into lower Gross/RO or NPS.
+                        </div>
+                        <div id="dailyPulseTodayScore" class="daily-pulse-score">—</div>
+                        <div id="dailyPulseTodayNote" class="daily-pulse-muted">No pulse submitted for this scope yet.</div>
+                    </div>
+
+                    <div class="daily-pulse-panel">
+                        <div class="daily-pulse-eyebrow">End of shift</div>
+                        <div class="controls" style="margin-bottom:10px;">
+                            <div class="control-group">
+                                <label>Date</label>
+                                <input type="date" id="dailyPulseDate">
+                            </div>
+                            <div class="control-group">
+                                <label>Role</label>
+                                <select id="dailyPulseRole">
+                                    <option value="service_advisor">Service Advisor</option>
+                                    <option value="technician">Technician</option>
+                                    <option value="lube_tech">Lube Tech</option>
+                                    <option value="parts_counter">Parts Counter</option>
+                                    <option value="estimator">Collision Estimator</option>
+                                    <option value="manager">Manager</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <label>Team Member</label>
+                                <select id="dailyPulsePerson"></select>
+                            </div>
+                        </div>
+                        <div id="dailyPulseQuestions" class="daily-pulse-grid"></div>
+                        <div class="daily-pulse-risk-grid">
+                            <div class="control-group">
+                                <label id="dailyPulseRiskOneLabel">Open Numa / calls</label>
+                                <input type="number" min="0" id="dailyPulseRiskOne" value="0">
+                            </div>
+                            <div class="control-group">
+                                <label id="dailyPulseRiskTwoLabel">At-risk customers</label>
+                                <input type="number" min="0" id="dailyPulseRiskTwo" value="0">
+                            </div>
+                            <div class="control-group">
+                                <label id="dailyPulseRiskThreeLabel">Stalled ROs</label>
+                                <input type="number" min="0" id="dailyPulseRiskThree" value="0">
+                            </div>
+                            <div class="control-group">
+                                <label>Manager notes</label>
+                                <textarea id="dailyPulseNotes" placeholder="Anything that needs manager review before tomorrow?"></textarea>
+                            </div>
+                        </div>
+                        <div class="btn-group" style="margin-top:14px;margin-bottom:0;">
+                            <button class="btn" id="saveDailyPulseBtn" type="button">Submit Daily Pulse</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="dailyPulseManagerCard">
+                <div class="line-rules-header">
+                    <h3 class="card-title">Process Health Today</h3>
+                    <div class="line-rules-note">Leading indicators only</div>
+                </div>
+                <div id="dailyPulseStoreGrid" class="daily-pulse-store-grid"></div>
+                <div style="overflow-x:auto;margin-top:16px;">
+                    <table class="daily-pulse-table">
+                        <thead>
+                            <tr>
+                                <th>Team Member</th>
+                                <th>Role</th>
+                                <th>Store</th>
+                                <th>Pulse</th>
+                                <th>Open Risks</th>
+                                <th>Manager Move</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dailyPulseTeamBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="controls accountability-manager-only" style="margin-bottom:16px;">
                 <div class="control-group">
                     <label>Month / Year</label>
                     <input type="month" id="accountabilityMonthPicker">
                 </div>
             </div>
 
-            <div class="accountability-summary" id="accountabilitySummaryCards">
+            <div class="accountability-summary accountability-manager-only" id="accountabilitySummaryCards">
             </div>
 
-            <div class="card line-rules-card">
+            <div class="card line-rules-card accountability-manager-only">
                 <div class="line-rules-header">
                     <h3 class="card-title">Line Rules</h3>
                     <div class="line-rules-note">Targets used for above / below status</div>
@@ -2375,7 +2898,7 @@
                 </div>
             </div>
 
-            <div class="card">
+            <div class="card accountability-manager-only">
                 <h3 class="card-title">Store Accountability Snapshot</h3>
                 <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Same live data as the dashboard. The line is pulled from Goals &amp; Settings first, with low-volume rows grayed out instead of over-called.</p>
                 <div style="overflow-x:auto;">
@@ -2395,7 +2918,7 @@
                 </div>
             </div>
 
-            <div class="card">
+            <div class="card accountability-manager-only">
                 <h3 class="card-title">Manager Follow-Up</h3>
                 <div style="overflow-x:auto;">
                     <table>
@@ -2415,7 +2938,7 @@
                 </div>
             </div>
 
-            <div class="card">
+            <div class="card accountability-manager-only">
                 <h3 class="card-title">Improvement Plans</h3>
                 <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Below-line people get a simple plan: training, manager review, practice, and a due date.</p>
                 <div style="overflow-x:auto;">
@@ -2438,7 +2961,7 @@
                 </div>
             </div>
 
-            <div class="card">
+            <div class="card accountability-manager-only">
                 <h3 class="card-title">Advisor Accountability — Current Month</h3>
                 <div style="overflow-x:auto;">
                     <table>
@@ -2460,7 +2983,7 @@
                 </div>
             </div>
 
-            <div class="card">
+            <div class="card accountability-manager-only">
                 <h3 class="card-title">Technician Accountability — Current Month</h3>
                 <div style="overflow-x:auto;">
                     <table>
@@ -3815,22 +4338,26 @@
                     }
                 });
             } else if (currentUser.role === 'advisor') {
-                // Advisors: only see the Advisors → Service tab. Hide every other nav element
-                // (dropdown toggles for Daily Entry / Dashboard included), keep just the
-                // Advisors dropdown trimmed to a single Service item.
+                // Advisors: see their Advisor scorecard and the Daily Pulse check-in only.
                 adminTab.style.display = 'none';
                 if (goalsTab) goalsTab.style.display = 'none';
                 if (facilityBaysGroup) facilityBaysGroup.style.display = 'none';
                 if (saveFacilityBtn) saveFacilityBtn.style.display = 'none';
                 if (baysKpiCard) baysKpiCard.style.display = 'none';
 
-                // Hide every nav-tab li except the Advisors dropdown
+                // Hide every nav-tab li except Advisors and Accountability.
                 document.querySelectorAll('.nav-tab').forEach(li => {
-                    if (li.id !== 'navGroupAdvisor') li.style.display = 'none';
+                    if (li.id !== 'navGroupAdvisor' && li.id !== 'navGroupAccountability') li.style.display = 'none';
                 });
-                // Hide non-Service items inside the Advisors dropdown
+                // Hide non-Service items inside both exposed dropdowns.
                 document.querySelectorAll('#navGroupAdvisor .nav-dropdown-item').forEach(item => {
                     if (item.dataset.tab !== 'advisor') {
+                        const liParent = item.closest('li');
+                        if (liParent) liParent.style.display = 'none';
+                    }
+                });
+                document.querySelectorAll('#navGroupAccountability .nav-dropdown-item').forEach(item => {
+                    if (item.dataset.tab !== 'accountability') {
                         const liParent = item.closest('li');
                         if (liParent) liParent.style.display = 'none';
                     }
@@ -3838,27 +4365,33 @@
 
                 setNavActiveState('advisor');
 
-                // Advisors are read-only — they view their own performance but don't edit
+                // Advisors are read-only except for their Daily Pulse check-in.
                 document.querySelectorAll('input:not([readonly]), select, textarea').forEach(el => {
-                    if (!el.closest('#loginScreen') && !el.closest('.navbar')) {
+                    if (!el.closest('#loginScreen') && !el.closest('.navbar') && !el.closest('#dailyPulseCard')) {
                         el.disabled = true;
                     }
                 });
             } else if (currentUser.role === 'technician') {
-                // Technicians: only see the Roster → Service tab, read-only
+                // Technicians: see Roster and the Daily Pulse check-in only.
                 adminTab.style.display = 'none';
                 if (goalsTab) goalsTab.style.display = 'none';
                 if (facilityBaysGroup) facilityBaysGroup.style.display = 'none';
                 if (saveFacilityBtn) saveFacilityBtn.style.display = 'none';
                 if (baysKpiCard) baysKpiCard.style.display = 'none';
 
-                // Hide every nav-tab li except the Roster dropdown
+                // Hide every nav-tab li except Roster and Accountability.
                 document.querySelectorAll('.nav-tab').forEach(li => {
-                    if (li.id !== 'navGroupRoster') li.style.display = 'none';
+                    if (li.id !== 'navGroupRoster' && li.id !== 'navGroupAccountability') li.style.display = 'none';
                 });
-                // Hide non-Service items inside the Roster dropdown
+                // Hide non-Service items inside both exposed dropdowns.
                 document.querySelectorAll('#navGroupRoster .nav-dropdown-item').forEach(item => {
                     if (item.dataset.tab !== 'roster') {
+                        const liParent = item.closest('li');
+                        if (liParent) liParent.style.display = 'none';
+                    }
+                });
+                document.querySelectorAll('#navGroupAccountability .nav-dropdown-item').forEach(item => {
+                    if (item.dataset.tab !== 'accountability') {
                         const liParent = item.closest('li');
                         if (liParent) liParent.style.display = 'none';
                     }
@@ -3866,9 +4399,9 @@
 
                 setNavActiveState('roster');
 
-                // Technicians are read-only
+                // Technicians are read-only except for their Daily Pulse check-in.
                 document.querySelectorAll('input:not([readonly]), select, textarea').forEach(el => {
-                    if (!el.closest('#loginScreen') && !el.closest('.navbar')) {
+                    if (!el.closest('#loginScreen') && !el.closest('.navbar') && !el.closest('#dailyPulseCard')) {
                         el.disabled = true;
                     }
                 });
@@ -4505,12 +5038,12 @@
             const currentTab = document.querySelector('.tab-content.active')?.id;
 
             // Role restrictions
-            if (currentUser && currentUser.role === 'advisor' && tabId !== 'advisor') {
-                showToast('Advisors only have access to the Advisor tab', 'error');
+            if (currentUser && currentUser.role === 'advisor' && !['advisor', 'accountability'].includes(tabId)) {
+                showToast('Advisors only have access to Advisor and Daily Pulse', 'error');
                 return false;
             }
-            if (currentUser && currentUser.role === 'technician' && tabId !== 'roster') {
-                showToast('Technicians only have access to the Roster tab', 'error');
+            if (currentUser && currentUser.role === 'technician' && !['roster', 'accountability'].includes(tabId)) {
+                showToast('Technicians only have access to Roster and Daily Pulse', 'error');
                 return false;
             }
 
@@ -5410,6 +5943,48 @@
                         if (error) { console.error('Supabase saveTechWeeklyEntry error', error); throw error; }
                     } catch(e) { console.warn('Supabase saveTechWeeklyEntry failed', e); throw e; }
                 }
+            },
+
+            // --- Daily Pulse leading-indicator check-ins ---
+            async getDailyPulseEntries() {
+                if (useSupabase) {
+                    try {
+                        const { data, error } = await db.from('daily_pulse_entries').select('*');
+                        if (!error && data) { this._set('dyer_daily_pulse_entries', data); return data; }
+                    } catch(e) { console.warn('Supabase getDailyPulseEntries failed, using cache', e); }
+                }
+                return this._get('dyer_daily_pulse_entries');
+            },
+            async saveDailyPulseEntry(entry) {
+                const all = this._get('dyer_daily_pulse_entries');
+                const idx = all.findIndex(d =>
+                    String(d.store_id) === String(entry.store_id) &&
+                    String(d.entry_date) === String(entry.entry_date) &&
+                    String(d.role_type) === String(entry.role_type) &&
+                    String(d.person_id) === String(entry.person_id)
+                );
+                if (idx >= 0) all[idx] = entry; else all.push(entry);
+                this._set('dyer_daily_pulse_entries', all);
+                if (useSupabase) {
+                    try {
+                        const row = {
+                            store_id: entry.store_id,
+                            entry_date: entry.entry_date,
+                            role_type: entry.role_type,
+                            person_id: String(entry.person_id),
+                            person_name: entry.person_name || '',
+                            pulse_score: entry.pulse_score || 0,
+                            answers: entry.answers || {},
+                            risk_counts: entry.risk_counts || {},
+                            notes: entry.notes || null,
+                            submitted_by: currentUser ? currentUser.id : null,
+                            updated_at: new Date().toISOString()
+                        };
+                        const { error } = await db.from('daily_pulse_entries').upsert(row, { onConflict: 'store_id,entry_date,role_type,person_id' });
+                        if (error) { console.warn('Supabase saveDailyPulseEntry failed, saved local cache only', error); return { ok: true, offline: true, error }; }
+                    } catch(e) { console.warn('Supabase saveDailyPulseEntry threw, saved local cache only', e); return { ok: true, offline: true, error: e }; }
+                }
+                return { ok: true };
             }
         };
 
@@ -5846,6 +6421,18 @@
                 accountabilityMP.value = currentMonthStr;
                 accountabilityMP.addEventListener('change', loadAccountability);
             }
+            const pulseDate = document.getElementById('dailyPulseDate');
+            if (pulseDate) {
+                pulseDate.value = dateToString(now);
+                pulseDate.addEventListener('change', loadAccountability);
+            }
+            const pulseRole = document.getElementById('dailyPulseRole');
+            if (pulseRole) pulseRole.addEventListener('change', () => {
+                populateDailyPulsePeople();
+                renderDailyPulseQuestions();
+            });
+            const savePulseBtn = document.getElementById('saveDailyPulseBtn');
+            if (savePulseBtn) savePulseBtn.addEventListener('click', saveDailyPulse);
             const partsAccountabilityMP = document.getElementById('partsAccountabilityMonthPicker');
             if (partsAccountabilityMP) {
                 partsAccountabilityMP.value = currentMonthStr;
@@ -10106,6 +10693,393 @@
             return 'Review dispatch, attendance, and 3 recent jobs, then set next-week productivity and efficiency targets.';
         }
 
+        const DAILY_PULSE_TEMPLATES = {
+            service_advisor: {
+                label: 'Service Advisor',
+                risks: ['Open Numa / calls', 'At-risk customers', 'Stalled ROs'],
+                questions: [
+                    { key: 'contacted_customers', label: 'Every open customer received a status update today.' },
+                    { key: 'waiting_promises', label: 'Waiting customers were updated before promised time.' },
+                    { key: 'mpi_reviewed', label: 'Every MPI / recommendation was reviewed with the customer.' },
+                    { key: 'declined_followup', label: 'Declined service follow-up was worked or scheduled.' },
+                    { key: 'numa_cleared', label: 'Numa, missed calls, and voicemails were cleared.' },
+                    { key: 'tomorrow_prepped', label: 'Tomorrow appointments were reviewed for prep opportunities.' }
+                ]
+            },
+            technician: {
+                label: 'Technician',
+                risks: ['Vehicles waiting', 'Parts / approval delays', 'Quality risks'],
+                questions: [
+                    { key: 'mpis_complete', label: 'MPIs were completed on all assigned vehicles.' },
+                    { key: 'notes_clear', label: 'Photos, videos, and notes are clear enough for the advisor.' },
+                    { key: 'parts_flagged', label: 'Parts needs and delays were flagged early.' },
+                    { key: 'waiting_flagged', label: 'Waiting vehicles at risk of delay were escalated.' },
+                    { key: 'carryover_explained', label: 'Carryover work has a documented reason.' },
+                    { key: 'quality_checked', label: 'Comeback or quality-risk work was rechecked.' }
+                ]
+            },
+            lube_tech: {
+                label: 'Lube Tech',
+                risks: ['Vehicles waiting', 'Inspection gaps', 'Carryover units'],
+                questions: [
+                    { key: 'inspections_complete', label: 'Inspections were completed on every assigned vehicle.' },
+                    { key: 'findings_documented', label: 'Maintenance findings were clearly documented.' },
+                    { key: 'advisor_handoff', label: 'Advisor handoff happened before the customer update window.' },
+                    { key: 'waiters_escalated', label: 'Any waiting-customer delays were escalated early.' },
+                    { key: 'bay_clean', label: 'Bay, tools, and next-job setup were ready for tomorrow.' }
+                ]
+            },
+            parts_counter: {
+                label: 'Parts Counter',
+                risks: ['Open ETA gaps', 'Backorders', 'ROs waiting on parts'],
+                questions: [
+                    { key: 'sor_reviewed', label: 'Special-order parts were reviewed today.' },
+                    { key: 'eta_updated', label: 'Parts ETAs were updated for advisors.' },
+                    { key: 'backorders_escalated', label: 'Backorders were escalated or documented.' },
+                    { key: 'received_matched', label: 'Received parts were matched to open ROs.' },
+                    { key: 'aging_reviewed', label: 'Aging parts or parts holds were reviewed.' }
+                ]
+            },
+            estimator: {
+                label: 'Collision Estimator',
+                risks: ['Customer update risks', 'Supplement delays', 'Delivered-not-closed ROs'],
+                questions: [
+                    { key: 'customers_updated', label: 'Every active repair customer received the needed update.' },
+                    { key: 'supplements_worked', label: 'Supplements and approvals were worked today.' },
+                    { key: 'parts_delays_flagged', label: 'Parts delays were communicated before they became surprises.' },
+                    { key: 'k2k_risk_reviewed', label: 'Keys-to-Keys risks were reviewed and escalated.' },
+                    { key: 'delivered_closed', label: 'Delivered-not-closed ROs were reviewed.' }
+                ]
+            },
+            manager: {
+                label: 'Manager',
+                risks: ['People needing follow-up', 'Customer escalations', 'Process blockers'],
+                questions: [
+                    { key: 'drive_reviewed', label: 'Daily drive / workload was reviewed.' },
+                    { key: 'pulse_reviewed', label: 'Team check-ins and customer risks were reviewed.' },
+                    { key: 'bottom_two_coached', label: 'At least one coaching or recognition conversation happened.' },
+                    { key: 'tomorrow_staffing', label: 'Tomorrow coverage and appointment load were checked.' },
+                    { key: 'blockers_removed', label: 'Known process blockers were assigned or removed.' }
+                ]
+            }
+        };
+
+        function isDailyPulseFrontlineUser() {
+            return currentUser && (currentUser.role === 'advisor' || currentUser.role === 'technician');
+        }
+
+        function dailyPulseRoleLabel(role) {
+            return DAILY_PULSE_TEMPLATES[role]?.label || role || 'Team Member';
+        }
+
+        function dailyPulseSelectedDate() {
+            const el = document.getElementById('dailyPulseDate');
+            if (el && el.value) return el.value;
+            return dateToString(new Date());
+        }
+
+        function dailyPulseScopedStores() {
+            const selectedStore = getSelectedStore();
+            if (selectedStore === 'all') return stores;
+            return stores.filter(s => s.id === selectedStore);
+        }
+
+        function dailyPulseUserStore() {
+            const selectedStore = getSelectedStore();
+            if (selectedStore !== 'all') return selectedStore;
+            if (currentUser?.default_store) return currentUser.default_store;
+            if (currentUser?.store_access?.length) return currentUser.store_access[0];
+            return stores[0]?.id || '';
+        }
+
+        function getDailyPulsePeople(role) {
+            const scopedIds = new Set(dailyPulseScopedStores().map(s => s.id));
+            if (isDailyPulseFrontlineUser()) {
+                return [{
+                    id: `user_${currentUser.id}`,
+                    name: currentUser.display_name || currentUser.username || 'My Check-In',
+                    store_id: dailyPulseUserStore()
+                }];
+            }
+            if (role === 'service_advisor') {
+                return advisors.filter(a => a.is_active !== false && scopedIds.has(a.store_id));
+            }
+            if (role === 'technician') {
+                return technicians.filter(t => t.is_active !== false && scopedIds.has(t.store_id));
+            }
+            if (role === 'lube_tech') {
+                return lubeTechs.filter(t => t.is_active !== false && scopedIds.has(t.store_id));
+            }
+            if (role === 'parts_counter') {
+                return partsCounterStaff.filter(p => p.is_active !== false && scopedIds.has(p.store_id));
+            }
+            if (role === 'estimator') {
+                return estimatorStaff.filter(e => e.is_active !== false && scopedIds.has(e.store_id));
+            }
+            const managers = managementStaff.filter(m => m.is_active !== false && (!m.store_id || scopedIds.has(m.store_id)));
+            return managers.length ? managers : [{
+                id: currentUser?.id || 'manager',
+                name: currentUser?.display_name || currentUser?.username || 'Manager',
+                store_id: dailyPulseUserStore()
+            }];
+        }
+
+        function configureDailyPulseRoleForUser() {
+            const roleEl = document.getElementById('dailyPulseRole');
+            if (!roleEl || !currentUser) return;
+            roleEl.disabled = false;
+            if (currentUser.role === 'advisor') {
+                roleEl.value = 'service_advisor';
+                roleEl.disabled = true;
+            } else if (currentUser.role === 'technician') {
+                roleEl.value = 'technician';
+                roleEl.disabled = true;
+            } else if (currentUser.role === 'parts_manager') {
+                roleEl.value = 'parts_counter';
+            } else if (currentUser.role === 'collision_manager') {
+                roleEl.value = 'estimator';
+            }
+        }
+
+        function populateDailyPulsePeople() {
+            const role = document.getElementById('dailyPulseRole')?.value || 'service_advisor';
+            const select = document.getElementById('dailyPulsePerson');
+            if (!select) return;
+            const people = getDailyPulsePeople(role);
+            select.innerHTML = people.length
+                ? people.map(p => `<option value="${accountabilityEscape(p.id)}" data-store="${accountabilityEscape(p.store_id || '')}" data-name="${accountabilityEscape(p.name || '')}">${accountabilityEscape(p.name || 'Unnamed')} ${p.store_id ? '· ' + accountabilityEscape(accountabilityStoreName(p.store_id)) : ''}</option>`).join('')
+                : '<option value="">No team members available</option>';
+            select.disabled = isDailyPulseFrontlineUser() || !people.length;
+            select.onchange = () => fillDailyPulseExistingEntry();
+        }
+
+        function renderDailyPulseQuestions() {
+            const role = document.getElementById('dailyPulseRole')?.value || 'service_advisor';
+            const template = DAILY_PULSE_TEMPLATES[role] || DAILY_PULSE_TEMPLATES.service_advisor;
+            const container = document.getElementById('dailyPulseQuestions');
+            if (container) {
+                container.innerHTML = template.questions.map(q => `
+                    <label class="daily-pulse-question">
+                        <input type="checkbox" data-pulse-question="${accountabilityEscape(q.key)}">
+                        <span>${accountabilityEscape(q.label)}</span>
+                    </label>
+                `).join('');
+            }
+            ['One', 'Two', 'Three'].forEach((suffix, idx) => {
+                const label = document.getElementById(`dailyPulseRisk${suffix}Label`);
+                if (label) label.textContent = template.risks[idx] || `Risk ${idx + 1}`;
+            });
+            fillDailyPulseExistingEntry();
+        }
+
+        async function fillDailyPulseExistingEntry() {
+            const role = document.getElementById('dailyPulseRole')?.value || 'service_advisor';
+            const person = document.getElementById('dailyPulsePerson');
+            if (!person || !person.value) return;
+            const entries = await LS.getDailyPulseEntries();
+            const entry = (entries || []).find(e =>
+                e.entry_date === dailyPulseSelectedDate() &&
+                e.role_type === role &&
+                String(e.person_id) === String(person.value)
+            );
+            document.querySelectorAll('[data-pulse-question]').forEach(cb => {
+                cb.checked = !!entry?.answers?.[cb.dataset.pulseQuestion];
+            });
+            document.getElementById('dailyPulseRiskOne').value = entry?.risk_counts?.risk_one ?? 0;
+            document.getElementById('dailyPulseRiskTwo').value = entry?.risk_counts?.risk_two ?? 0;
+            document.getElementById('dailyPulseRiskThree').value = entry?.risk_counts?.risk_three ?? 0;
+            document.getElementById('dailyPulseNotes').value = entry?.notes || '';
+        }
+
+        function dailyPulseScore(answers, role) {
+            const questions = DAILY_PULSE_TEMPLATES[role]?.questions || DAILY_PULSE_TEMPLATES.service_advisor.questions;
+            if (!questions.length) return 0;
+            const done = questions.filter(q => answers[q.key]).length;
+            return Math.round(done / questions.length * 100);
+        }
+
+        function dailyPulseRiskTotal(entry) {
+            const r = entry?.risk_counts || {};
+            return (parseInt(r.risk_one) || 0) + (parseInt(r.risk_two) || 0) + (parseInt(r.risk_three) || 0);
+        }
+
+        function dailyPulseTone(score, risks) {
+            if (score >= 90 && risks === 0) return 'above';
+            if (score >= 75 && risks <= 2) return 'watch';
+            return 'below';
+        }
+
+        function updateDailyPulseVisual(score) {
+            const panel = document.querySelector('.daily-pulse-panel.dark');
+            const wave = document.getElementById('dailyPulseWave');
+            if (!panel || !wave) return;
+            panel.classList.remove('pulse-no-data', 'pulse-flatline', 'pulse-critical', 'pulse-watch', 'pulse-healthy', 'pulse-strong');
+
+            if (score == null || !Number.isFinite(score)) {
+                panel.classList.add('pulse-no-data');
+                wave.setAttribute('points', '4,23 38,23 52,19 66,27 82,23 116,23 130,20 144,26 158,23 216,23');
+                return;
+            }
+            if (score <= 0) {
+                panel.classList.add('pulse-flatline');
+                wave.setAttribute('points', '4,23 216,23');
+                return;
+            }
+            if (score < 50) {
+                panel.classList.add('pulse-critical');
+                wave.setAttribute('points', '4,23 42,23 54,17 66,29 80,23 118,23 130,19 142,28 156,23 216,23');
+                return;
+            }
+            if (score < 80) {
+                panel.classList.add('pulse-watch');
+                wave.setAttribute('points', '4,23 34,23 46,17 58,31 72,23 100,23 114,14 130,32 146,23 216,23');
+                return;
+            }
+            if (score < 95) {
+                panel.classList.add('pulse-healthy');
+                wave.setAttribute('points', '4,23 34,23 46,23 55,10 67,34 80,23 105,23 117,15 130,30 143,23 216,23');
+                return;
+            }
+            panel.classList.add('pulse-strong');
+            wave.setAttribute('points', '4,23 32,23 43,23 53,7 66,37 81,23 103,23 114,11 130,34 146,23 166,23 177,16 190,29 204,23 216,23');
+        }
+
+        function dailyPulseManagerMove(entry) {
+            const score = parseFloat(entry.pulse_score) || 0;
+            const risks = dailyPulseRiskTotal(entry);
+            const role = entry.role_type;
+            const r = entry.risk_counts || {};
+            if ((parseInt(r.risk_two) || 0) > 0) return 'Manager reviews customer risk before tomorrow morning.';
+            if ((parseInt(r.risk_one) || 0) > 0) return role === 'service_advisor'
+                ? 'Clear Numa / call backlog before new write-ups stack up.'
+                : 'Assign owner and ETA for the open blocker.';
+            if (score < 75) return 'Review missed behaviors and set one action for next shift.';
+            if (score < 90) return 'Quick check-in: confirm the weak item does not repeat tomorrow.';
+            return 'No immediate action. Keep inspecting the habit.';
+        }
+
+        function renderDailyPulseSummary(entries, scopedStores, pulseDate) {
+            const scopedIds = new Set(scopedStores.map(s => s.id));
+            const todays = (entries || []).filter(e => e.entry_date === pulseDate && scopedIds.has(e.store_id));
+            const avgScore = todays.length
+                ? Math.round(todays.reduce((sum, e) => sum + (parseFloat(e.pulse_score) || 0), 0) / todays.length)
+                : null;
+            const totalRisks = todays.reduce((sum, e) => sum + dailyPulseRiskTotal(e), 0);
+            const scoreEl = document.getElementById('dailyPulseTodayScore');
+            const noteEl = document.getElementById('dailyPulseTodayNote');
+            if (scoreEl) scoreEl.textContent = avgScore == null ? '—' : `${avgScore}%`;
+            updateDailyPulseVisual(avgScore);
+            if (noteEl) {
+                noteEl.textContent = todays.length
+                    ? `${todays.length} check-in${todays.length === 1 ? '' : 's'} submitted today with ${totalRisks} open risk${totalRisks === 1 ? '' : 's'}.`
+                    : 'No pulse submitted for this scope yet.';
+            }
+
+            const storeGrid = document.getElementById('dailyPulseStoreGrid');
+            if (storeGrid) {
+                storeGrid.innerHTML = scopedStores.map(store => {
+                    const rows = todays.filter(e => e.store_id === store.id);
+                    const storeAvg = rows.length
+                        ? Math.round(rows.reduce((sum, e) => sum + (parseFloat(e.pulse_score) || 0), 0) / rows.length)
+                        : null;
+                    const riskOne = rows.reduce((sum, e) => sum + (parseInt(e.risk_counts?.risk_one) || 0), 0);
+                    const riskTwo = rows.reduce((sum, e) => sum + (parseInt(e.risk_counts?.risk_two) || 0), 0);
+                    const riskThree = rows.reduce((sum, e) => sum + (parseInt(e.risk_counts?.risk_three) || 0), 0);
+                    const tone = storeAvg == null ? 'low' : dailyPulseTone(storeAvg, riskOne + riskTwo + riskThree);
+                    return `
+                        <div class="daily-pulse-store-card">
+                            <div class="daily-pulse-store-top">
+                                <div>
+                                    <div class="store-name">${accountabilityEscape(store.code || store.name)}</div>
+                                    <div class="store-meta">${rows.length} check-in${rows.length === 1 ? '' : 's'} submitted today</div>
+                                </div>
+                                <div class="pulse-score-pill ${tone}">${accountabilityEscape(storeAvg == null ? 'No pulse' : storeAvg + '%')}</div>
+                            </div>
+                            <div class="store-risks">
+                                <div class="pulse-risk-stat ${riskOne ? 'risk-alert' : ''}">
+                                    <div class="risk-value">${riskOne}</div>
+                                    <div class="risk-label">Calls</div>
+                                </div>
+                                <div class="pulse-risk-stat ${riskTwo ? 'risk-danger' : ''}">
+                                    <div class="risk-value">${riskTwo}</div>
+                                    <div class="risk-label">Survey Risk</div>
+                                </div>
+                                <div class="pulse-risk-stat ${riskThree ? 'risk-alert' : ''}">
+                                    <div class="risk-value">${riskThree}</div>
+                                    <div class="risk-label">Stalled</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            const body = document.getElementById('dailyPulseTeamBody');
+            if (body) {
+                body.innerHTML = todays.length
+                    ? todays.sort((a, b) => (a.pulse_score - b.pulse_score) || (dailyPulseRiskTotal(b) - dailyPulseRiskTotal(a))).map(entry => {
+                        const risks = dailyPulseRiskTotal(entry);
+                        const tone = dailyPulseTone(parseFloat(entry.pulse_score) || 0, risks);
+                        const r = entry.risk_counts || {};
+                        const riskText = [
+                            `${r.risk_one || 0} calls/tasks`,
+                            `${r.risk_two || 0} customer risks`,
+                            `${r.risk_three || 0} blockers`
+                        ].join(' · ');
+                        return `
+                            <tr>
+                                <td>
+                                    <div class="pulse-person-name">${accountabilityEscape(entry.person_name)}</div>
+                                    <div class="pulse-person-meta">${accountabilityEscape(accountabilityStoreName(entry.store_id))}</div>
+                                </td>
+                                <td>${accountabilityEscape(dailyPulseRoleLabel(entry.role_type))}</td>
+                                <td>${accountabilityEscape(accountabilityStoreName(entry.store_id))}</td>
+                                <td>${accountabilityBadge((entry.pulse_score || 0) + '%', tone)}</td>
+                                <td class="accountability-action"><span class="pulse-risk-line">${accountabilityEscape(riskText)}</span>${entry.notes ? '<span class="pulse-note">' + accountabilityEscape(entry.notes) + '</span>' : ''}</td>
+                                <td class="accountability-action">${accountabilityEscape(dailyPulseManagerMove(entry))}</td>
+                            </tr>
+                        `;
+                    }).join('')
+                    : '<tr><td colspan="6" class="empty-state">No Daily Pulse check-ins submitted for this date yet.</td></tr>';
+            }
+        }
+
+        async function saveDailyPulse() {
+            const role = document.getElementById('dailyPulseRole')?.value || 'service_advisor';
+            const person = document.getElementById('dailyPulsePerson');
+            if (!person || !person.value) {
+                showToast('Choose a team member for this Daily Pulse', 'error');
+                return;
+            }
+            const selected = person.options[person.selectedIndex];
+            const answers = {};
+            document.querySelectorAll('[data-pulse-question]').forEach(cb => {
+                answers[cb.dataset.pulseQuestion] = !!cb.checked;
+            });
+            const entry = {
+                store_id: selected.dataset.store || dailyPulseUserStore(),
+                entry_date: dailyPulseSelectedDate(),
+                role_type: role,
+                person_id: person.value,
+                person_name: selected.dataset.name || selected.textContent || '',
+                pulse_score: dailyPulseScore(answers, role),
+                answers,
+                risk_counts: {
+                    risk_one: parseInt(document.getElementById('dailyPulseRiskOne')?.value) || 0,
+                    risk_two: parseInt(document.getElementById('dailyPulseRiskTwo')?.value) || 0,
+                    risk_three: parseInt(document.getElementById('dailyPulseRiskThree')?.value) || 0
+                },
+                notes: document.getElementById('dailyPulseNotes')?.value.trim() || ''
+            };
+            const result = await LS.saveDailyPulseEntry(entry);
+            if (result && result.offline) {
+                showToast('Daily Pulse submitted locally. Add the Daily Pulse table to share it across devices.', 'success');
+            } else {
+                showToast('Daily Pulse submitted');
+            }
+            loadAccountability();
+        }
+
         async function loadAccountability() {
             try {
                 const picker = document.getElementById('accountabilityMonthPicker');
@@ -10122,6 +11096,28 @@
                 const currentRange = accountabilityMonthRange(year, month);
                 const oldest = accountabilityMonthBack(year, month, 11);
                 const oldestRange = accountabilityMonthRange(oldest.year, oldest.month);
+                const frontlinePulseOnly = isDailyPulseFrontlineUser();
+
+                document.querySelectorAll('.accountability-manager-only').forEach(el => {
+                    el.style.display = frontlinePulseOnly ? 'none' : '';
+                });
+                const pulseManagerCard = document.getElementById('dailyPulseManagerCard');
+                if (pulseManagerCard) pulseManagerCard.style.display = frontlinePulseOnly ? 'none' : '';
+
+                try {
+                    if ((!partsCounterStaff.length && !estimatorStaff.length) && typeof loadDepartmentStaff === 'function') {
+                        await loadDepartmentStaff();
+                    }
+                } catch(e) {
+                    console.warn('Daily Pulse department staff load skipped', e);
+                }
+                configureDailyPulseRoleForUser();
+                populateDailyPulsePeople();
+                renderDailyPulseQuestions();
+                const pulseEntries = await LS.getDailyPulseEntries();
+                renderDailyPulseSummary(pulseEntries, scopedStores, dailyPulseSelectedDate());
+
+                if (frontlinePulseOnly) return;
 
                 const rawGoals = await LS.getGoals();
                 let advisorEntries = (await LS.getAdvisorEntries()).filter(d =>
