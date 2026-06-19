@@ -1555,6 +1555,50 @@
             text-transform: uppercase;
         }
 
+        .sop-panel-heading {
+            display: grid;
+            gap: 3px;
+            min-width: 0;
+        }
+
+        .sop-panel-help {
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0;
+            line-height: 1.3;
+            text-transform: none;
+        }
+
+        .sop-header-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .sop-text-button {
+            appearance: none;
+            border: 1px solid #d9e2ef;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #334155;
+            min-height: 28px;
+            padding: 4px 9px;
+            font-size: 11px;
+            font-weight: 900;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .sop-text-button:hover,
+        .sop-text-button:focus {
+            border-color: #cc0000;
+            color: #b91c1c;
+            outline: none;
+        }
+
         .sop-panel-body {
             padding: 16px;
         }
@@ -3888,8 +3932,14 @@
             <div class="sop-shell">
                 <div class="sop-panel">
                     <div class="sop-panel-header">
-                        <div class="sop-panel-title">Positions</div>
-                        <span class="sop-pill" id="sopPositionCount">0 positions</span>
+                        <div class="sop-panel-heading">
+                            <div class="sop-panel-title">Positions</div>
+                            <div class="sop-panel-help">Click a position to view its SOPs and responsibilities.</div>
+                        </div>
+                        <div class="sop-header-actions">
+                            <button class="sop-text-button" id="sopShowAllPositions" type="button">Show All</button>
+                            <span class="sop-pill" id="sopPositionCount">0 positions</span>
+                        </div>
                     </div>
                     <div class="sop-panel-body">
                         <div class="sop-responsibility-list" id="sopPositionList"></div>
@@ -7437,6 +7487,10 @@
                 const eventName = id === 'sopSearch' ? 'input' : 'change';
                 el.addEventListener(eventName, renderSops);
             });
+            const sopShowAllPositions = document.getElementById('sopShowAllPositions');
+            if (sopShowAllPositions) {
+                sopShowAllPositions.addEventListener('click', resetSopPositionFilters);
+            }
 
             // Parts Roster month picker — defaults to current month, re-renders on change
             const prMP = document.getElementById('partsRosterMonthPicker');
@@ -15159,15 +15213,16 @@
         function selectSopRole(roleKey) {
             const position = SOP_POSITIONS.find(pos => pos.key === roleKey);
             if (!position) return;
-            const deptFilter = document.getElementById('sopDepartmentFilter');
-            const roleFilter = document.getElementById('sopRoleFilter');
-            const search = document.getElementById('sopSearch');
-            if (search) search.value = '';
-            if (deptFilter) deptFilter.value = position.department;
-            populateSopRoleFilter();
-            if (roleFilter) roleFilter.value = roleKey;
             selectedSopRoleKey = roleKey;
             selectedSopId = `role-overview-${roleKey}`;
+            renderSops();
+        }
+
+        function resetSopPositionFilters() {
+            const deptFilter = document.getElementById('sopDepartmentFilter');
+            const search = document.getElementById('sopSearch');
+            if (search) search.value = '';
+            if (deptFilter) deptFilter.value = 'all';
             renderSops();
         }
 
@@ -15238,14 +15293,15 @@
             const allSops = getAllSopEntries();
             panel.innerHTML = positions.map(pos => {
                 const sopCount = allSops.filter(sop => sop.role_key === pos.key).length;
+                const isSelected = selectedSopRoleKey === pos.key;
                 return `
-                    <div class="sop-role-card sop-role-button ${selectedSopRoleKey === pos.key ? 'active' : ''}" role="button" tabindex="0" data-role-key="${onboardingEscape(pos.key)}" aria-label="Open SOPs for ${onboardingEscape(pos.title)}">
+                    <div class="sop-role-card sop-role-button ${isSelected ? 'active' : ''}" role="button" tabindex="0" data-role-key="${onboardingEscape(pos.key)}" aria-label="View SOPs and responsibilities for ${onboardingEscape(pos.title)}">
                         <div class="sop-item-top">
                             <div>
                                 <div class="sop-title">${onboardingEscape(pos.title)}</div>
                                 <div class="sop-sub">${onboardingEscape(SOP_DEPARTMENT_LABELS[pos.department] || pos.department)} - ${sopCount} SOP${sopCount === 1 ? '' : 's'}</div>
                             </div>
-                            <span class="sop-pill ${selectedSopRoleKey === pos.key ? 'red' : ''}">Open</span>
+                            <span class="sop-pill ${isSelected ? 'red' : ''}">${isSelected ? 'Selected' : 'View SOPs'}</span>
                         </div>
                     </div>
                 `;
