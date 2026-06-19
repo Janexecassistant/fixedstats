@@ -340,7 +340,7 @@
             position: absolute;
             top: calc(100% - 2px);
             left: 3px;
-            min-width: 200px;
+            min-width: 230px;
             background: rgba(22, 22, 30, 0.98);
             border: 1px solid rgba(255,255,255,0.15);
             border-radius: 10px;
@@ -374,6 +374,7 @@
             cursor: pointer;
             transition: all 0.15s ease;
             letter-spacing: 0.2px;
+            text-decoration: none;
         }
         .nav-dropdown-item:hover {
             background: rgba(255,255,255,0.1);
@@ -383,6 +384,12 @@
             background: linear-gradient(135deg, rgba(204,0,0,0.45), rgba(160,0,0,0.3));
             color: white;
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+        }
+        .nav-dropdown-item .nav-ext {
+            float: right;
+            opacity: 0.65;
+            font-size: 11px;
+            margin-top: 1px;
         }
 
         /* Training button — lives in navbar-right, always visible, distinct from SPA tabs */
@@ -2600,7 +2607,7 @@
             transition: max-height 0.25s ease;
         }
         .sidebar .nav-dropdown.open .nav-dropdown-menu {
-            max-height: 400px;
+            max-height: 720px;
         }
         .sidebar .nav-dropdown-menu > li { margin: 0; }
         .sidebar .nav-dropdown-item {
@@ -2616,6 +2623,7 @@
             cursor: pointer;
             transition: background 0.15s ease, color 0.15s ease;
             border-left: 3px solid transparent;
+            text-decoration: none;
         }
         .sidebar .nav-dropdown-item:hover {
             background: rgba(255,255,255,0.04);
@@ -2844,33 +2852,42 @@
         </div>
         <div class="sidebar-scroll">
             <ul class="nav-tabs">
-                <!-- Daily Entry group -->
-                <li class="nav-tab nav-dropdown" id="navGroupDaily" data-group="daily">
+                <!-- Enter Numbers group -->
+                <li class="nav-tab nav-dropdown" id="navGroupEntry" data-group="entry">
                     <button class="nav-btn nav-dropdown-toggle active" type="button" aria-haspopup="true" aria-expanded="false">
-                        <span class="nav-label">Daily Entry</span>
-                        <span class="nav-sub" id="navDailySub">Service</span>
+                        <span class="nav-label">Enter Numbers</span>
+                        <span class="nav-sub" id="navEntrySub">Service</span>
                         <span class="nav-caret">▾</span>
                     </button>
                     <ul class="nav-dropdown-menu">
-                        <li><button class="nav-dropdown-item active" data-tab="daily" data-group="daily" data-sub="Service">Service</button></li>
-                        <li><button class="nav-dropdown-item" data-tab="partsDaily" data-group="daily" data-sub="Parts">Parts</button></li>
-                        <li><button class="nav-dropdown-item" data-tab="collisionDaily" data-group="daily" data-sub="Collision">Collision</button></li>
+                        <li><button class="nav-dropdown-item active" data-tab="daily" data-group="entry" data-sub="Service">Service Daily Entry</button></li>
+                        <li><button class="nav-dropdown-item" data-tab="partsDaily" data-group="entry" data-sub="Parts">Parts Daily Entry</button></li>
+                        <li><button class="nav-dropdown-item" data-tab="collisionDaily" data-group="entry" data-sub="Collision">Collision Daily Entry</button></li>
                     </ul>
                 </li>
-                <!-- Dashboard group -->
-                <li class="nav-tab nav-dropdown" id="navGroupDashboard" data-group="dashboard">
+
+                <!-- Performance group -->
+                <li class="nav-tab nav-dropdown" id="navGroupPerformance" data-group="performance">
                     <button class="nav-btn nav-dropdown-toggle" type="button" aria-haspopup="true" aria-expanded="false">
-                        <span class="nav-label">Dashboard</span>
-                        <span class="nav-sub" id="navDashboardSub">Service</span>
+                        <span class="nav-label">Performance</span>
+                        <span class="nav-sub" id="navPerformanceSub">Service</span>
                         <span class="nav-caret">▾</span>
                     </button>
                     <ul class="nav-dropdown-menu">
-                        <li><button class="nav-dropdown-item active" data-tab="dashboard" data-group="dashboard" data-sub="Service">Service</button></li>
-                        <li><button class="nav-dropdown-item" data-tab="parts" data-group="dashboard" data-sub="Parts">Parts</button></li>
-                        <li><button class="nav-dropdown-item" data-tab="collisionDashboard" data-group="dashboard" data-sub="Collision">Collision</button></li>
-                        <li><button class="nav-dropdown-item" data-tab="executive" data-group="dashboard" data-sub="All">All Departments</button></li>
+                        <li><button class="nav-dropdown-item active" data-tab="dashboard" data-group="performance" data-sub="Service">Service Dashboard</button></li>
+                        <li><button class="nav-dropdown-item" data-tab="parts" data-group="performance" data-sub="Parts">Parts Dashboard</button></li>
+                        <li><button class="nav-dropdown-item" data-tab="collisionDashboard" data-group="performance" data-sub="Collision">Collision Dashboard</button></li>
+                        <li><button class="nav-dropdown-item" data-tab="executive" data-group="performance" data-sub="Roll-Up">Executive Roll-Up</button></li>
+                        <li><button class="nav-dropdown-item" data-tab="advisor" data-group="performance" data-sub="People">Service People Scorecards</button></li>
+                        <li><button class="nav-dropdown-item" data-tab="partsAdvisor" data-group="performance" data-sub="People">Parts Counter Scorecards</button></li>
+                        <li><button class="nav-dropdown-item" data-tab="collisionAdvisor" data-group="performance" data-sub="People">Collision Estimator Scorecards</button></li>
+                        <li><button class="nav-dropdown-item" data-tab="roster" data-group="performance" data-sub="Capacity">Roster &amp; Capacity</button></li>
+                        <li><button class="nav-dropdown-item" data-tab="partsRoster" data-group="performance" data-sub="Capacity">Parts Roster</button></li>
+                        <li><button class="nav-dropdown-item" data-tab="collisionRoster" data-group="performance" data-sub="Capacity">Collision Roster</button></li>
+                        <li><button class="nav-dropdown-item" id="goalsTab" data-tab="goals" data-group="performance" data-sub="Goals" style="display:none;">Goals &amp; Settings</button></li>
                     </ul>
                 </li>
+
                 <!-- Accountability group -->
                 <li class="nav-tab nav-dropdown" id="navGroupAccountability" data-group="accountability">
                     <button class="nav-btn nav-dropdown-toggle" type="button" aria-haspopup="true" aria-expanded="false">
@@ -2879,49 +2896,27 @@
                         <span class="nav-caret">▾</span>
                     </button>
                     <ul class="nav-dropdown-menu">
-                        <li><button class="nav-dropdown-item active" data-tab="accountability" data-group="accountability" data-sub="Service">Service</button></li>
-                        <li><button class="nav-dropdown-item" data-tab="partsAccountability" data-group="accountability" data-sub="Parts">Parts</button></li>
-                        <li><button class="nav-dropdown-item" data-tab="collisionAccountability" data-group="accountability" data-sub="Collision">Collision</button></li>
+                        <li><button class="nav-dropdown-item active" data-tab="accountability" data-group="accountability" data-sub="Service">Service Accountability</button></li>
+                        <li><button class="nav-dropdown-item" data-tab="partsAccountability" data-group="accountability" data-sub="Parts">Parts Accountability</button></li>
+                        <li><button class="nav-dropdown-item" data-tab="collisionAccountability" data-group="accountability" data-sub="Collision">Collision Accountability</button></li>
                     </ul>
                 </li>
-                <!-- Advisors group -->
-                <li class="nav-tab nav-dropdown" id="navGroupAdvisor" data-group="advisor">
+
+                <!-- People Readiness group -->
+                <li class="nav-tab nav-dropdown" id="navGroupPeople" data-group="people">
                     <button class="nav-btn nav-dropdown-toggle" type="button" aria-haspopup="true" aria-expanded="false">
-                        <span class="nav-label">Advisors</span>
-                        <span class="nav-sub" id="navAdvisorSub">Service</span>
+                        <span class="nav-label">People Readiness</span>
+                        <span class="nav-sub" id="navPeopleSub">Onboarding</span>
                         <span class="nav-caret">▾</span>
                     </button>
                     <ul class="nav-dropdown-menu">
-                        <li><button class="nav-dropdown-item active" data-tab="advisor" data-group="advisor" data-sub="Service">Service</button></li>
-                        <li><button class="nav-dropdown-item" data-tab="partsAdvisor" data-group="advisor" data-sub="Parts">Parts</button></li>
-                        <li><button class="nav-dropdown-item" data-tab="collisionAdvisor" data-group="advisor" data-sub="Collision">Collision</button></li>
+                        <li><button class="nav-dropdown-item" id="onboardingTab" data-tab="onboarding" data-group="people" data-sub="Onboarding">Onboarding</button></li>
+                        <li><a href="/training/" target="_blank" rel="noopener" class="nav-dropdown-item" data-external-nav="training">Training Library <span class="nav-ext">↗</span></a></li>
+                        <li id="sopsNavItem"><button class="nav-dropdown-item" id="sopsTab" data-tab="sops" data-group="people" data-sub="SOPs">Roles &amp; SOPs</button></li>
+                        <li><button class="nav-dropdown-item" id="adminConsoleTab" data-tab="admin" data-group="people" data-sub="Admin" style="display:none;">Admin Console</button></li>
                     </ul>
                 </li>
-                <!-- Roster group -->
-                <li class="nav-tab nav-dropdown" id="navGroupRoster" data-group="roster">
-                    <button class="nav-btn nav-dropdown-toggle" type="button" aria-haspopup="true" aria-expanded="false">
-                        <span class="nav-label">Roster</span>
-                        <span class="nav-sub" id="navRosterSub">Service</span>
-                        <span class="nav-caret">▾</span>
-                    </button>
-                    <ul class="nav-dropdown-menu">
-                        <li><button class="nav-dropdown-item active" data-tab="roster" data-group="roster" data-sub="Service">Service</button></li>
-                        <li><button class="nav-dropdown-item" data-tab="partsRoster" data-group="roster" data-sub="Parts">Parts</button></li>
-                        <li><button class="nav-dropdown-item" data-tab="collisionRoster" data-group="roster" data-sub="Collision">Collision</button></li>
-                    </ul>
-                </li>
-                <li class="nav-tab"><button class="nav-btn" id="onboardingTab" data-tab="onboarding">Onboarding</button></li>
-                <li class="nav-tab" id="sopsNavItem"><button class="nav-btn" id="sopsTab" data-tab="sops">SOPs</button></li>
-                <li class="nav-tab"><button class="nav-btn" id="goalsTab" data-tab="goals" style="display:none;">Goals</button></li>
-                <li class="nav-tab"><button class="nav-btn" id="adminConsoleTab" data-tab="admin" style="display:none;">Admin Console</button></li>
             </ul>
-        </div>
-        <div class="sidebar-bottom">
-            <a href="/training/" target="_blank" rel="noopener" class="nav-training-btn" title="Open the Dyer Training Library in a new tab">
-                <svg class="training-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-                <span>Training</span>
-                <span class="ext-icon" aria-hidden="true">↗</span>
-            </a>
         </div>
     </aside>
 
@@ -5276,8 +5271,6 @@
             const facilityBaysGroup = document.getElementById('facilityBaysGroup');
             const saveFacilityBtn = document.getElementById('saveFacilityBtn');
             const baysKpiCard = document.getElementById('baysKpiCard');
-            const onboardingTab = document.getElementById('onboardingTab');
-            const sopsNavItem = document.getElementById('sopsNavItem');
 
             // Department staff cards (Parts Counter / Body Tech / Painter / Estimator)
             const partsCounterCard = document.getElementById('staffPartsCounterCard');
@@ -5304,14 +5297,66 @@
                 if (estimatorCard)    estimatorCard.style.display    = est   ? '' : 'none';
             };
 
-            const goalsTab = document.getElementById('goalsTab');
+            const resetNavVisibility = () => {
+                document.querySelectorAll('.nav-tab, .nav-dropdown-menu > li').forEach(el => {
+                    el.style.display = '';
+                });
+                document.querySelectorAll('.nav-btn, .nav-dropdown-item, .nav-dropdown-toggle').forEach(el => {
+                    el.style.display = '';
+                });
+                document.querySelectorAll('#formRole option[data-admin-only]').forEach(opt => {
+                    opt.style.display = '';
+                });
+            };
+
+            const setNavTabVisible = (tabId, visible) => {
+                const item = document.querySelector(`.nav-dropdown-item[data-tab="${tabId}"], .nav-btn[data-tab="${tabId}"]`);
+                if (!item) return;
+                const li = item.closest('li');
+                if (li) {
+                    li.style.display = visible ? '' : 'none';
+                } else {
+                    item.style.display = visible ? '' : 'none';
+                }
+            };
+
+            const restrictNavTo = (allowedTabs, allowedExternalNav) => {
+                const tabSet = new Set(allowedTabs);
+                const externalSet = new Set(allowedExternalNav || []);
+
+                document.querySelectorAll('.nav-dropdown-menu > li').forEach(li => {
+                    const tabItem = li.querySelector('[data-tab]');
+                    const externalItem = li.querySelector('[data-external-nav]');
+                    const visible = tabItem
+                        ? tabSet.has(tabItem.dataset.tab)
+                        : externalItem
+                            ? externalSet.has(externalItem.dataset.externalNav)
+                            : true;
+                    li.style.display = visible ? '' : 'none';
+                });
+
+                document.querySelectorAll('.nav-tab').forEach(li => {
+                    if (li.classList.contains('nav-dropdown')) {
+                        const hasVisibleChild = Array.from(li.querySelectorAll('.nav-dropdown-menu > li'))
+                            .some(child => child.style.display !== 'none');
+                        li.style.display = hasVisibleChild ? '' : 'none';
+                        return;
+                    }
+
+                    const tabItem = li.querySelector('[data-tab]');
+                    li.style.display = tabItem && tabSet.has(tabItem.dataset.tab) ? '' : 'none';
+                });
+            };
+
+            resetNavVisibility();
 
             if (currentUser.role === 'admin') {
                 // Admins see everything
-                adminTab.style.display = 'block';
-                if (onboardingTab) onboardingTab.style.display = '';
-                if (sopsNavItem) sopsNavItem.style.display = '';
-                if (goalsTab) goalsTab.style.display = '';
+                if (adminTab) adminTab.style.display = '';
+                setNavTabVisible('admin', true);
+                setNavTabVisible('onboarding', true);
+                setNavTabVisible('sops', true);
+                setNavTabVisible('goals', true);
                 if (userAccountsCard) userAccountsCard.style.display = 'block';
                 if (executiveStaffCard) executiveStaffCard.style.display = 'block';
                 if (facilityBaysGroup) facilityBaysGroup.style.display = '';
@@ -5327,9 +5372,11 @@
             } else if (currentUser.role === 'manager') {
                 // Managers can see Admin Console. They can manage user accounts for their
                 // store staff (advisors + technicians only) but cannot create admin/manager/executive users.
-                adminTab.style.display = 'block';
-                if (onboardingTab) onboardingTab.style.display = '';
-                if (sopsNavItem) sopsNavItem.style.display = '';
+                if (adminTab) adminTab.style.display = '';
+                setNavTabVisible('admin', true);
+                setNavTabVisible('onboarding', true);
+                setNavTabVisible('sops', true);
+                setNavTabVisible('goals', false);
                 if (userAccountsCard) userAccountsCard.style.display = 'block';
                 if (executiveStaffCard) executiveStaffCard.style.display = 'none';
                 // Hide admin-only role options in the Add User form
@@ -5346,9 +5393,11 @@
             } else if (currentUser.role === 'parts_manager' || currentUser.role === 'collision_manager') {
                 // Parts/Collision Managers — manager-level admin access scoped to their staff.
                 // Full nav access (can drill into any dropdown), default-lands on their daily entry.
-                adminTab.style.display = 'block';
-                if (onboardingTab) onboardingTab.style.display = 'none';
-                if (sopsNavItem) sopsNavItem.style.display = '';
+                if (adminTab) adminTab.style.display = '';
+                setNavTabVisible('admin', true);
+                setNavTabVisible('onboarding', false);
+                setNavTabVisible('sops', true);
+                setNavTabVisible('goals', false);
                 if (userAccountsCard) userAccountsCard.style.display = 'block';
                 if (executiveStaffCard) executiveStaffCard.style.display = 'none';
                 document.querySelectorAll('#formRole option[data-admin-only]').forEach(opt => {
@@ -5372,9 +5421,11 @@
                 setNavActiveState(defaultTab);
             } else if (currentUser.role === 'executive') {
                 // Executives: read-only, no admin console
-                adminTab.style.display = 'none';
-                if (onboardingTab) onboardingTab.style.display = '';
-                if (sopsNavItem) sopsNavItem.style.display = '';
+                if (adminTab) adminTab.style.display = 'none';
+                setNavTabVisible('admin', false);
+                setNavTabVisible('onboarding', true);
+                setNavTabVisible('sops', true);
+                setNavTabVisible('goals', false);
                 // Hide bays for non-admins
                 if (facilityBaysGroup) facilityBaysGroup.style.display = 'none';
                 if (saveFacilityBtn) saveFacilityBtn.style.display = 'none';
@@ -5386,34 +5437,12 @@
                     }
                 });
             } else if (currentUser.role === 'advisor') {
-                // Advisors: see their Advisor scorecard, Daily Pulse, their onboarding path, and SOPs.
-                adminTab.style.display = 'none';
-                if (onboardingTab) onboardingTab.style.display = '';
-                if (sopsNavItem) sopsNavItem.style.display = '';
-                if (goalsTab) goalsTab.style.display = 'none';
+                // Advisors: see their scorecard, Daily Pulse, onboarding path, training, and SOPs.
+                if (adminTab) adminTab.style.display = 'none';
                 if (facilityBaysGroup) facilityBaysGroup.style.display = 'none';
                 if (saveFacilityBtn) saveFacilityBtn.style.display = 'none';
                 if (baysKpiCard) baysKpiCard.style.display = 'none';
-
-                // Hide every nav-tab li except Advisors, Accountability, Onboarding, and SOPs.
-                document.querySelectorAll('.nav-tab').forEach(li => {
-                    const isOnboardingNav = !!li.querySelector('#onboardingTab');
-                    const allowed = li.id === 'navGroupAdvisor' || li.id === 'navGroupAccountability' || li.id === 'sopsNavItem' || isOnboardingNav;
-                    li.style.display = allowed ? '' : 'none';
-                });
-                // Hide non-Service items inside both exposed dropdowns.
-                document.querySelectorAll('#navGroupAdvisor .nav-dropdown-item').forEach(item => {
-                    if (item.dataset.tab !== 'advisor') {
-                        const liParent = item.closest('li');
-                        if (liParent) liParent.style.display = 'none';
-                    }
-                });
-                document.querySelectorAll('#navGroupAccountability .nav-dropdown-item').forEach(item => {
-                    if (item.dataset.tab !== 'accountability') {
-                        const liParent = item.closest('li');
-                        if (liParent) liParent.style.display = 'none';
-                    }
-                });
+                restrictNavTo(['advisor', 'accountability', 'onboarding', 'sops'], ['training']);
 
                 setNavActiveState('advisor');
 
@@ -5424,34 +5453,12 @@
                     }
                 });
             } else if (currentUser.role === 'technician') {
-                // Technicians: see Roster, Daily Pulse, their onboarding path, and SOPs.
-                adminTab.style.display = 'none';
-                if (onboardingTab) onboardingTab.style.display = '';
-                if (sopsNavItem) sopsNavItem.style.display = '';
-                if (goalsTab) goalsTab.style.display = 'none';
+                // Technicians: see Roster, Daily Pulse, onboarding path, training, and SOPs.
+                if (adminTab) adminTab.style.display = 'none';
                 if (facilityBaysGroup) facilityBaysGroup.style.display = 'none';
                 if (saveFacilityBtn) saveFacilityBtn.style.display = 'none';
                 if (baysKpiCard) baysKpiCard.style.display = 'none';
-
-                // Hide every nav-tab li except Roster, Accountability, Onboarding, and SOPs.
-                document.querySelectorAll('.nav-tab').forEach(li => {
-                    const isOnboardingNav = !!li.querySelector('#onboardingTab');
-                    const allowed = li.id === 'navGroupRoster' || li.id === 'navGroupAccountability' || li.id === 'sopsNavItem' || isOnboardingNav;
-                    li.style.display = allowed ? '' : 'none';
-                });
-                // Hide non-Service items inside both exposed dropdowns.
-                document.querySelectorAll('#navGroupRoster .nav-dropdown-item').forEach(item => {
-                    if (item.dataset.tab !== 'roster') {
-                        const liParent = item.closest('li');
-                        if (liParent) liParent.style.display = 'none';
-                    }
-                });
-                document.querySelectorAll('#navGroupAccountability .nav-dropdown-item').forEach(item => {
-                    if (item.dataset.tab !== 'accountability') {
-                        const liParent = item.closest('li');
-                        if (liParent) liParent.style.display = 'none';
-                    }
-                });
+                restrictNavTo(['roster', 'accountability', 'onboarding', 'sops'], ['training']);
 
                 setNavActiveState('roster');
 
@@ -6169,6 +6176,7 @@
         document.querySelectorAll('.nav-dropdown-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 e.stopPropagation();
+                if (!item.dataset.tab) return;
                 activateTab(item.dataset.tab);
             });
         });
