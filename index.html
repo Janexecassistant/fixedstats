@@ -1357,6 +1357,19 @@
             font-weight: 900;
         }
 
+        .onboarding-section-title-stack {
+            display: grid;
+            gap: 3px;
+            min-width: 0;
+        }
+
+        .onboarding-section-title-stack small {
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+
         .onboarding-module-row,
         .onboarding-gate-row {
             padding: 11px 12px;
@@ -1396,6 +1409,42 @@
         .onboarding-check.bad {
             background: #e11d48;
             color: #ffffff;
+        }
+
+        .onboarding-row-main {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            min-width: 0;
+        }
+
+        .onboarding-row-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .onboarding-row-action {
+            appearance: none;
+            border: 1px solid #d9e2ef;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #334155;
+            min-height: 28px;
+            padding: 4px 9px;
+            font-size: 11px;
+            font-weight: 900;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .onboarding-row-action:hover,
+        .onboarding-row-action:focus {
+            border-color: #cc0000;
+            color: #b91c1c;
+            outline: none;
         }
 
         .onboarding-gate-stack {
@@ -6512,6 +6561,26 @@
                         await db.from('roster_entries').upsert(row, { onConflict: 'advisor_id,week_start' });
                     } catch(e) { console.warn('Supabase saveRosterEntry failed', e); }
                 }
+            },
+            async clearAdvisorRosterTrainingStatus(advisorId) {
+                const all = this._get('dyer_roster_entries');
+                let touched = false;
+                const next = all.map(row => {
+                    if (String(row.advisor_id) !== String(advisorId)) return row;
+                    touched = true;
+                    return { ...row, training_status: '' };
+                });
+                if (touched) this._set('dyer_roster_entries', next);
+                if (useSupabase) {
+                    try {
+                        const { error } = await db
+                            .from('roster_entries')
+                            .update({ training_status: '' })
+                            .eq('advisor_id', parseInt(advisorId, 10));
+                        if (error) { console.warn('Supabase clearAdvisorRosterTrainingStatus failed', error); return { ok: false, error }; }
+                    } catch(e) { console.warn('Supabase clearAdvisorRosterTrainingStatus threw', e); return { ok: false, error: e }; }
+                }
+                return { ok: true, touched };
             },
 
             // --- Onboarding readiness records ---
@@ -15640,6 +15709,16 @@
             return { record, path, status, trainingComplete, observationComplete, goLiveReady, commissionReleased, moduleDone, obsDone, pct };
         }
 
+        function getOnboardingTrainingPath(moduleName, pathKey) {
+            const text = `${moduleName || ''} ${pathKey || ''}`.toLowerCase();
+            if (text.includes('walkaround') || text.includes('lane greeting') || text.includes('service flow')) return 'walkaround/';
+            if (text.includes('menu') || text.includes('maintenance awareness')) return 'menu-sales/';
+            if (text.includes('phone') || text.includes('customer communication') || text.includes('promise') || text.includes('declined') || text.includes('handoff') || text.includes('status')) return 'customer-comms/';
+            if (text.includes('mpvi') || text.includes('mpi') || text.includes('video') || text.includes('recommendation') || text.includes('documentation') || text.includes('quality') || text.includes('ro review')) return 'mpvi/';
+            if (text.includes('objection')) return 'objections/';
+            return '';
+        }
+
         function statusLabel(status) {
             return {
                 not_started: 'Not Started',
@@ -15818,21 +15897,28 @@
 
                 <div class="onboarding-section">
                     <div class="onboarding-section-head">
-                        <span>Required for ${onboardingEscape(path.label)} Path</span>
+                        <div class="onboarding-section-title-stack">
+                            <span>Training Modules for ${onboardingEscape(path.label)} Path</span>
+                            <small>Employees complete lessons and quizzes in the Training app; managers verify the gate here.</small>
+                        </div>
                         <span class="onboarding-pill ${state.trainingComplete ? 'good' : 'watch'}">${state.moduleDone} of ${path.modules.length} complete</span>
                     </div>
                     ${path.modules.map((module, index) => {
                         const done = index < state.moduleDone;
+                        const trainingPath = getOnboardingTrainingPath(module, person.path_key);
                         return `
                             <div class="onboarding-module-row">
-                                <div style="display:flex;gap:12px;align-items:flex-start;">
+                                <div class="onboarding-row-main">
                                     <span class="onboarding-check ${done ? 'good' : 'watch'}">${done ? 'OK' : '!'}</span>
                                     <div>
                                         <div class="onboarding-person-name">${onboardingEscape(module)}</div>
-                                        <div class="onboarding-person-sub">${done ? 'Training app complete or manager marked complete' : 'Required before go-live'}</div>
+                                        <div class="onboarding-person-sub">${done ? 'Complete in Training app or verified by manager' : 'Required before go-live. Open the assigned training, complete the lessons, and pass the knowledge check.'}</div>
                                     </div>
                                 </div>
-                                <span class="onboarding-pill ${done ? 'good' : 'watch'}">${done ? 'Done' : 'Open'}</span>
+                                <div class="onboarding-row-actions">
+                                    <button class="onboarding-row-action onboarding-training-link" type="button" data-training-path="${onboardingEscape(trainingPath)}">${done ? 'Review Training' : 'Open Training'}</button>
+                                    <span class="onboarding-pill ${done ? 'good' : 'watch'}">${done ? 'Done' : 'Training Required'}</span>
+                                </div>
                             </div>
                         `;
                     }).join('')}
@@ -15840,14 +15926,17 @@
 
                 <div class="onboarding-section">
                     <div class="onboarding-section-head">
-                        <span>Manager Observation</span>
+                        <div class="onboarding-section-title-stack">
+                            <span>Manager Observation</span>
+                            <small>This is not a training module. A manager passes this after watching the employee do the work live.</small>
+                        </div>
                         <span class="onboarding-pill ${state.observationComplete ? 'good' : 'watch'}">${state.obsDone} of ${path.observations.length}</span>
                     </div>
                     ${path.observations.map((item, index) => {
                         const done = index < state.obsDone;
                         return `
                             <div class="onboarding-module-row">
-                                <div style="display:flex;gap:12px;align-items:flex-start;">
+                                <div class="onboarding-row-main">
                                     <span class="onboarding-check ${done ? 'good' : 'bad'}">${done ? 'OK' : 'X'}</span>
                                     <div>
                                         <div class="onboarding-person-name">${onboardingEscape(item)}</div>
@@ -15860,6 +15949,9 @@
                     }).join('')}
                 </div>
             `;
+            detail.querySelectorAll('.onboarding-training-link').forEach(btn => {
+                btn.addEventListener('click', () => openOnboardingTrainingPath(btn.dataset.trainingPath || ''));
+            });
 
             renderOnboardingGate(person, state);
         }
@@ -15875,7 +15967,7 @@
             gate.innerHTML = `
                 <div class="onboarding-gate-box">
                     <h4>Training Status</h4>
-                    <p>${state.moduleDone} of ${path.modules.length} required ${path.label.toLowerCase()} modules complete. Optional cross-training modules do not block this gate.</p>
+                    <p>${state.moduleDone} of ${path.modules.length} required ${path.label.toLowerCase()} modules complete. Employees complete modules in the Training app; this page is the manager verification and go-live gate.</p>
                 </div>
                 <div class="onboarding-gate-box">
                     <h4>Manager Observation</h4>
@@ -15894,11 +15986,11 @@
                 </div>
                 <div class="onboarding-actions">
                     ${managerControls ? `
-                        <button class="btn" type="button" onclick="setOnboardingStep('${onboardingEscape(person.person_key)}', 'training_complete')">Mark Training Complete</button>
-                        <button class="btn" type="button" onclick="setOnboardingStep('${onboardingEscape(person.person_key)}', 'observation_complete')">Mark Manager Observation Complete</button>
+                        <button class="btn" type="button" onclick="setOnboardingStep('${onboardingEscape(person.person_key)}', 'training_complete')">Verify Training Complete</button>
+                        <button class="btn" type="button" onclick="setOnboardingStep('${onboardingEscape(person.person_key)}', 'observation_complete')">Pass Manager Observation</button>
                         <button class="btn" type="button" onclick="setOnboardingStep('${onboardingEscape(person.person_key)}', 'go_live_ready')">Approve Go-Live Ready</button>
                         <button class="btn" type="button" onclick="setOnboardingStep('${onboardingEscape(person.person_key)}', 'commission_released')">Release Commission / Production</button>
-                        <button class="btn btn-secondary" type="button" onclick="resetOnboardingRecord('${onboardingEscape(person.person_key)}')">Reset Onboarding</button>
+                        <button class="btn btn-secondary" type="button" onclick="resetOnboardingRecord('${onboardingEscape(person.person_key)}')">Reset Onboarding + Roster Gate</button>
                     ` : '<div class="onboarding-empty">Read-only view. Managers approve training, observations, and go-live status.</div>'}
                     <button class="btn btn-secondary" type="button" onclick="openOnboardingTraining('library')">Open Training App</button>
                     <button class="btn btn-secondary" type="button" onclick="openOnboardingTraining('admin')">Open Training Admin</button>
@@ -15946,11 +16038,27 @@
             const person = onboardingPeople.find(p => p.person_key === personKey);
             if (!person) return;
             const next = defaultOnboardingRecord(person);
-            await LS.saveOnboardingRecord(next);
-            showToast('Onboarding reset');
+            const result = await LS.saveOnboardingRecord(next);
+            let rosterResult = { ok: true };
+            if (person.person_key.startsWith('advisor:')) {
+                rosterResult = await LS.clearAdvisorRosterTrainingStatus(person.id);
+            }
+            if (result && result.ok === false) {
+                showToast('Onboarding reset locally, but Supabase did not save the reset', 'error');
+            } else if (rosterResult && rosterResult.ok === false) {
+                showToast('Onboarding reset. Roster go-live flag could not be cleared', 'error');
+            } else {
+                showToast(person.person_key.startsWith('advisor:') ? 'Onboarding reset and roster go-live flag cleared' : 'Onboarding reset');
+            }
             await loadOnboarding();
             selectedOnboardingKey = personKey;
             renderOnboarding();
+        }
+
+        function openOnboardingTrainingPath(trainingPath) {
+            const fileMode = window.location.protocol === 'file:';
+            const base = fileMode ? 'training/' : '/training/';
+            window.open(base + (trainingPath || ''), '_blank', 'noopener');
         }
 
         function openOnboardingTraining(target) {
