@@ -2877,11 +2877,10 @@
                         <li><button class="nav-dropdown-item active" data-tab="dashboard" data-group="performance" data-sub="Service">Service Dashboard</button></li>
                         <li><button class="nav-dropdown-item" data-tab="parts" data-group="performance" data-sub="Parts">Parts Dashboard</button></li>
                         <li><button class="nav-dropdown-item" data-tab="collisionDashboard" data-group="performance" data-sub="Collision">Collision Dashboard</button></li>
-                        <li><button class="nav-dropdown-item" data-tab="executive" data-group="performance" data-sub="Roll-Up">Executive Roll-Up</button></li>
-                        <li><button class="nav-dropdown-item" data-tab="advisor" data-group="performance" data-sub="People">Service People Scorecards</button></li>
+                        <li><button class="nav-dropdown-item" data-tab="advisor" data-group="performance" data-sub="Advisor">Advisor Scorecard</button></li>
                         <li><button class="nav-dropdown-item" data-tab="partsAdvisor" data-group="performance" data-sub="People">Parts Counter Scorecards</button></li>
                         <li><button class="nav-dropdown-item" data-tab="collisionAdvisor" data-group="performance" data-sub="People">Collision Estimator Scorecards</button></li>
-                        <li><button class="nav-dropdown-item" data-tab="roster" data-group="performance" data-sub="Capacity">Roster &amp; Capacity</button></li>
+                        <li><button class="nav-dropdown-item" data-tab="roster" data-group="performance" data-sub="Service">Service Roster</button></li>
                         <li><button class="nav-dropdown-item" data-tab="partsRoster" data-group="performance" data-sub="Capacity">Parts Roster</button></li>
                         <li><button class="nav-dropdown-item" data-tab="collisionRoster" data-group="performance" data-sub="Capacity">Collision Roster</button></li>
                         <li><button class="nav-dropdown-item" id="goalsTab" data-tab="goals" data-group="performance" data-sub="Goals" style="display:none;">Goals &amp; Settings</button></li>
@@ -6070,6 +6069,19 @@
         // ============================================================================
         // NAVIGATION & TABS
         // ============================================================================
+        function setDropdownOpen(dropdown, open) {
+            if (!dropdown) return;
+            dropdown.classList.toggle('open', open);
+            const toggle = dropdown.querySelector('.nav-dropdown-toggle');
+            if (toggle) toggle.setAttribute('aria-expanded', String(open));
+        }
+
+        function closeOpenDropdowns(exceptDropdown) {
+            document.querySelectorAll('.nav-dropdown.open').forEach(dropdown => {
+                if (dropdown !== exceptDropdown) setDropdownOpen(dropdown, false);
+            });
+        }
+
         // setNavActiveState(tabId): visual-only update — set the right dropdown item,
         // its parent toggle (with sub-label), or a standalone nav-btn as active, and
         // show the matching tab panel. No data loader call. Use during login flow
@@ -6155,20 +6167,14 @@
         }
 
         // Dropdown toggle button → open/close menu (no tab switch)
-        // In sidebar context, allow multiple groups to be open at once.
         document.querySelectorAll('.nav-dropdown-toggle').forEach(toggle => {
             toggle.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const dropdown = toggle.closest('.nav-dropdown');
                 if (!dropdown) return;
-                const inSidebar = !!dropdown.closest('.sidebar');
                 const wasOpen = dropdown.classList.contains('open');
-                if (!inSidebar) {
-                    // Legacy navbar behavior: only one dropdown open at a time
-                    document.querySelectorAll('.nav-dropdown').forEach(d => d.classList.remove('open'));
-                }
-                dropdown.classList.toggle('open', !wasOpen);
-                toggle.setAttribute('aria-expanded', String(!wasOpen));
+                closeOpenDropdowns(dropdown);
+                setDropdownOpen(dropdown, !wasOpen);
             });
         });
 
@@ -6176,8 +6182,11 @@
         document.querySelectorAll('.nav-dropdown-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (!item.dataset.tab) return;
-                activateTab(item.dataset.tab);
+                if (!item.dataset.tab) {
+                    closeOpenDropdowns();
+                    return;
+                }
+                if (activateTab(item.dataset.tab)) closeOpenDropdowns();
             });
         });
 
@@ -6191,13 +6200,9 @@
             });
         });
 
-        // Click anywhere outside an open dropdown → close all
-        // (only applies to legacy navbar dropdowns, NOT sidebar groups)
+        // Click anywhere outside an open dropdown → close all menus.
         document.addEventListener('click', (e) => {
-            if (e.target.closest('.sidebar')) return;
-            if (!e.target.closest('.nav-dropdown')) {
-                document.querySelectorAll('.nav-dropdown:not(.sidebar .nav-dropdown)').forEach(d => d.classList.remove('open'));
-            }
+            if (!e.target.closest('.nav-dropdown')) closeOpenDropdowns();
         });
 
         // ===== Sidebar hamburger toggle (mobile) =====
