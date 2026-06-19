@@ -1773,6 +1773,15 @@
             box-shadow: 0 8px 20px rgba(204, 0, 0, 0.12);
         }
 
+        .sop-inline-detail {
+            border: 1px solid #fecaca;
+            border-left: 4px solid #cc0000;
+            border-radius: 8px;
+            background: #ffffff;
+            padding: 14px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 8px 18px rgba(15, 23, 42, 0.06);
+        }
+
         .sop-item-top,
         .sop-detail-top {
             display: flex;
@@ -1781,10 +1790,11 @@
             align-items: flex-start;
         }
 
-        .sop-detail h3 {
+        .sop-detail h3,
+        .sop-inline-detail h3 {
             margin: 0 0 5px 0;
             color: #111827;
-            font-size: 22px;
+            font-size: 18px;
             line-height: 1.15;
         }
 
@@ -3953,7 +3963,6 @@
                     </div>
                     <div class="sop-panel-body">
                         <div class="sop-list" id="sopLibraryList"></div>
-                        <div class="sop-detail" id="sopDetailPanel" style="margin-top:16px;"></div>
                     </div>
                 </div>
 
@@ -15240,7 +15249,6 @@
             renderSopOrgChart();
             renderSopPositionList(positions);
             renderSopLibrary(sops);
-            renderSopDetail(sops.find(s => s.id === selectedSopId));
             renderSopResponsibilities();
         }
 
@@ -15341,17 +15349,21 @@
                             <span class="sop-pill gold">${group.sops.length} items</span>
                         </div>
                         <div class="sop-role-group-list">
-                            ${group.sops.map(sop => `
-                                <button class="sop-list-item ${sop.id === selectedSopId ? 'active' : ''}" type="button" data-sop-id="${onboardingEscape(sop.id)}">
-                                    <div class="sop-item-top">
-                                        <div>
-                                            <div class="sop-title">${onboardingEscape(sop.title)}</div>
-                                            <div class="sop-sub">${sop.is_role_overview ? 'Overall job standard' : 'Detailed workflow SOP'}</div>
+                            ${group.sops.map(sop => {
+                                const isSelected = sop.id === selectedSopId;
+                                return `
+                                    <button class="sop-list-item ${isSelected ? 'active' : ''}" type="button" data-sop-id="${onboardingEscape(sop.id)}" aria-expanded="${isSelected ? 'true' : 'false'}">
+                                        <div class="sop-item-top">
+                                            <div>
+                                                <div class="sop-title">${onboardingEscape(sop.title)}</div>
+                                                <div class="sop-sub">${sop.is_role_overview ? 'Overall job standard' : 'Detailed workflow SOP'}</div>
+                                            </div>
+                                            <span class="sop-pill ${sop.is_role_overview ? 'green' : 'red'}">${sop.is_role_overview ? 'Overall' : 'SOP'}</span>
                                         </div>
-                                        <span class="sop-pill ${sop.is_role_overview ? 'green' : 'red'}">${sop.is_role_overview ? 'Overall' : 'SOP'}</span>
-                                    </div>
-                                </button>
-                            `).join('')}
+                                    </button>
+                                    ${isSelected ? renderSopDetailMarkup(sop) : ''}
+                                `;
+                            }).join('')}
                         </div>
                     </div>
                 `;
@@ -15364,15 +15376,11 @@
             });
         }
 
-        function renderSopDetail(sop) {
-            const detail = document.getElementById('sopDetailPanel');
-            if (!detail) return;
-            if (!sop) {
-                detail.innerHTML = '<div class="sop-empty">Select an SOP to view the operating standard.</div>';
-                return;
-            }
+        function renderSopDetailMarkup(sop) {
+            if (!sop) return '';
             const pos = SOP_POSITIONS.find(p => p.key === sop.role_key);
-            detail.innerHTML = `
+            return `
+                <div class="sop-inline-detail">
                 <div class="sop-detail-top">
                     <div>
                         <h3>${onboardingEscape(sop.title)}</h3>
@@ -15395,6 +15403,7 @@
                 <div class="sop-detail-section">
                     <h4>Manager Check</h4>
                     <div class="sop-sub">${onboardingEscape(sop.manager_check)}</div>
+                </div>
                 </div>
             `;
         }
