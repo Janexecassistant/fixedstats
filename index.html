@@ -5368,18 +5368,20 @@
                     }
                 });
             } else if (currentUser.role === 'advisor') {
-                // Advisors: see their Advisor scorecard and the Daily Pulse check-in only.
+                // Advisors: see their Advisor scorecard, Daily Pulse, their onboarding path, and SOPs.
                 adminTab.style.display = 'none';
-                if (onboardingTab) onboardingTab.style.display = 'none';
+                if (onboardingTab) onboardingTab.style.display = '';
                 if (sopsNavItem) sopsNavItem.style.display = '';
                 if (goalsTab) goalsTab.style.display = 'none';
                 if (facilityBaysGroup) facilityBaysGroup.style.display = 'none';
                 if (saveFacilityBtn) saveFacilityBtn.style.display = 'none';
                 if (baysKpiCard) baysKpiCard.style.display = 'none';
 
-                // Hide every nav-tab li except Advisors and Accountability.
+                // Hide every nav-tab li except Advisors, Accountability, Onboarding, and SOPs.
                 document.querySelectorAll('.nav-tab').forEach(li => {
-                    if (li.id !== 'navGroupAdvisor' && li.id !== 'navGroupAccountability' && li.id !== 'sopsNavItem') li.style.display = 'none';
+                    const isOnboardingNav = !!li.querySelector('#onboardingTab');
+                    const allowed = li.id === 'navGroupAdvisor' || li.id === 'navGroupAccountability' || li.id === 'sopsNavItem' || isOnboardingNav;
+                    li.style.display = allowed ? '' : 'none';
                 });
                 // Hide non-Service items inside both exposed dropdowns.
                 document.querySelectorAll('#navGroupAdvisor .nav-dropdown-item').forEach(item => {
@@ -5399,23 +5401,25 @@
 
                 // Advisors are read-only except for their Daily Pulse check-in.
                 document.querySelectorAll('input:not([readonly]), select, textarea').forEach(el => {
-                    if (!el.closest('#loginScreen') && !el.closest('.navbar') && !el.closest('#dailyPulseCard') && !el.closest('#sops')) {
+                    if (!el.closest('#loginScreen') && !el.closest('.navbar') && !el.closest('#dailyPulseCard') && !el.closest('#sops') && !el.closest('#onboarding')) {
                         el.disabled = true;
                     }
                 });
             } else if (currentUser.role === 'technician') {
-                // Technicians: see Roster and the Daily Pulse check-in only.
+                // Technicians: see Roster, Daily Pulse, their onboarding path, and SOPs.
                 adminTab.style.display = 'none';
-                if (onboardingTab) onboardingTab.style.display = 'none';
+                if (onboardingTab) onboardingTab.style.display = '';
                 if (sopsNavItem) sopsNavItem.style.display = '';
                 if (goalsTab) goalsTab.style.display = 'none';
                 if (facilityBaysGroup) facilityBaysGroup.style.display = 'none';
                 if (saveFacilityBtn) saveFacilityBtn.style.display = 'none';
                 if (baysKpiCard) baysKpiCard.style.display = 'none';
 
-                // Hide every nav-tab li except Roster and Accountability.
+                // Hide every nav-tab li except Roster, Accountability, Onboarding, and SOPs.
                 document.querySelectorAll('.nav-tab').forEach(li => {
-                    if (li.id !== 'navGroupRoster' && li.id !== 'navGroupAccountability' && li.id !== 'sopsNavItem') li.style.display = 'none';
+                    const isOnboardingNav = !!li.querySelector('#onboardingTab');
+                    const allowed = li.id === 'navGroupRoster' || li.id === 'navGroupAccountability' || li.id === 'sopsNavItem' || isOnboardingNav;
+                    li.style.display = allowed ? '' : 'none';
                 });
                 // Hide non-Service items inside both exposed dropdowns.
                 document.querySelectorAll('#navGroupRoster .nav-dropdown-item').forEach(item => {
@@ -5435,7 +5439,7 @@
 
                 // Technicians are read-only except for their Daily Pulse check-in.
                 document.querySelectorAll('input:not([readonly]), select, textarea').forEach(el => {
-                    if (!el.closest('#loginScreen') && !el.closest('.navbar') && !el.closest('#dailyPulseCard') && !el.closest('#sops')) {
+                    if (!el.closest('#loginScreen') && !el.closest('.navbar') && !el.closest('#dailyPulseCard') && !el.closest('#sops') && !el.closest('#onboarding')) {
                         el.disabled = true;
                     }
                 });
@@ -6083,12 +6087,12 @@
             const currentTab = document.querySelector('.tab-content.active')?.id;
 
             // Role restrictions
-            if (currentUser && currentUser.role === 'advisor' && !['advisor', 'accountability', 'sops'].includes(tabId)) {
-                showToast('Advisors only have access to Advisor, Daily Pulse, and SOPs', 'error');
+            if (currentUser && currentUser.role === 'advisor' && !['advisor', 'accountability', 'onboarding', 'sops'].includes(tabId)) {
+                showToast('Advisors only have access to Advisor, Daily Pulse, Onboarding, and SOPs', 'error');
                 return false;
             }
-            if (currentUser && currentUser.role === 'technician' && !['roster', 'accountability', 'sops'].includes(tabId)) {
-                showToast('Technicians only have access to Roster, Daily Pulse, and SOPs', 'error');
+            if (currentUser && currentUser.role === 'technician' && !['roster', 'accountability', 'onboarding', 'sops'].includes(tabId)) {
+                showToast('Technicians only have access to Roster, Daily Pulse, Onboarding, and SOPs', 'error');
                 return false;
             }
 
@@ -7170,12 +7174,22 @@
                 // Apply store filtering and default store AFTER options are populated
                 applyStoreDefaults();
 
-                // Load the user's default landing tab. applyRoleAccess() has already set
-                // visual active states; here we just run the matching data loader.
+                // Load the user's default landing tab. Employees who are not go-live
+                // ready land on their onboarding checklist first.
                 if (currentUser && currentUser.role === 'advisor') {
-                    await loadAdvisor();
+                    if (await shouldStartOnEmployeeOnboarding()) {
+                        setNavActiveState('onboarding');
+                        await loadOnboarding();
+                    } else {
+                        await loadAdvisor();
+                    }
                 } else if (currentUser && currentUser.role === 'technician') {
-                    await loadRoster();
+                    if (await shouldStartOnEmployeeOnboarding()) {
+                        setNavActiveState('onboarding');
+                        await loadOnboarding();
+                    } else {
+                        await loadRoster();
+                    }
                 } else if (currentUser && currentUser.role === 'parts_manager') {
                     await loadPartsDailyEntry();
                 } else if (currentUser && currentUser.role === 'collision_manager') {
@@ -15555,6 +15569,52 @@
         let onboardingPeople = [];
         let selectedOnboardingKey = null;
 
+        function isEmployeeOnboardingUser() {
+            return !!currentUser && ['advisor', 'technician'].includes(currentUser.role);
+        }
+
+        function normalizeOnboardingName(value) {
+            return String(value || '')
+                .toLowerCase()
+                .replace(/@.*/, '')
+                .replace(/[^a-z0-9]+/g, ' ')
+                .trim();
+        }
+
+        function currentUserOnboardingPathKeys() {
+            if (!currentUser) return [];
+            if (currentUser.role === 'advisor') return ['advisor'];
+            if (currentUser.role === 'technician') return ['technician', 'lube_technician'];
+            return [];
+        }
+
+        function onboardingPersonMatchesCurrentUser(person, requireStoreMatch) {
+            if (!currentUser || !person) return false;
+            const personName = normalizeOnboardingName(person.name);
+            const possibleNames = [
+                currentUser.display_name,
+                currentUser.username,
+                currentUser.email
+            ].map(normalizeOnboardingName).filter(Boolean);
+            const nameMatch = possibleNames.some(name =>
+                name === personName || personName.includes(name) || name.includes(personName)
+            );
+            if (!nameMatch) return false;
+            if (!requireStoreMatch) return true;
+            const userStores = new Set((currentUser.store_access || []).map(String));
+            if (currentUser.default_store) userStores.add(String(currentUser.default_store));
+            return !userStores.size || userStores.has(String(person.store_id));
+        }
+
+        function getCurrentUserOnboardingPerson() {
+            if (!isEmployeeOnboardingUser()) return null;
+            const pathKeys = currentUserOnboardingPathKeys();
+            const candidates = onboardingPeople.filter(person => pathKeys.includes(person.path_key));
+            return candidates.find(person => onboardingPersonMatchesCurrentUser(person, true))
+                || candidates.find(person => onboardingPersonMatchesCurrentUser(person, false))
+                || null;
+        }
+
         function onboardingEscape(value) {
             return String(value == null ? '' : value)
                 .replace(/&/g, '&amp;')
@@ -15741,14 +15801,34 @@
             return '';
         }
 
+        async function refreshOnboardingData() {
+            if (typeof loadManagementAndExecutiveStaff === 'function') {
+                await loadManagementAndExecutiveStaff();
+            }
+            onboardingRecords = await LS.getOnboardingRecords();
+            const rosterEntries = await LS.getRosterEntries();
+            onboardingPeople = buildOnboardingPeople(rosterEntries);
+        }
+
+        async function shouldStartOnEmployeeOnboarding() {
+            if (!isEmployeeOnboardingUser()) return false;
+            try {
+                await refreshOnboardingData();
+                const person = getCurrentUserOnboardingPerson();
+                if (!person) return true;
+                return !getOnboardingStatus(person).goLiveReady;
+            } catch (error) {
+                console.warn('Employee onboarding gate check failed:', error);
+                return true;
+            }
+        }
+
         async function loadOnboarding() {
             try {
-                if (typeof loadManagementAndExecutiveStaff === 'function') {
-                    await loadManagementAndExecutiveStaff();
+                await refreshOnboardingData();
+                if (isEmployeeOnboardingUser()) {
+                    selectedOnboardingKey = getCurrentUserOnboardingPerson()?.person_key || null;
                 }
-                onboardingRecords = await LS.getOnboardingRecords();
-                const rosterEntries = await LS.getRosterEntries();
-                onboardingPeople = buildOnboardingPeople(rosterEntries);
                 renderOnboarding();
             } catch (error) {
                 console.error('Onboarding load error:', error);
@@ -15757,6 +15837,10 @@
         }
 
         function getFilteredOnboardingPeople() {
+            if (isEmployeeOnboardingUser()) {
+                const person = getCurrentUserOnboardingPerson();
+                return person ? [person] : [];
+            }
             const query = (document.getElementById('onboardingSearch')?.value || '').trim().toLowerCase();
             const pathFilter = document.getElementById('onboardingPathFilter')?.value || 'all';
             const statusFilter = document.getElementById('onboardingStatusFilter')?.value || 'all';
@@ -15779,6 +15863,11 @@
 
         function renderOnboarding() {
             const people = getFilteredOnboardingPeople();
+            renderOnboardingModeUi(people);
+            if (isEmployeeOnboardingUser() && !people.length) {
+                renderCurrentUserOnboardingFallback();
+                return;
+            }
             if (!selectedOnboardingKey || !people.some(p => p.person_key === selectedOnboardingKey)) {
                 selectedOnboardingKey = people[0]?.person_key || null;
             }
@@ -15788,6 +15877,32 @@
         }
 
         function renderOnboardingSummary(filteredPeople) {
+            if (isEmployeeOnboardingUser()) {
+                const person = filteredPeople[0];
+                const summary = document.getElementById('onboardingSummaryCards');
+                if (summary) {
+                    if (!person) {
+                        summary.innerHTML = '';
+                    } else {
+                        const state = getOnboardingStatus(person);
+                        const cards = [
+                            ['Your Path', state.path.label],
+                            ['Training', `${state.moduleDone}/${state.path.modules.length}`],
+                            ['Observation', `${state.obsDone}/${state.path.observations.length}`],
+                            ['Go-Live Gate', state.goLiveReady ? 'Open' : 'Locked']
+                        ];
+                        summary.innerHTML = cards.map(([label, value]) => `
+                            <div class="onboarding-kpi">
+                                <b>${onboardingEscape(value)}</b>
+                                <span>${onboardingEscape(label)}</span>
+                            </div>
+                        `).join('');
+                    }
+                }
+                const queueCount = document.getElementById('onboardingQueueCount');
+                if (queueCount) queueCount.textContent = person ? 'My profile' : 'Profile not linked';
+                return;
+            }
             const all = onboardingPeople.map(p => ({ person: p, state: getOnboardingStatus(p) }));
             const counts = all.reduce((acc, item) => {
                 acc.total++;
@@ -15956,6 +16071,131 @@
             renderOnboardingGate(person, state);
         }
 
+        function renderOnboardingModeUi(people) {
+            const hero = document.querySelector('#onboarding .onboarding-hero');
+            const title = hero?.querySelector('h2');
+            const copy = hero?.querySelector('p');
+            const filters = hero?.querySelector('.onboarding-filter-row');
+            const queueTitle = document.querySelector('#onboarding .onboarding-panel-title');
+            if (isEmployeeOnboardingUser()) {
+                if (title) title.textContent = 'My Onboarding';
+                if (copy) copy.textContent = 'Complete the assigned Training app modules, then your manager observes the work and approves go-live before independent production or commission starts.';
+                if (filters) filters.style.display = 'none';
+                if (queueTitle) queueTitle.textContent = 'My Status';
+            } else {
+                if (title) title.textContent = 'Onboarding';
+                if (copy) copy.textContent = 'Position-based readiness for service employees. Training modules live in the Training app; fixedstats owns roster status, manager sign-off, go-live readiness, and commission release.';
+                if (filters) filters.style.display = '';
+                if (queueTitle) queueTitle.textContent = 'Queue';
+            }
+        }
+
+        function renderCurrentUserOnboardingFallback() {
+            const summary = document.getElementById('onboardingSummaryCards');
+            const queueCount = document.getElementById('onboardingQueueCount');
+            const list = document.getElementById('onboardingQueueList');
+            const detail = document.getElementById('onboardingDetailPanel');
+            const gate = document.getElementById('onboardingGatePanel');
+            const selectedBadge = document.getElementById('onboardingSelectedBadge');
+            const gateBadge = document.getElementById('onboardingGateBadge');
+            const name = currentUser?.display_name || currentUser?.username || 'Your profile';
+            const roleLabel = currentUser?.role === 'technician' ? 'Technician' : 'Advisor';
+            if (summary) {
+                summary.innerHTML = [
+                    ['Your Path', roleLabel],
+                    ['First Step', 'Training App'],
+                    ['Manager Gate', 'Required'],
+                    ['Go-Live', 'Locked']
+                ].map(([label, value]) => `
+                    <div class="onboarding-kpi">
+                        <b>${onboardingEscape(value)}</b>
+                        <span>${onboardingEscape(label)}</span>
+                    </div>
+                `).join('');
+            }
+            if (queueCount) queueCount.textContent = 'Profile not linked';
+            if (list) {
+                list.innerHTML = `
+                    <div class="onboarding-queue-item active" style="cursor:default;">
+                        <div class="onboarding-queue-top">
+                            <div>
+                                <div class="onboarding-person-name">${onboardingEscape(name)}</div>
+                                <div class="onboarding-person-sub">${onboardingEscape(roleLabel)} onboarding path</div>
+                            </div>
+                            <span class="onboarding-pill locked">Roster Link Needed</span>
+                        </div>
+                        <div class="onboarding-progress"><span style="width:0%"></span></div>
+                        <div class="onboarding-small-row"><span>Start in Training app</span><strong>0%</strong></div>
+                    </div>
+                `;
+            }
+            if (selectedBadge) {
+                selectedBadge.textContent = 'Start onboarding';
+                selectedBadge.className = 'onboarding-pill watch';
+            }
+            if (gateBadge) {
+                gateBadge.textContent = 'Locked';
+                gateBadge.className = 'onboarding-pill locked';
+            }
+            if (detail) {
+                detail.innerHTML = `
+                    <div class="onboarding-section" style="margin-top:0;">
+                        <div class="onboarding-section-head">
+                            <div class="onboarding-section-title-stack">
+                                <span>Before You Go Live</span>
+                                <small>Your manager needs to connect your login to the fixedstats roster, but you can start the Training app now.</small>
+                            </div>
+                            <span class="onboarding-pill watch">Required</span>
+                        </div>
+                        <div class="onboarding-module-row">
+                            <div class="onboarding-row-main">
+                                <span class="onboarding-check watch">1</span>
+                                <div>
+                                    <div class="onboarding-person-name">Complete assigned Training app modules</div>
+                                    <div class="onboarding-person-sub">Lessons and quizzes are completed in the Training app.</div>
+                                </div>
+                            </div>
+                            <button class="onboarding-row-action" type="button" onclick="openOnboardingTraining('library')">Open Training</button>
+                        </div>
+                        <div class="onboarding-module-row">
+                            <div class="onboarding-row-main">
+                                <span class="onboarding-check bad">2</span>
+                                <div>
+                                    <div class="onboarding-person-name">Manager observation</div>
+                                    <div class="onboarding-person-sub">Your manager watches the role-specific workflow before approving go-live.</div>
+                                </div>
+                            </div>
+                            <span class="onboarding-pill locked">Manager Gate</span>
+                        </div>
+                        <div class="onboarding-module-row">
+                            <div class="onboarding-row-main">
+                                <span class="onboarding-check bad">3</span>
+                                <div>
+                                    <div class="onboarding-person-name">Go-live and commission / production release</div>
+                                    <div class="onboarding-person-sub">You are not cleared for independent work until the manager gate is approved.</div>
+                                </div>
+                            </div>
+                            <span class="onboarding-pill locked">Locked</span>
+                        </div>
+                    </div>
+                `;
+            }
+            if (gate) {
+                gate.innerHTML = `
+                    <div class="onboarding-gate-box">
+                        <h4>Why You Are Seeing This</h4>
+                        <p>New service employees must complete assigned training before going live. A manager then observes the work, approves go-live, and releases commission or production status.</p>
+                    </div>
+                    <div class="onboarding-guardrail">
+                        Ask your manager to connect your user login to your fixedstats roster profile so this page can show your exact module progress.
+                    </div>
+                    <div class="onboarding-actions">
+                        <button class="btn btn-secondary" type="button" onclick="openOnboardingTraining('library')">Open Training App</button>
+                    </div>
+                `;
+            }
+        }
+
         function renderOnboardingGate(person, state) {
             const gate = document.getElementById('onboardingGatePanel');
             if (!gate) return;
@@ -15993,7 +16233,7 @@
                         <button class="btn btn-secondary" type="button" onclick="resetOnboardingRecord('${onboardingEscape(person.person_key)}')">Reset Onboarding + Roster Gate</button>
                     ` : '<div class="onboarding-empty">Read-only view. Managers approve training, observations, and go-live status.</div>'}
                     <button class="btn btn-secondary" type="button" onclick="openOnboardingTraining('library')">Open Training App</button>
-                    <button class="btn btn-secondary" type="button" onclick="openOnboardingTraining('admin')">Open Training Admin</button>
+                    ${managerControls ? '<button class="btn btn-secondary" type="button" onclick="openOnboardingTraining(\'admin\')">Open Training Admin</button>' : ''}
                 </div>
             `;
         }
