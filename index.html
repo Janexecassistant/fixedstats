@@ -1376,6 +1376,24 @@
             border-top: 1px solid #e2e8f0;
         }
 
+        .onboarding-training-row {
+            cursor: pointer;
+            transition: background 0.16s ease, box-shadow 0.16s ease;
+        }
+
+        .onboarding-training-row:hover,
+        .onboarding-training-row:focus {
+            background: #fff7f7;
+            box-shadow: inset 3px 0 0 #cc0000;
+            outline: none;
+        }
+
+        .onboarding-training-row:hover .onboarding-row-action,
+        .onboarding-training-row:focus .onboarding-row-action {
+            border-color: #cc0000;
+            color: #b91c1c;
+        }
+
         .onboarding-module-row:first-of-type,
         .onboarding-gate-row:first-of-type {
             border-top: 0;
@@ -15771,11 +15789,12 @@
 
         function getOnboardingTrainingPath(moduleName, pathKey) {
             const text = `${moduleName || ''} ${pathKey || ''}`.toLowerCase();
-            if (text.includes('walkaround') || text.includes('lane greeting') || text.includes('service flow')) return 'walkaround/';
+            if (text.includes('phone')) return 'phone-skills/';
+            if (text.includes('objection') || text.includes('declined')) return 'objections/';
+            if (text.includes('walkaround') || text.includes('lane greeting') || text.includes('service flow') || text.includes('ro documentation')) return 'walkaround/';
             if (text.includes('menu') || text.includes('maintenance awareness')) return 'menu-sales/';
-            if (text.includes('phone') || text.includes('customer communication') || text.includes('promise') || text.includes('declined') || text.includes('handoff') || text.includes('status')) return 'customer-comms/';
+            if (text.includes('customer communication') || text.includes('promise') || text.includes('handoff') || text.includes('status')) return 'customer-comms/';
             if (text.includes('mpvi') || text.includes('mpi') || text.includes('video') || text.includes('recommendation') || text.includes('documentation') || text.includes('quality') || text.includes('ro review')) return 'mpvi/';
-            if (text.includes('objection')) return 'objections/';
             return '';
         }
 
@@ -16022,7 +16041,7 @@
                         const done = index < state.moduleDone;
                         const trainingPath = getOnboardingTrainingPath(module, person.path_key);
                         return `
-                            <div class="onboarding-module-row">
+                            <div class="onboarding-module-row onboarding-training-row" role="button" tabindex="0" data-training-path="${onboardingEscape(trainingPath)}" aria-label="Open training for ${onboardingEscape(module)}">
                                 <div class="onboarding-row-main">
                                     <span class="onboarding-check ${done ? 'good' : 'watch'}">${done ? 'OK' : '!'}</span>
                                     <div>
@@ -16031,7 +16050,7 @@
                                     </div>
                                 </div>
                                 <div class="onboarding-row-actions">
-                                    <button class="onboarding-row-action onboarding-training-link" type="button" data-training-path="${onboardingEscape(trainingPath)}">${done ? 'Review Training' : 'Open Training'}</button>
+                                    <span class="onboarding-row-action">${done ? 'Review Training' : 'Open Training'}</span>
                                     <span class="onboarding-pill ${done ? 'good' : 'watch'}">${done ? 'Done' : 'Training Required'}</span>
                                 </div>
                             </div>
@@ -16064,8 +16083,15 @@
                     }).join('')}
                 </div>
             `;
-            detail.querySelectorAll('.onboarding-training-link').forEach(btn => {
-                btn.addEventListener('click', () => openOnboardingTrainingPath(btn.dataset.trainingPath || ''));
+            detail.querySelectorAll('.onboarding-training-row').forEach(row => {
+                const openRowTraining = () => openOnboardingTrainingPath(row.dataset.trainingPath || '');
+                row.addEventListener('click', openRowTraining);
+                row.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        openRowTraining();
+                    }
+                });
             });
 
             renderOnboardingGate(person, state);
