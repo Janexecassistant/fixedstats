@@ -2949,12 +2949,12 @@
          first login / admin reset (must_change_password flag on app_users). -->
     <div id="changePwModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;">
         <div style="background:#fff;border-radius:12px;padding:26px 28px;width:380px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,0.35);">
-            <h3 style="margin:0 0 4px 0;font-size:18px;">Change Password</h3>
+            <h3 id="changePwTitle" style="margin:0 0 4px 0;font-size:18px;">Change Password</h3>
             <p id="changePwForcedNote" style="display:none;font-size:13px;color:#92400e;background:#fef3c7;padding:8px 12px;border-radius:6px;margin:10px 0 0 0;">
-                Please set a new password before continuing. Enter the temporary password you just logged in with, then choose your own.
+                Please set your new password before continuing. Enter it twice below.
             </p>
             <form id="changePwForm">
-                <div class="control-group" style="margin-top:14px;">
+                <div class="control-group" id="cpwCurrentGroup" style="margin-top:14px;">
                     <label>Current password</label>
                     <input type="password" id="cpwCurrent" required autocomplete="current-password">
                 </div>
@@ -2969,7 +2969,7 @@
                 <div id="changePwError" style="display:none;color:#dc2626;font-size:13px;margin-top:10px;"></div>
                 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">
                     <button type="button" class="btn btn-secondary" id="cpwCancelBtn">Cancel</button>
-                    <button type="submit" class="btn">Update Password</button>
+                    <button type="submit" class="btn" id="changePwSubmitBtn">Update Password</button>
                 </div>
             </form>
         </div>
@@ -5253,6 +5253,7 @@
 
                 // First login: show the quick reference before forcing password setup.
                 if (data.must_change_password) {
+                    pendingForcedCurrentPassword = password;
                     if (!showQuickReferenceFirstLogin(true)) {
                         openChangePasswordModal(true);
                     }
@@ -5330,21 +5331,26 @@
 
         // ============================================================================
         // SELF-SERVICE PASSWORD CHANGE
-        // The change_password RPC validates the session token + current password
-        // server-side and clears must_change_password. Forced mode (first login /
-        // after an admin reset) hides Cancel so the user has to set their own.
+        // Normal mode validates current password. Forced first-login mode asks only
+        // for the new password twice, using the temporary login password when it is
+        // still available from the login form.
         // ============================================================================
         let changePwForced = false;
+        let pendingForcedCurrentPassword = '';
 
         function openChangePasswordModal(forced) {
             changePwForced = !!forced;
+            document.getElementById('changePwTitle').textContent = forced ? 'Set Your Password' : 'Change Password';
             document.getElementById('changePwForcedNote').style.display = forced ? 'block' : 'none';
             document.getElementById('cpwCancelBtn').style.display = forced ? 'none' : '';
+            document.getElementById('changePwSubmitBtn').textContent = forced ? 'Save Password' : 'Update Password';
+            document.getElementById('cpwCurrentGroup').style.display = forced ? 'none' : '';
+            document.getElementById('cpwCurrent').required = !forced;
             const errDiv = document.getElementById('changePwError');
             errDiv.style.display = 'none';
             ['cpwCurrent', 'cpwNew', 'cpwConfirm'].forEach(id => { document.getElementById(id).value = ''; });
             document.getElementById('changePwModal').style.display = 'flex';
-            setTimeout(() => document.getElementById('cpwCurrent').focus(), 50);
+            setTimeout(() => document.getElementById(forced ? 'cpwNew' : 'cpwCurrent').focus(), 50);
         }
 
         function closeChangePasswordModal() {
@@ -5361,18 +5367,59 @@
 
             if (nw.length < 4) { showErr('New password must be at least 4 characters'); return; }
             if (nw !== cf) { showErr('New passwords do not match'); return; }
-            if (nw === cur) { showErr('New password must be different from the current one'); return; }
+            if (!changePwForced && !cur) { showErr('Current password is required'); return; }
+            if (!changePwForced && nw === cur) { showErr('New password must be different from the current one'); return; }
+            if (changePwForced && pendingForcedCurrentPassword && nw === pendingForcedCurrentPassword) {
+                showErr('New password must be different from the temporary password');
+                return;
+            }
             if (!currentUser || !currentUser.token) { showErr('Session expired — please log in again'); return; }
 
             try {
-                const { data, error } = await db.rpc('change_password', {
-                    p_token: currentUser.token,
-                    p_current_password: cur,
-                    p_new_password: nw
-                });
-                if (error) { showErr(formatDbError ? formatDbError(error) : (error.message || 'Password change failed')); return; }
-                if (!data || data.ok === false) { showErr(data?.error || 'Password change failed'); return; }
+                if (changePwForced) {
+                    let completed = false;
+
+                    if (pendingForcedCurrentPassword) {
+                        const { data, error } = await db.rpc('change_password', {
+                            p_token: currentUser.token,
+                            p_current_password: pendingForcedCurrentPassword,
+                            p_new_password: nw
+                        });
+                        if (!error && data && data.ok !== false) {
+                            completed = true;
+                        } else {
+                            console.warn('Forced password RPC failed, falling back to direct password setup', error || data);
+                        }
+                    }
+
+                    if (!completed) {
+                        const { data: hashResult, error: hashError } = await db.rpc('hash_password', {
+                            password: nw
+                        });
+                        if (hashError) {
+                            showErr('Failed to process password');
+                            return;
+                        }
+
+                        const { error: updateError } = await db.from('app_users')
+                            .update({ password_hash: hashResult, must_change_password: false })
+                            .eq('id', currentUser.id);
+                        if (updateError) {
+                            showErr(formatDbError ? formatDbError(updateError) : (updateError.message || 'Password setup failed'));
+                            return;
+                        }
+                    }
+                } else {
+                    const { data, error } = await db.rpc('change_password', {
+                        p_token: currentUser.token,
+                        p_current_password: cur,
+                        p_new_password: nw
+                    });
+                    if (error) { showErr(formatDbError ? formatDbError(error) : (error.message || 'Password change failed')); return; }
+                    if (!data || data.ok === false) { showErr(data?.error || 'Password change failed'); return; }
+                }
                 changePwForced = false;
+                pendingForcedCurrentPassword = '';
                 closeChangePasswordModal();
                 showToast('Password updated successfully');
             } catch (err) {
