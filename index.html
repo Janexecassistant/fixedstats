@@ -5348,7 +5348,12 @@
             document.getElementById('cpwCurrent').required = !forced;
             const errDiv = document.getElementById('changePwError');
             errDiv.style.display = 'none';
-            ['cpwCurrent', 'cpwNew', 'cpwConfirm'].forEach(id => { document.getElementById(id).value = ''; });
+            ['cpwCurrent', 'cpwNew', 'cpwConfirm'].forEach(id => {
+                const input = document.getElementById(id);
+                input.value = '';
+                input.disabled = false;
+            });
+            document.getElementById('cpwCurrent').disabled = !!forced;
             document.getElementById('changePwModal').style.display = 'flex';
             setTimeout(() => document.getElementById(forced ? 'cpwNew' : 'cpwCurrent').focus(), 50);
         }
@@ -5614,7 +5619,7 @@
                 if (baysKpiCard) baysKpiCard.style.display = 'none';
                 // Make content read-only
                 document.querySelectorAll('input:not([readonly]), select').forEach(el => {
-                    if (!el.closest('#loginScreen') && !el.closest('#sops')) {
+                    if (!el.closest('#loginScreen') && !el.closest('#changePwModal') && !el.closest('#quickReferenceModal') && !el.closest('#sops')) {
                         el.disabled = true;
                     }
                 });
@@ -5630,7 +5635,7 @@
 
                 // Advisors are read-only except for their Daily Pulse check-in.
                 document.querySelectorAll('input:not([readonly]), select, textarea').forEach(el => {
-                    if (!el.closest('#loginScreen') && !el.closest('.navbar') && !el.closest('#dailyPulseCard') && !el.closest('#sops') && !el.closest('#onboarding')) {
+                    if (!el.closest('#loginScreen') && !el.closest('.navbar') && !el.closest('#changePwModal') && !el.closest('#quickReferenceModal') && !el.closest('#dailyPulseCard') && !el.closest('#sops') && !el.closest('#onboarding')) {
                         el.disabled = true;
                     }
                 });
@@ -5646,7 +5651,7 @@
 
                 // Technicians are read-only except for their Daily Pulse check-in.
                 document.querySelectorAll('input:not([readonly]), select, textarea').forEach(el => {
-                    if (!el.closest('#loginScreen') && !el.closest('.navbar') && !el.closest('#dailyPulseCard') && !el.closest('#sops') && !el.closest('#onboarding')) {
+                    if (!el.closest('#loginScreen') && !el.closest('.navbar') && !el.closest('#changePwModal') && !el.closest('#quickReferenceModal') && !el.closest('#dailyPulseCard') && !el.closest('#sops') && !el.closest('#onboarding')) {
                         el.disabled = true;
                     }
                 });
