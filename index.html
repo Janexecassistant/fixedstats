@@ -1943,8 +1943,8 @@
         <div class="sidebar-scroll">
             <ul class="nav-tabs">
                 <!-- Daily Entry group -->
-                <li class="nav-tab nav-dropdown open" id="navGroupDaily" data-group="daily">
-                    <button class="nav-btn nav-dropdown-toggle active" type="button" aria-haspopup="true" aria-expanded="true">
+                <li class="nav-tab nav-dropdown" id="navGroupDaily" data-group="daily">
+                    <button class="nav-btn nav-dropdown-toggle active" type="button" aria-haspopup="true" aria-expanded="false">
                         <span class="nav-label">Daily Entry</span>
                         <span class="nav-sub" id="navDailySub">Service</span>
                         <span class="nav-caret">▾</span>
@@ -3698,7 +3698,7 @@
                                 <option value="parts_manager" data-admin-only>Parts Manager</option>
                                 <option value="collision_manager" data-admin-only>Collision Manager</option>
                                 <option value="executive" data-admin-only>Executive</option>
-                                <option value="advisor">Advisor (Advisor tab only)</option>
+                                <option value="advisor">Advisor (Advisor + Daily Pulse)</option>
                                 <option value="technician">Technician (Roster tab only)</option>
                             </select>
                         </div>
@@ -4411,6 +4411,12 @@
             // to ensure store options are populated first. See applyStoreDefaults().
         }
 
+        function getCurrentUserStoreAccessIds() {
+            const ids = new Set((currentUser?.store_access || []).filter(Boolean).map(String));
+            if (currentUser?.default_store) ids.add(String(currentUser.default_store));
+            return Array.from(ids);
+        }
+
         function applyStoreDefaults() {
             // Called after initialize() so dropdown options exist
             if (!currentUser) return;
@@ -4425,12 +4431,13 @@
         function filterStoreDropdown() {
             const select = document.getElementById('globalStoreSelect');
             const allOptions = Array.from(select.options);
+            const allowedStoreIds = getCurrentUserStoreAccessIds();
 
             // Hide stores the user doesn't have access to
             allOptions.forEach((opt, idx) => {
                 if (idx === 0) return; // Keep "All Stores" option
                 const storeId = opt.value;
-                if (!currentUser.store_access.includes(storeId)) {
+                if (!allowedStoreIds.includes(String(storeId))) {
                     opt.style.display = 'none';
                 }
             });
@@ -4443,7 +4450,7 @@
                 allOptions[0].style.display = 'none'; // Hide "All Stores" for single-store users
             } else if (accessibleStores.length > 1) {
                 // Multiple stores — check for default_store, else select first accessible
-                if (currentUser.default_store && currentUser.store_access.includes(currentUser.default_store)) {
+                if (currentUser.default_store && allowedStoreIds.includes(String(currentUser.default_store))) {
                     select.value = currentUser.default_store;
                 } else {
                     select.value = accessibleStores[0].value;
@@ -4544,7 +4551,7 @@
         function isManagerScopedUser(user) {
             if (!currentUser || !['manager', 'parts_manager', 'collision_manager'].includes(currentUser.role)) return true;
             if (!user || (user.role !== 'advisor' && user.role !== 'technician')) return false;
-            const myStores = new Set((currentUser.store_access || []).map(String));
+            const myStores = new Set(getCurrentUserStoreAccessIds());
             const theirStores = (user.user_store_access || []).map(a => String(a.store_id));
             return theirStores.some(storeId => myStores.has(storeId));
         }
@@ -4765,7 +4772,7 @@
                 let visibleUsers = allUsers;
                 const _isAnyMgr = currentUser && (currentUser.role === 'manager' || currentUser.role === 'parts_manager' || currentUser.role === 'collision_manager');
                 if (_isAnyMgr) {
-                    const myStores = new Set((currentUser.store_access || []).map(String));
+                    const myStores = new Set(getCurrentUserStoreAccessIds());
                     visibleUsers = allUsers.filter(u => {
                         if (u.role !== 'advisor' && u.role !== 'technician') return false;
                         const theirStores = (u.user_store_access || []).map(a => String(a.store_id));
@@ -5008,7 +5015,11 @@
             if (!tabId) return;
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.nav-dropdown-item').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.nav-dropdown').forEach(d => d.classList.remove('open'));
+            document.querySelectorAll('.nav-dropdown').forEach(d => {
+                d.classList.remove('open');
+                const toggle = d.querySelector('.nav-dropdown-toggle');
+                if (toggle) toggle.setAttribute('aria-expanded', 'false');
+            });
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
 
             const dropdownItem = document.querySelector(`.nav-dropdown-item[data-tab="${tabId}"]`);
@@ -10788,7 +10799,8 @@
             const selectedStore = getSelectedStore();
             if (selectedStore !== 'all') return selectedStore;
             if (currentUser?.default_store) return currentUser.default_store;
-            if (currentUser?.store_access?.length) return currentUser.store_access[0];
+            const accessibleStoreIds = getCurrentUserStoreAccessIds();
+            if (accessibleStoreIds.length) return accessibleStoreIds[0];
             return stores[0]?.id || '';
         }
 
@@ -10851,6 +10863,19 @@
                 : '<option value="">No team members available</option>';
             select.disabled = isDailyPulseFrontlineUser() || !people.length;
             select.onchange = () => fillDailyPulseExistingEntry();
+        }
+
+        function syncDailyPulseFrontlineControls() {
+            if (!isDailyPulseFrontlineUser()) return;
+            const card = document.getElementById('dailyPulseCard');
+            if (!card) return;
+            card.querySelectorAll('input, textarea, button').forEach(el => {
+                el.disabled = false;
+            });
+            const roleEl = document.getElementById('dailyPulseRole');
+            if (roleEl) roleEl.disabled = true;
+            const personEl = document.getElementById('dailyPulsePerson');
+            if (personEl) personEl.disabled = true;
         }
 
         function renderDailyPulseQuestions() {
@@ -11114,6 +11139,7 @@
                 configureDailyPulseRoleForUser();
                 populateDailyPulsePeople();
                 renderDailyPulseQuestions();
+                syncDailyPulseFrontlineControls();
                 const pulseEntries = await LS.getDailyPulseEntries();
                 renderDailyPulseSummary(pulseEntries, scopedStores, dailyPulseSelectedDate());
 
@@ -14596,7 +14622,7 @@
         // Stores accessible to current user — used to filter the store dropdown in each row.
         function getAccessibleStores() {
             if (!currentUser || currentUser.role === 'admin') return stores;
-            const allowed = new Set(currentUser.store_access || []);
+            const allowed = new Set(getCurrentUserStoreAccessIds());
             return stores.filter(s => allowed.has(s.id));
         }
 
