@@ -2975,6 +2975,28 @@
         </div>
     </div>
 
+    <!-- First-login quick reference modal. New users see this before they continue into the app. -->
+    <div id="quickReferenceModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.58);z-index:9998;align-items:center;justify-content:center;padding:24px;">
+        <div style="background:#fff;border-radius:14px;width:560px;max-width:94vw;box-shadow:0 24px 70px rgba(0,0,0,0.38);overflow:hidden;">
+            <div style="height:8px;background:#c40018;"></div>
+            <div style="padding:26px 28px;">
+                <div style="font-size:11px;font-weight:800;color:#8f0011;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Start here</div>
+                <h3 style="margin:0 0 8px 0;font-size:24px;color:#111827;">Fixedstats Quick Reference</h3>
+                <p style="margin:0;color:#374151;font-size:14px;line-height:1.55;">
+                    Before using Fixedstats, review this one-page guide. It explains where to enter numbers, where to find performance, how accountability works, and how onboarding ties to training and SOPs.
+                </p>
+                <div style="margin-top:18px;background:#fff1f2;border:1px solid #f5c8cf;border-radius:10px;padding:14px 16px;color:#1f2937;font-size:13px;line-height:1.5;">
+                    New employees can open or print this page now, then continue to password setup and their assigned onboarding path.
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:22px;">
+                    <button type="button" class="btn btn-secondary" onclick="openQuickReference()">Open PDF</button>
+                    <button type="button" class="btn btn-secondary" onclick="printQuickReference()">Print</button>
+                    <button type="button" class="btn" id="quickReferenceContinueBtn" onclick="closeQuickReferenceModal()">Continue</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <!-- TAB 1: SERVICE DAILY ENTRY (Service Manager) -->
         <div id="daily" class="tab-content active">
@@ -4686,6 +4708,23 @@
         <!-- TAB 7: STAFF MANAGEMENT -->
         <!-- ADMIN CONSOLE TAB -->
         <div id="admin" class="tab-content">
+            <div class="card" id="quickReferenceAdminCard">
+                <h2 class="card-title">New User Quick Reference</h2>
+                <p style="font-size:13px;color:#4b5563;margin:-6px 0 14px 0;line-height:1.5;">
+                    Send this one-page guide to every new Fixedstats user before they start entering numbers or completing onboarding. It explains the four main areas: Enter Numbers, Performance, Accountability, and People Readiness.
+                </p>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:#f6f7f9;border:1px solid #d9dee7;border-radius:8px;padding:14px 16px;">
+                    <div>
+                        <div style="font-weight:800;color:#111827;">Fixedstats Quick Reference</div>
+                        <div style="font-size:12px;color:#4b5563;margin-top:3px;">Opens the printable one-page PDF shown to new users at first login.</div>
+                    </div>
+                    <div class="btn-group" style="margin:0;">
+                        <button class="btn btn-secondary" type="button" onclick="openQuickReference()">Open PDF</button>
+                        <button class="btn" type="button" onclick="printQuickReference()">Print</button>
+                    </div>
+                </div>
+            </div>
+
             <div class="card" id="userAccountsCard">
                 <h2 class="card-title">User Accounts</h2>
                 <div style="overflow-x: auto;">
@@ -4984,6 +5023,8 @@
         let charts = {};
         let currentUser = null;
         let allUsers = [];
+        const QUICK_REFERENCE_PDF_PATH = 'docs/fixedstats-one-page-quick-reference.pdf';
+        const QUICK_REFERENCE_SEEN_PREFIX = 'fixedstats_quick_reference_seen_';
 
         // === Effective tracking date ====================================
         // Service managers enter yesterday's numbers when they come in this
@@ -5056,6 +5097,94 @@
             document.getElementById('appContent').style.display = 'block';
         }
 
+        let quickReferencePasswordAfterClose = false;
+
+        function getQuickReferenceUrl() {
+            return window.location.protocol === 'file:'
+                ? QUICK_REFERENCE_PDF_PATH
+                : '/' + QUICK_REFERENCE_PDF_PATH;
+        }
+
+        function getQuickReferenceSeenKey() {
+            return currentUser && currentUser.id
+                ? QUICK_REFERENCE_SEEN_PREFIX + currentUser.id
+                : '';
+        }
+
+        function hasSeenQuickReference() {
+            const key = getQuickReferenceSeenKey();
+            if (!key) return false;
+            try {
+                return localStorage.getItem(key) === '1';
+            } catch (_) {
+                return false;
+            }
+        }
+
+        function markQuickReferenceSeen() {
+            const key = getQuickReferenceSeenKey();
+            if (!key) return;
+            try {
+                localStorage.setItem(key, '1');
+            } catch (_) {}
+        }
+
+        function openQuickReference() {
+            window.open(getQuickReferenceUrl(), '_blank', 'noopener');
+        }
+
+        function printQuickReference() {
+            const url = getQuickReferenceUrl();
+            const frame = document.createElement('iframe');
+            frame.style.position = 'fixed';
+            frame.style.right = '0';
+            frame.style.bottom = '0';
+            frame.style.width = '0';
+            frame.style.height = '0';
+            frame.style.border = '0';
+            frame.src = url;
+            frame.onload = () => {
+                try {
+                    frame.contentWindow.focus();
+                    frame.contentWindow.print();
+                    setTimeout(() => frame.remove(), 60000);
+                } catch (err) {
+                    frame.remove();
+                    window.open(url, '_blank', 'noopener');
+                    showToast('Opening the quick reference. Use the browser print button if the print dialog does not open.', 'success');
+                }
+            };
+            document.body.appendChild(frame);
+        }
+
+        function openQuickReferenceModal(options = {}) {
+            quickReferencePasswordAfterClose = !!options.passwordAfterClose;
+            const btn = document.getElementById('quickReferenceContinueBtn');
+            if (btn) {
+                btn.textContent = quickReferencePasswordAfterClose ? 'Continue to Password Setup' : 'Continue';
+            }
+            const modal = document.getElementById('quickReferenceModal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeQuickReferenceModal() {
+            markQuickReferenceSeen();
+            const modal = document.getElementById('quickReferenceModal');
+            if (modal) modal.style.display = 'none';
+            if (quickReferencePasswordAfterClose) {
+                quickReferencePasswordAfterClose = false;
+                openChangePasswordModal(true);
+            }
+        }
+
+        function showQuickReferenceFirstLogin(passwordAfterClose) {
+            if (!hasSeenQuickReference()) {
+                openQuickReferenceModal({ passwordAfterClose });
+                return true;
+            }
+            return false;
+        }
+
         async function handleLogin(event) {
             event.preventDefault();
             const username = document.getElementById('loginEmail').value.trim();
@@ -5122,9 +5251,11 @@
                 hideLoginScreen();
                 showToast('Logged in successfully');
 
-                // First login (or admin reset): force the user to set their own password
+                // First login: show the quick reference before forcing password setup.
                 if (data.must_change_password) {
-                    openChangePasswordModal(true);
+                    if (!showQuickReferenceFirstLogin(true)) {
+                        openChangePasswordModal(true);
+                    }
                 }
 
                 // Load initial data
@@ -5180,9 +5311,11 @@
                 hideLoginScreen();
 
                 // Restored a session that still owes a password change (e.g. user
-                // closed the tab before completing the forced change at first login)
+                // closed the tab before completing the forced change at first login).
                 if (data.must_change_password) {
-                    openChangePasswordModal(true);
+                    if (!showQuickReferenceFirstLogin(true)) {
+                        openChangePasswordModal(true);
+                    }
                 }
                 return true;
             } catch (error) {
