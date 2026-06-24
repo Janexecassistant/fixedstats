@@ -2164,6 +2164,22 @@
             line-height: 1.45;
         }
 
+        .daily-pulse-storage-warning {
+            margin-top: 14px;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            background: #fffbeb;
+            color: #92400e;
+            padding: 10px 12px;
+            font-size: 13px;
+            font-weight: 800;
+            line-height: 1.4;
+        }
+
+        .daily-pulse-storage-warning[hidden] {
+            display: none;
+        }
+
         .daily-pulse-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -2289,6 +2305,36 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 8px;
+        }
+
+        .daily-pulse-completion-panel {
+            margin-top: 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            background: #ffffff;
+            padding: 14px;
+        }
+
+        .daily-pulse-completion-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .daily-pulse-completion-head h4 {
+            margin: 0;
+            color: #111827;
+            font-size: 16px;
+            font-weight: 950;
+        }
+
+        .daily-pulse-completion-head p {
+            margin: 4px 0 0 0;
+            color: #667085;
+            font-size: 12px;
+            line-height: 1.35;
         }
 
         .pulse-risk-stat {
@@ -3723,6 +3769,7 @@
                         </div>
                         <div id="dailyPulseTodayScore" class="daily-pulse-score">—</div>
                         <div id="dailyPulseTodayNote" class="daily-pulse-muted">No pulse submitted for this scope yet.</div>
+                        <div id="dailyPulseStorageWarning" class="daily-pulse-storage-warning" hidden></div>
                     </div>
 
                     <div class="daily-pulse-panel">
@@ -3780,6 +3827,30 @@
                     <div class="line-rules-note">Leading indicators only</div>
                 </div>
                 <div id="dailyPulseStoreGrid" class="daily-pulse-store-grid"></div>
+                <div class="daily-pulse-completion-panel">
+                    <div class="daily-pulse-completion-head">
+                        <div>
+                            <h4>Advisor Pulse Completion</h4>
+                            <p>Compares the active advisor roster against Daily Pulse submissions for the selected date.</p>
+                        </div>
+                        <div id="dailyPulseCompletionRate" class="pulse-score-pill low">—</div>
+                    </div>
+                    <div id="dailyPulseCompletionSummary" class="daily-pulse-muted">No advisor roster loaded for this scope.</div>
+                    <div style="overflow-x:auto;margin-top:12px;">
+                        <table class="daily-pulse-table">
+                            <thead>
+                                <tr>
+                                    <th>Advisor</th>
+                                    <th>Store</th>
+                                    <th>Status</th>
+                                    <th>Pulse</th>
+                                    <th>Manager Follow-Up</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dailyPulseCompletionBody"></tbody>
+                        </table>
+                    </div>
+                </div>
                 <div style="overflow-x:auto;margin-top:16px;">
                     <table class="daily-pulse-table">
                         <thead>
@@ -6625,6 +6696,95 @@
             // --- Local cache helpers ---
             _get(key) { try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; } },
             _set(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) { console.error('LS write error', e); } },
+            _dailyPulseStorageWarning: '',
+            _dailyPulseEntryKey(entry) {
+                return [
+                    entry?.store_id,
+                    entry?.entry_date,
+                    entry?.role_type,
+                    entry?.person_id
+                ].map(value => String(value ?? '')).join('|');
+            },
+            _cacheDailyPulseEntry(entry) {
+                const all = this._get('dyer_daily_pulse_entries');
+                const row = { ...entry };
+                const rowKey = this._dailyPulseEntryKey(row);
+                const idx = all.findIndex(d => this._dailyPulseEntryKey(d) === rowKey);
+                if (idx >= 0) all[idx] = row; else all.push(row);
+                this._set('dyer_daily_pulse_entries', all);
+            },
+            _dailyPulseDbRow(entry, updatedAt = new Date().toISOString()) {
+                return {
+                    store_id: entry.store_id,
+                    entry_date: entry.entry_date,
+                    role_type: entry.role_type,
+                    person_id: String(entry.person_id),
+                    person_name: entry.person_name || '',
+                    pulse_score: entry.pulse_score || 0,
+                    answers: entry.answers || {},
+                    risk_counts: entry.risk_counts || {},
+                    notes: entry.notes || null,
+                    submitted_by: entry.submitted_by || (currentUser ? currentUser.id : null),
+                    updated_at: updatedAt
+                };
+            },
+            _mergeDailyPulseEntries(remoteRows, cachedRows) {
+                const merged = [...(remoteRows || [])];
+                const keys = new Set(merged.map(row => this._dailyPulseEntryKey(row)));
+                (cachedRows || []).forEach(row => {
+                    const key = this._dailyPulseEntryKey(row);
+                    if (!keys.has(key)) {
+                        merged.push(row);
+                        keys.add(key);
+                    }
+                });
+                return merged;
+            },
+            _dailyPulseStorageMessage(error) {
+                const message = formatDbError(error);
+                if (error?.code === 'PGRST205' || /daily_pulse_entries/i.test(message)) {
+                    return 'Daily Pulse is only saving on this browser because the Supabase daily_pulse_entries table is missing. Run fixedstats/db/daily-pulse-setup.sql in Supabase to retain and share reports.';
+                }
+                return 'Daily Pulse is only saving on this browser because cloud save failed: ' + message;
+            },
+            _setDailyPulseStorageWarning(message) {
+                this._dailyPulseStorageWarning = message || '';
+                renderDailyPulseStorageWarning(this._dailyPulseStorageWarning);
+            },
+            async _syncCachedDailyPulseEntries(remoteRows) {
+                const cached = this._get('dyer_daily_pulse_entries');
+                if (!useSupabase || !cached.length) {
+                    this._setDailyPulseStorageWarning('');
+                    return remoteRows || [];
+                }
+
+                const remoteKeys = new Set((remoteRows || []).map(row => this._dailyPulseEntryKey(row)));
+                const pending = cached.filter(row => row?.local_only || !remoteKeys.has(this._dailyPulseEntryKey(row)));
+                if (!pending.length) {
+                    this._setDailyPulseStorageWarning('');
+                    return remoteRows || [];
+                }
+
+                try {
+                    const rows = pending.map(row => this._dailyPulseDbRow(row, row.updated_at || new Date().toISOString()));
+                    const { data, error } = await db.from('daily_pulse_entries')
+                        .upsert(rows, { onConflict: 'store_id,entry_date,role_type,person_id' })
+                        .select('*');
+                    if (error) {
+                        const warning = this._dailyPulseStorageMessage(error);
+                        console.warn('Supabase sync cached Daily Pulse entries failed', error);
+                        this._setDailyPulseStorageWarning(warning);
+                        return this._mergeDailyPulseEntries(remoteRows, pending.map(row => ({ ...row, local_only: true })));
+                    }
+                    this._setDailyPulseStorageWarning('');
+                    return this._mergeDailyPulseEntries(remoteRows, data || []);
+                } catch(e) {
+                    const warning = this._dailyPulseStorageMessage(e);
+                    console.warn('Supabase sync cached Daily Pulse entries threw', e);
+                    this._setDailyPulseStorageWarning(warning);
+                    return this._mergeDailyPulseEntries(remoteRows, pending.map(row => ({ ...row, local_only: true })));
+                }
+            },
 
             // --- Daily department entries ---
             async getDailyEntries() {
@@ -7280,41 +7440,52 @@
                 if (useSupabase) {
                     try {
                         const { data, error } = await db.from('daily_pulse_entries').select('*');
-                        if (!error && data) { this._set('dyer_daily_pulse_entries', data); return data; }
-                    } catch(e) { console.warn('Supabase getDailyPulseEntries failed, using cache', e); }
+                        if (error) {
+                            const warning = this._dailyPulseStorageMessage(error);
+                            console.warn('Supabase getDailyPulseEntries failed, using cache', error);
+                            this._setDailyPulseStorageWarning(warning);
+                            return this._get('dyer_daily_pulse_entries');
+                        }
+                        if (data) {
+                            const synced = await this._syncCachedDailyPulseEntries(data);
+                            this._set('dyer_daily_pulse_entries', synced);
+                            return synced;
+                        }
+                    } catch(e) {
+                        console.warn('Supabase getDailyPulseEntries failed, using cache', e);
+                        this._setDailyPulseStorageWarning(this._dailyPulseStorageMessage(e));
+                    }
                 }
                 return this._get('dyer_daily_pulse_entries');
             },
             async saveDailyPulseEntry(entry) {
-                const all = this._get('dyer_daily_pulse_entries');
-                const idx = all.findIndex(d =>
-                    String(d.store_id) === String(entry.store_id) &&
-                    String(d.entry_date) === String(entry.entry_date) &&
-                    String(d.role_type) === String(entry.role_type) &&
-                    String(d.person_id) === String(entry.person_id)
-                );
-                if (idx >= 0) all[idx] = entry; else all.push(entry);
-                this._set('dyer_daily_pulse_entries', all);
                 if (useSupabase) {
                     try {
-                        const row = {
-                            store_id: entry.store_id,
-                            entry_date: entry.entry_date,
-                            role_type: entry.role_type,
-                            person_id: String(entry.person_id),
-                            person_name: entry.person_name || '',
-                            pulse_score: entry.pulse_score || 0,
-                            answers: entry.answers || {},
-                            risk_counts: entry.risk_counts || {},
-                            notes: entry.notes || null,
-                            submitted_by: currentUser ? currentUser.id : null,
-                            updated_at: new Date().toISOString()
-                        };
+                        const updatedAt = new Date().toISOString();
+                        const row = this._dailyPulseDbRow(entry, updatedAt);
                         const { error } = await db.from('daily_pulse_entries').upsert(row, { onConflict: 'store_id,entry_date,role_type,person_id' });
-                        if (error) { console.warn('Supabase saveDailyPulseEntry failed, saved local cache only', error); return { ok: true, offline: true, error }; }
-                    } catch(e) { console.warn('Supabase saveDailyPulseEntry threw, saved local cache only', e); return { ok: true, offline: true, error: e }; }
+                        if (error) {
+                            const warning = this._dailyPulseStorageMessage(error);
+                            console.warn('Supabase saveDailyPulseEntry failed, saved local cache only', error);
+                            this._cacheDailyPulseEntry({ ...entry, updated_at: updatedAt, local_only: true });
+                            this._setDailyPulseStorageWarning(warning);
+                            return { ok: false, localOnly: true, error, message: warning };
+                        }
+                        this._cacheDailyPulseEntry({ ...entry, updated_at: updatedAt, local_only: false });
+                        this._setDailyPulseStorageWarning('');
+                        return { ok: true };
+                    } catch(e) {
+                        const warning = this._dailyPulseStorageMessage(e);
+                        console.warn('Supabase saveDailyPulseEntry threw, saved local cache only', e);
+                        this._cacheDailyPulseEntry({ ...entry, updated_at: new Date().toISOString(), local_only: true });
+                        this._setDailyPulseStorageWarning(warning);
+                        return { ok: false, localOnly: true, error: e, message: warning };
+                    }
                 }
-                return { ok: true };
+                const warning = 'Daily Pulse is saved on this browser only because cloud sync is turned off.';
+                this._cacheDailyPulseEntry({ ...entry, updated_at: new Date().toISOString(), local_only: true });
+                this._setDailyPulseStorageWarning(warning);
+                return { ok: false, localOnly: true, message: warning };
             }
         };
 
@@ -12123,6 +12294,14 @@
             }
         };
 
+        function renderDailyPulseStorageWarning(message) {
+            const el = document.getElementById('dailyPulseStorageWarning');
+            if (!el) return;
+            const text = String(message || '').trim();
+            el.textContent = text;
+            el.hidden = !text;
+        }
+
         function isDailyPulseFrontlineUser() {
             return currentUser && (currentUser.role === 'advisor' || currentUser.role === 'technician');
         }
@@ -12331,6 +12510,112 @@
             return 'No immediate action. Keep inspecting the habit.';
         }
 
+        function dailyPulseNormalizeName(value) {
+            return String(value || '')
+                .toLowerCase()
+                .replace(/@.*/, '')
+                .replace(/[^a-z0-9]+/g, ' ')
+                .trim();
+        }
+
+        function renderDailyPulseCompletion(todays, scopedStores) {
+            const rateEl = document.getElementById('dailyPulseCompletionRate');
+            const summaryEl = document.getElementById('dailyPulseCompletionSummary');
+            const body = document.getElementById('dailyPulseCompletionBody');
+            if (!rateEl || !summaryEl || !body) return;
+
+            const scopedIds = new Set(scopedStores.map(store => String(store.id)));
+            const expected = advisors
+                .filter(advisor => advisor.is_active !== false && scopedIds.has(String(advisor.store_id)))
+                .map(advisor => ({
+                    id: String(advisor.id),
+                    name: advisor.name || 'Unnamed advisor',
+                    store_id: advisor.store_id
+                }));
+            const advisorEntries = (todays || []).filter(entry => entry.role_type === 'service_advisor');
+            const usedEntryKeys = new Set();
+
+            const rows = expected.map(advisor => {
+                const byId = advisorEntries.find(entry =>
+                    !usedEntryKeys.has(`${entry.role_type}|${entry.person_id}|${entry.store_id}`) &&
+                    String(entry.person_id) === advisor.id &&
+                    String(entry.store_id) === String(advisor.store_id)
+                );
+                const byName = byId || advisorEntries.find(entry =>
+                    !usedEntryKeys.has(`${entry.role_type}|${entry.person_id}|${entry.store_id}`) &&
+                    String(entry.store_id) === String(advisor.store_id) &&
+                    dailyPulseNormalizeName(entry.person_name) === dailyPulseNormalizeName(advisor.name)
+                );
+                const entry = byId || byName || null;
+                if (entry) usedEntryKeys.add(`${entry.role_type}|${entry.person_id}|${entry.store_id}`);
+                return {
+                    advisor,
+                    entry,
+                    status: entry ? 'submitted' : 'missing',
+                    sort: entry ? 2 : 1
+                };
+            });
+
+            const unmatched = advisorEntries
+                .filter(entry => !usedEntryKeys.has(`${entry.role_type}|${entry.person_id}|${entry.store_id}`))
+                .map(entry => ({
+                    advisor: {
+                        id: String(entry.person_id),
+                        name: entry.person_name || 'Submitted advisor',
+                        store_id: entry.store_id
+                    },
+                    entry,
+                    status: 'unmatched',
+                    sort: 1.5
+                }));
+
+            const submittedCount = rows.filter(row => row.status === 'submitted').length;
+            const missingCount = rows.filter(row => row.status === 'missing').length;
+            const rate = expected.length ? Math.round(submittedCount / expected.length * 100) : null;
+            const tone = rate == null ? 'low' : (rate >= 90 ? 'above' : (rate >= 75 ? 'watch' : 'below'));
+
+            rateEl.className = `pulse-score-pill ${tone}`;
+            rateEl.textContent = rate == null ? 'No roster' : `${rate}%`;
+            summaryEl.textContent = expected.length
+                ? `${submittedCount} of ${expected.length} active advisor${expected.length === 1 ? '' : 's'} submitted. ${missingCount} missing${unmatched.length ? `, plus ${unmatched.length} submitted report${unmatched.length === 1 ? '' : 's'} needing roster/login match` : ''}.`
+                : 'No active advisors found for this scope.';
+
+            const completionRows = rows.concat(unmatched).sort((a, b) =>
+                a.sort - b.sort ||
+                String(a.advisor.store_id || '').localeCompare(String(b.advisor.store_id || '')) ||
+                String(a.advisor.name || '').localeCompare(String(b.advisor.name || ''))
+            );
+
+            body.innerHTML = completionRows.length
+                ? completionRows.map(row => {
+                    const entry = row.entry;
+                    const pulse = entry ? `${entry.pulse_score || 0}%` : '—';
+                    const statusBadge = row.status === 'submitted'
+                        ? accountabilityBadge('Submitted', 'above')
+                        : row.status === 'unmatched'
+                            ? accountabilityBadge('Roster Link Needed', 'watch')
+                            : accountabilityBadge('Missing', 'below');
+                    const followUp = row.status === 'submitted'
+                        ? dailyPulseManagerMove(entry)
+                        : row.status === 'unmatched'
+                            ? 'Submission exists, but the login does not cleanly match the advisor roster. Confirm the user profile or advisor name.'
+                            : 'Confirm the end-of-shift Pulse before the advisor leaves or review it first thing tomorrow.';
+                    return `
+                        <tr>
+                            <td>
+                                <div class="pulse-person-name">${accountabilityEscape(row.advisor.name)}</div>
+                                <div class="pulse-person-meta">${row.status === 'unmatched' ? accountabilityEscape(String(row.advisor.id)) : 'Advisor roster'}</div>
+                            </td>
+                            <td>${accountabilityEscape(accountabilityStoreName(row.advisor.store_id))}</td>
+                            <td>${statusBadge}</td>
+                            <td>${entry ? accountabilityBadge(pulse, dailyPulseTone(parseFloat(entry.pulse_score) || 0, dailyPulseRiskTotal(entry))) : accountabilityBadge(pulse, 'low')}</td>
+                            <td class="accountability-action">${accountabilityEscape(followUp)}</td>
+                        </tr>
+                    `;
+                }).join('')
+                : '<tr><td colspan="5" class="empty-state">No advisors found for this Daily Pulse scope.</td></tr>';
+        }
+
         function renderDailyPulseSummary(entries, scopedStores, pulseDate) {
             const scopedIds = new Set(scopedStores.map(s => s.id));
             const todays = (entries || []).filter(e => e.entry_date === pulseDate && scopedIds.has(e.store_id));
@@ -12386,6 +12671,8 @@
                     `;
                 }).join('');
             }
+
+            renderDailyPulseCompletion(todays, scopedStores);
 
             const body = document.getElementById('dailyPulseTeamBody');
             if (body) {
@@ -12445,8 +12732,8 @@
                 notes: document.getElementById('dailyPulseNotes')?.value.trim() || ''
             };
             const result = await LS.saveDailyPulseEntry(entry);
-            if (result && result.offline) {
-                showToast('Daily Pulse submitted locally. Add the Daily Pulse table to share it across devices.', 'success');
+            if (result && result.localOnly) {
+                showToast(result.message || 'Daily Pulse saved on this browser only. Cloud retention needs setup.', 'error');
             } else {
                 showToast('Daily Pulse submitted');
             }

@@ -12,7 +12,7 @@ create table if not exists public.daily_pulse_entries (
     answers jsonb not null default '{}'::jsonb,
     risk_counts jsonb not null default '{}'::jsonb,
     notes text,
-    submitted_by bigint references public.app_users(id) on delete set null,
+    submitted_by uuid references public.app_users(id) on delete set null,
     updated_at timestamptz not null default now(),
     unique (store_id, entry_date, role_type, person_id)
 );
@@ -22,3 +22,5 @@ create index if not exists daily_pulse_entries_store_date_idx
 
 create index if not exists daily_pulse_entries_role_date_idx
     on public.daily_pulse_entries (role_type, entry_date desc);
+
+notify pgrst, 'reload schema';
