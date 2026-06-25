@@ -4036,6 +4036,14 @@
                             <label>Month</label>
                             <input type="month" id="dailyPulseHistoryMonth">
                         </div>
+                        <div class="control-group">
+                            <label>Start Date</label>
+                            <input type="date" id="dailyPulseHistoryStart">
+                        </div>
+                        <div class="control-group">
+                            <label>End Date</label>
+                            <input type="date" id="dailyPulseHistoryEnd">
+                        </div>
                     </div>
                     <div id="dailyPulseHistorySummary" class="daily-pulse-history-summary"></div>
                     <div id="dailyPulseHistoryNote" class="daily-pulse-history-note">Choose an advisor to review their saved Daily Pulse history.</div>
@@ -5031,6 +5039,7 @@
                                 <th data-usort="username" style="cursor:pointer;user-select:none;" title="Click to sort A–Z / Z–A">Username <span data-usort-arrow="username" style="font-size:10px;"></span></th>
                                 <th>Email</th>
                                 <th data-usort="role" style="cursor:pointer;user-select:none;" title="Click to sort A–Z / Z–A">Role <span data-usort-arrow="role" style="font-size:10px;"></span></th>
+                                <th>Roster Link</th>
                                 <th>Store Access</th>
                                 <th>Default Store</th>
                                 <th>Status</th>
@@ -5075,6 +5084,15 @@
                         <div class="control-group">
                             <label id="passwordLabel">Password *</label>
                             <input type="password" id="formPassword" required>
+                        </div>
+                    </div>
+                    <div class="control-group" id="advisorRosterLinkGroup" style="display:none;margin-top:16px;">
+                        <label>Linked Advisor Roster Record</label>
+                        <select id="formAdvisorLink" onchange="applyAdvisorRosterLinkToUserForm()">
+                            <option value="">Not linked</option>
+                        </select>
+                        <div style="font-size:12px;color:#667085;line-height:1.45;margin-top:6px;">
+                            Advisor information should be entered once in Manage Advisors. Link the user account here so Daily Pulse, onboarding, and advisor tracking use that same roster record.
                         </div>
                     </div>
                     <div style="margin-top: 20px;">
@@ -5319,6 +5337,7 @@
         let charts = {};
         let currentUser = null;
         let allUsers = [];
+        let userStaffLinks = {};
         const QUICK_REFERENCE_PDF_PATH = 'docs/fixedstats-one-page-quick-reference.pdf';
         const QUICK_REFERENCE_SEEN_PREFIX = 'fixedstats_quick_reference_seen_';
 
@@ -6041,6 +6060,8 @@
             document.getElementById('addUserForm').reset();
             document.getElementById('addUserFormTitle').textContent = 'Add New User';
             populateStoreCheckboxes();
+            populateAdvisorRosterLinkSelect();
+            updateAdvisorRosterLinkVisibility();
         }
 
         function closeAddUserForm() {
@@ -6092,6 +6113,7 @@
                     cb.disabled = false;
                 });
             }
+            updateAdvisorRosterLinkVisibility();
         }
 
         function isManagerScopedUser(user) {
@@ -6130,6 +6152,91 @@
                 technician: 'Technician'
             };
             return labels[role] || role || 'User';
+        }
+
+        function advisorRosterLinkValue(advisor) {
+            if (!advisor) return '';
+            return `${String(advisor.store_id || '')}|${String(advisor.id || '')}`;
+        }
+
+        function parseAdvisorRosterLinkValue(value) {
+            const parts = String(value || '').split('|');
+            return {
+                store_id: parts.shift() || '',
+                advisor_id: parts.join('|') || ''
+            };
+        }
+
+        function getAdvisorByLinkValue(value) {
+            const parsed = parseAdvisorRosterLinkValue(value);
+            if (!parsed.store_id || !parsed.advisor_id) return null;
+            return advisors.find(advisor =>
+                String(advisor.store_id || '') === String(parsed.store_id) &&
+                String(advisor.id || '') === String(parsed.advisor_id)
+            ) || null;
+        }
+
+        function linkedAdvisorForUser(user) {
+            if (!user?.id) return null;
+            const link = userStaffLinks[String(user.id)];
+            if (!link || link.staff_type !== 'advisor' || link.advisor_id == null) return null;
+            return advisors.find(advisor =>
+                String(advisor.id) === String(link.advisor_id) &&
+                String(advisor.store_id || '') === String(link.store_id || '')
+            ) || null;
+        }
+
+        function populateAdvisorRosterLinkSelect(selectedValue = '') {
+            const select = document.getElementById('formAdvisorLink');
+            if (!select) return;
+            const current = selectedValue || select.value;
+            const activeAdvisors = advisors
+                .filter(advisor => advisor.is_active !== false)
+                .sort((a, b) =>
+                    String(a.store_id || '').localeCompare(String(b.store_id || '')) ||
+                    String(a.name || '').localeCompare(String(b.name || ''))
+                );
+            select.innerHTML = '<option value="">Not linked</option>' + activeAdvisors.map(advisor => {
+                const storeLabel = accountabilityStoreName(advisor.store_id);
+                const value = advisorRosterLinkValue(advisor);
+                return `<option value="${accountabilityEscape(value)}">${accountabilityEscape(advisor.name || 'Unnamed advisor')} - ${accountabilityEscape(storeLabel)}</option>`;
+            }).join('');
+            if (current && Array.from(select.options).some(option => option.value === current)) {
+                select.value = current;
+            }
+        }
+
+        function updateAdvisorRosterLinkVisibility() {
+            const role = document.getElementById('formRole')?.value || '';
+            const group = document.getElementById('advisorRosterLinkGroup');
+            if (!group) return;
+            group.style.display = role === 'advisor' ? '' : 'none';
+            if (role === 'advisor') populateAdvisorRosterLinkSelect();
+        }
+
+        function applyAdvisorRosterLinkToUserForm() {
+            const select = document.getElementById('formAdvisorLink');
+            const advisor = getAdvisorByLinkValue(select?.value || '');
+            if (!advisor) return;
+            const nameEl = document.getElementById('formDisplayName');
+            const roleEl = document.getElementById('formRole');
+            const defaultStoreEl = document.getElementById('formDefaultStore');
+            if (nameEl) nameEl.value = advisor.name || nameEl.value;
+            if (roleEl) roleEl.value = 'advisor';
+            document.querySelectorAll('.storeAccessCheckbox').forEach(cb => {
+                if (cb.value === advisor.store_id) cb.checked = true;
+            });
+            if (defaultStoreEl) defaultStoreEl.value = advisor.store_id || '';
+            updateAdvisorRosterLinkVisibility();
+        }
+
+        function userRosterLinkLabel(user) {
+            if (!user || user.role !== 'advisor') return '-';
+            const advisor = linkedAdvisorForUser(user);
+            if (advisor) {
+                return `${advisor.name || 'Advisor'} - ${accountabilityStoreName(advisor.store_id)}`;
+            }
+            return 'Needs link';
         }
 
         async function handleExistingUser(username) {
@@ -6173,9 +6280,17 @@
             // Username is set to lowercase email
             const username = email;
 
-            const storeAccess = Array.from(document.querySelectorAll('.storeAccessCheckbox:checked'))
+            let storeAccess = Array.from(document.querySelectorAll('.storeAccessCheckbox:checked'))
                 .map(cb => cb.value);
-            const defaultStore = document.getElementById('formDefaultStore').value || null;
+            let defaultStore = document.getElementById('formDefaultStore').value || null;
+            const advisorLinkValue = document.getElementById('formAdvisorLink')?.value || '';
+            const linkedAdvisor = role === 'advisor' ? getAdvisorByLinkValue(advisorLinkValue) : null;
+            if (linkedAdvisor) {
+                if (!storeAccess.includes(linkedAdvisor.store_id)) {
+                    storeAccess = storeAccess.concat(linkedAdvisor.store_id);
+                }
+                defaultStore = defaultStore || linkedAdvisor.store_id;
+            }
 
             if (storeAccess.length === 0 && (role === 'manager' || role === 'parts_manager' || role === 'collision_manager' || role === 'advisor' || role === 'technician')) {
                 const msg = role === 'advisor' ? 'Advisors must have at least one store assigned'
@@ -6249,6 +6364,11 @@
                         if (accErr) { console.error('Insert store access error:', accErr); showToast('Failed to save store access: ' + formatDbError(accErr), 'error'); return; }
                     }
 
+                    await LS.saveUserStaffLink(editingUserId, linkedAdvisor ? {
+                        advisor_id: linkedAdvisor.id,
+                        store_id: linkedAdvisor.store_id
+                    } : null);
+
                     showToast('User updated successfully');
                 } else {
                     // INSERT new user
@@ -6291,6 +6411,11 @@
                         }
                     }
 
+                    await LS.saveUserStaffLink(userId, linkedAdvisor ? {
+                        advisor_id: linkedAdvisor.id,
+                        store_id: linkedAdvisor.store_id
+                    } : null);
+
                     showToast('User created successfully');
                 }
 
@@ -6311,6 +6436,11 @@
                 }
 
                 allUsers = data || [];
+                try {
+                    userStaffLinks = LS.extractUserStaffLinks(await LS.getStaffOverrides());
+                } catch(e) {
+                    console.warn('User roster links could not be refreshed', e);
+                }
                 const tbody = document.getElementById('userManagementBody');
                 tbody.innerHTML = '';
 
@@ -6357,11 +6487,14 @@
                     const statusStyle = user.is_active ? 'color: #22c55e;' : 'color: #ef4444;';
                     const toggleLabel = user.is_active ? 'Deactivate' : 'Activate';
                     const toggleColor = user.is_active ? 'btn-danger' : '';
+                    const rosterLinkLabel = userRosterLinkLabel(user);
+                    const rosterLinkColor = rosterLinkLabel === 'Needs link' ? '#b45309' : '#334155';
                     row.innerHTML = `
                         <td>${user.display_name}</td>
                         <td>${user.username}</td>
                         <td>${user.email || '-'}</td>
                         <td><span style="text-transform:capitalize;">${user.role}</span></td>
+                        <td style="font-size:12px;color:${rosterLinkColor};font-weight:${rosterLinkLabel === 'Needs link' ? '800' : '600'};">${accountabilityEscape(rosterLinkLabel)}</td>
                         <td style="font-size:12px;">${storeLabels}</td>
                         <td style="font-size:12px;">${defaultStoreLabel}</td>
                         <td><span style="${statusStyle} font-weight:600;">${user.is_active ? 'Active' : 'Inactive'}</span></td>
@@ -6402,6 +6535,9 @@
             // Populate store checkboxes and default store dropdown
             populateStoreCheckboxes();
             updateStoreCheckboxesForRole();
+            const linkedAdvisor = linkedAdvisorForUser(user);
+            populateAdvisorRosterLinkSelect(linkedAdvisor ? advisorRosterLinkValue(linkedAdvisor) : '');
+            updateAdvisorRosterLinkVisibility();
 
             // Check the stores this user has access to
             setTimeout(() => {
@@ -6411,6 +6547,10 @@
                 });
                 // Set default store after dropdown is populated
                 document.getElementById('formDefaultStore').value = user.default_store || '';
+                if (linkedAdvisor) {
+                    const linkSelect = document.getElementById('formAdvisorLink');
+                    if (linkSelect) linkSelect.value = advisorRosterLinkValue(linkedAdvisor);
+                }
             }, 100);
 
             // Scroll to form
@@ -6423,6 +6563,9 @@
             document.getElementById('passwordLabel').textContent = 'Password *';
             document.getElementById('addUserFormTitle').textContent = 'Add New User';
             document.getElementById('formDefaultStore').value = '';
+            const linkSelect = document.getElementById('formAdvisorLink');
+            if (linkSelect) linkSelect.value = '';
+            updateAdvisorRosterLinkVisibility();
         }
 
         async function toggleUserActive(userId, currentlyActive) {
@@ -7572,6 +7715,43 @@
                 });
                 return { advisors: advs, lubeTechs: lubes, technicians: techs, apprentices: apps };
             },
+            extractUserStaffLinks(overrides) {
+                const links = {};
+                (overrides || []).forEach(o => {
+                    if (o.type !== 'user_staff_link' || o.action === 'delete') return;
+                    const data = o.data || {};
+                    if (!data.user_id && !o.id) return;
+                    links[String(data.user_id || o.id)] = {
+                        user_id: String(data.user_id || o.id),
+                        role_type: data.role_type || '',
+                        staff_type: data.staff_type || '',
+                        advisor_id: data.advisor_id == null ? null : String(data.advisor_id),
+                        store_id: data.store_id || null,
+                        updated_at: data.updated_at || null
+                    };
+                });
+                return links;
+            },
+            async saveUserStaffLink(userId, link) {
+                const key = String(userId || '');
+                if (!key) return;
+                if (!link || !link.advisor_id) {
+                    delete userStaffLinks[key];
+                    await this.recordStaffChange('user_staff_link', key, { user_id: key }, 'delete');
+                    return;
+                }
+                const record = {
+                    user_id: key,
+                    role_type: 'advisor',
+                    staff_type: 'advisor',
+                    advisor_id: String(link.advisor_id),
+                    store_id: link.store_id || null,
+                    updated_at: new Date().toISOString(),
+                    updated_by: currentUser ? currentUser.id : null
+                };
+                userStaffLinks[key] = record;
+                await this.recordStaffChange('user_staff_link', key, record, 'update');
+            },
 
             // Record a staff change
             async recordStaffChange(type, id, data, action = 'update') {
@@ -7730,6 +7910,7 @@
                 // Use local fallback data with any saved staff changes applied
                 stores = FALLBACK_STORES;
                 const overrides = await LS.getStaffOverrides();
+                userStaffLinks = LS.extractUserStaffLinks(overrides);
                 const staffData = LS.applyStaffOverrides(FALLBACK_ADVISORS, null, FALLBACK_TECHS, FALLBACK_TECHNICIANS, overrides);
                 advisors = staffData.advisors;
                 lubeTechs = staffData.lubeTechs;
@@ -7824,6 +8005,7 @@
                 useSupabase = false;
                 stores = FALLBACK_STORES;
                 const fbOverrides = LS._get('dyer_staff_overrides');
+                userStaffLinks = LS.extractUserStaffLinks(fbOverrides);
                 const fbStaff = LS.applyStaffOverrides(FALLBACK_ADVISORS, null, FALLBACK_TECHS, FALLBACK_TECHNICIANS, fbOverrides);
                 advisors = fbStaff.advisors;
                 lubeTechs = fbStaff.lubeTechs;
@@ -8166,6 +8348,7 @@
                     const historyMonth = document.getElementById('dailyPulseHistoryMonth');
                     if (historyMonth && !historyMonth.dataset.userPicked) {
                         historyMonth.value = dailyPulseMonthKey(pulseDate.value);
+                        dailyPulseSetHistoryRangeForMonth(historyMonth.value, false);
                     }
                     loadAccountability();
                 });
@@ -8183,11 +8366,21 @@
             const pulseHistoryMonth = document.getElementById('dailyPulseHistoryMonth');
             if (pulseHistoryMonth) {
                 pulseHistoryMonth.value = currentMonthStr;
+                dailyPulseSetHistoryRangeForMonth(currentMonthStr, true);
                 pulseHistoryMonth.addEventListener('change', () => {
                     pulseHistoryMonth.dataset.userPicked = 'true';
+                    dailyPulseSetHistoryRangeForMonth(pulseHistoryMonth.value, true);
                     refreshDailyPulseHistory(false);
                 });
             }
+            ['dailyPulseHistoryStart', 'dailyPulseHistoryEnd'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('change', () => {
+                    el.dataset.userPicked = 'true';
+                    refreshDailyPulseHistory(false);
+                });
+            });
             const savePulseBtn = document.getElementById('saveDailyPulseBtn');
             if (savePulseBtn) savePulseBtn.addEventListener('click', saveDailyPulse);
             const partsAccountabilityMP = document.getElementById('partsAccountabilityMonthPicker');
@@ -12578,6 +12771,14 @@
         function getDailyPulsePeople(role) {
             const scopedIds = new Set(dailyPulseScopedStores().map(s => s.id));
             if (isDailyPulseFrontlineUser()) {
+                const linkedAdvisor = role === 'service_advisor' ? linkedAdvisorForUser(currentUser) : null;
+                if (linkedAdvisor) {
+                    return [{
+                        id: String(linkedAdvisor.id),
+                        name: linkedAdvisor.name || currentUser.display_name || currentUser.username || 'My Check-In',
+                        store_id: linkedAdvisor.store_id
+                    }];
+                }
                 return [{
                     id: `user_${currentUser.id}`,
                     name: currentUser.display_name || currentUser.username || 'My Check-In',
@@ -12740,6 +12941,42 @@
             const [year, month] = String(monthKey || dailyPulseMonthKey()).split('-').map(Number);
             if (!year || !month) return 'selected month';
             return new Date(year, month - 1, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+        }
+
+        function dailyPulseMonthRange(monthKey) {
+            const [year, month] = String(monthKey || dailyPulseMonthKey()).split('-').map(Number);
+            if (!year || !month) {
+                const today = new Date();
+                return accountabilityMonthRange(today.getFullYear(), today.getMonth() + 1);
+            }
+            return accountabilityMonthRange(year, month);
+        }
+
+        function dailyPulseSetHistoryRangeForMonth(monthKey, force = false) {
+            const startEl = document.getElementById('dailyPulseHistoryStart');
+            const endEl = document.getElementById('dailyPulseHistoryEnd');
+            if (!startEl || !endEl) return;
+            const range = dailyPulseMonthRange(monthKey);
+            if (force || !startEl.dataset.userPicked) startEl.value = range.start;
+            if (force || !endEl.dataset.userPicked) endEl.value = range.end;
+        }
+
+        function dailyPulseHistoryDateRange(monthKey) {
+            const monthRange = dailyPulseMonthRange(monthKey);
+            const startEl = document.getElementById('dailyPulseHistoryStart');
+            const endEl = document.getElementById('dailyPulseHistoryEnd');
+            let start = startEl?.value || monthRange.start;
+            let end = endEl?.value || monthRange.end;
+            if (start > end) [start, end] = [end, start];
+            if (startEl && !startEl.value) startEl.value = start;
+            if (endEl && !endEl.value) endEl.value = end;
+            return { start, end };
+        }
+
+        function dailyPulseDateRangeLabel(range) {
+            if (!range?.start || !range?.end) return 'selected dates';
+            if (range.start === range.end) return range.start;
+            return `${range.start} to ${range.end}`;
         }
 
         function dailyPulseHistoryOptionValue(storeId, personId) {
@@ -12982,6 +13219,7 @@
             if (!monthInput.value) monthInput.value = dailyPulseMonthKey(pulseDate);
             const monthKey = dailyPulseMonthKey(monthInput.value || pulseDate);
             monthInput.value = monthKey;
+            const range = dailyPulseHistoryDateRange(monthKey);
 
             if (!choices.length || !selectedValue) {
                 dailyPulseDestroyHistoryCharts();
@@ -13005,7 +13243,7 @@
             const rows = (entries || [])
                 .filter(entry => {
                     if (entry.role_type !== 'service_advisor') return false;
-                    if (!String(entry.entry_date || '').startsWith(`${monthKey}-`)) return false;
+                    if (String(entry.entry_date || '') < range.start || String(entry.entry_date || '') > range.end) return false;
                     if (String(entry.store_id || '') !== String(selected.store_id || '')) return false;
                     const idMatch = String(entry.person_id || '') === String(selected.person_id || '');
                     const nameMatch = normalizedSelectedName && dailyPulseNamesLikelyMatch(entry.person_name, selectedName);
@@ -13042,8 +13280,8 @@
                 </div>
             `).join('');
             noteEl.textContent = rows.length
-                ? `Reviewing ${dailyPulseMonthLabel(monthKey)} for ${selectedName || 'selected advisor'} - ${rows.length} submitted day${rows.length === 1 ? '' : 's'} found.`
-                : `No saved Daily Pulse entries for ${selectedName || 'this advisor'} in ${dailyPulseMonthLabel(monthKey)}.`;
+                ? `Reviewing ${dailyPulseDateRangeLabel(range)} for ${selectedName || 'selected advisor'} - ${rows.length} submitted day${rows.length === 1 ? '' : 's'} found.`
+                : `No saved Daily Pulse entries for ${selectedName || 'this advisor'} from ${dailyPulseDateRangeLabel(range)}.`;
             if (rosterNoteEl) {
                 if (selectedSource === 'submitted') {
                     rosterNoteEl.hidden = false;
