@@ -6605,6 +6605,19 @@
             }
         }
 
+        async function loadAdminConsole() {
+            try {
+                await loadAdminUsers();
+            } catch(e) {
+                console.error('Admin user account load failed', e);
+            }
+            try {
+                await loadStaffManagement();
+            } catch(e) {
+                console.error('Admin staff management load failed', e);
+            }
+        }
+
                 // ============================================================================
         // UTILITY FUNCTIONS
         // ============================================================================
@@ -6789,7 +6802,7 @@
             else if (tabId === 'roster') loadRoster();
             else if (tabId === 'partsRoster') { if (typeof loadPartsRosterPerf === 'function') loadPartsRosterPerf(); }
             else if (tabId === 'collisionRoster') loadCollisionRoster();
-            else if (tabId === 'admin') loadStaffManagement();
+            else if (tabId === 'admin') loadAdminConsole();
             return true;
         }
 
@@ -8169,7 +8182,7 @@
                 else if (activeTab === 'onboarding') loadOnboarding();
                 else if (activeTab === 'sops') loadSops();
                 else if (activeTab === 'roster') loadRoster();
-                else if (activeTab === 'admin') loadStaffManagement();
+                else if (activeTab === 'admin') loadAdminConsole();
             });
 
             // Roster dirty-tracking via event delegation on the editable tbody
