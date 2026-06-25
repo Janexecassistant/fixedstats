@@ -3970,7 +3970,7 @@
                                 <input type="number" min="0" id="dailyPulseRiskOne" value="0">
                             </div>
                             <div class="control-group">
-                                <label id="dailyPulseRiskTwoLabel">At-risk customers</label>
+                                <label id="dailyPulseRiskTwoLabel">NPS at-risk customers</label>
                                 <input type="number" min="0" id="dailyPulseRiskTwo" value="0">
                             </div>
                             <div class="control-group">
@@ -12779,12 +12779,12 @@
         const DAILY_PULSE_TEMPLATES = {
             service_advisor: {
                 label: 'Service Advisor',
-                risks: ['Open Numa / calls', 'At-risk customers', 'Stalled ROs'],
+                risks: ['Open Numa / calls', 'NPS at-risk customers', 'Stalled ROs'],
                 questions: [
                     { key: 'contacted_customers', label: 'Every open customer received a status update today.' },
                     { key: 'waiting_promises', label: 'Waiting customers were updated before promised time.' },
                     { key: 'mpi_reviewed', label: 'Every MPI / recommendation was reviewed with the customer.' },
-                    { key: 'declined_followup', label: 'Declined service follow-up was worked or scheduled.' },
+                    { key: 'declined_followup', label: 'All customers signed NPS recommendation on RO.' },
                     { key: 'numa_cleared', label: 'Numa, missed calls, and voicemails were cleared.' },
                     { key: 'tomorrow_prepped', label: 'Tomorrow appointments were reviewed for prep opportunities.' }
                 ]
@@ -13387,7 +13387,7 @@
                 { value: rows.length, label: 'Submitted days' },
                 { value: avgScore == null ? '-' : `${avgScore}%`, label: 'Average pulse' },
                 { value: totals.riskOne, label: 'Open Numa / calls' },
-                { value: totals.riskTwo, label: 'At-risk customers' },
+                { value: totals.riskTwo, label: 'NPS at-risk customers' },
                 { value: totals.riskThree, label: 'Stalled ROs' }
             ].map(metric => `
                 <div class="daily-pulse-history-card">
@@ -13504,7 +13504,9 @@
             const risks = dailyPulseRiskTotal(entry);
             const role = entry.role_type;
             const r = entry.risk_counts || {};
-            if ((parseInt(r.risk_two) || 0) > 0) return 'Manager reviews customer risk before tomorrow morning.';
+            if ((parseInt(r.risk_two) || 0) > 0) return role === 'service_advisor'
+                ? 'Manager reviews NPS at-risk customers before tomorrow morning.'
+                : 'Manager reviews customer risk before tomorrow morning.';
             if ((parseInt(r.risk_one) || 0) > 0) return role === 'service_advisor'
                 ? 'Clear Numa / call backlog before new write-ups stack up.'
                 : 'Assign owner and ETA for the open blocker.';
@@ -13708,7 +13710,7 @@
                                 </div>
                                 <div class="pulse-risk-stat ${riskTwo ? 'risk-danger' : ''}">
                                     <div class="risk-value">${riskTwo}</div>
-                                    <div class="risk-label">Survey Risk</div>
+                                    <div class="risk-label">NPS Risk</div>
                                 </div>
                                 <div class="pulse-risk-stat ${riskThree ? 'risk-alert' : ''}">
                                     <div class="risk-value">${riskThree}</div>
@@ -13730,10 +13732,11 @@
                         const risks = dailyPulseRiskTotal(entry);
                         const tone = dailyPulseTone(parseFloat(entry.pulse_score) || 0, risks);
                         const r = entry.risk_counts || {};
+                        const riskLabels = DAILY_PULSE_TEMPLATES[entry.role_type]?.risks || ['Calls/tasks', 'Customer risks', 'Blockers'];
                         const riskText = [
-                            `${r.risk_one || 0} calls/tasks`,
-                            `${r.risk_two || 0} customer risks`,
-                            `${r.risk_three || 0} blockers`
+                            `${r.risk_one || 0} ${riskLabels[0] || 'calls/tasks'}`,
+                            `${r.risk_two || 0} ${riskLabels[1] || 'customer risks'}`,
+                            `${r.risk_three || 0} ${riskLabels[2] || 'blockers'}`
                         ].join(' · ');
                         return `
                             <tr>
