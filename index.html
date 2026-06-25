@@ -2390,6 +2390,82 @@
             margin-top: 10px;
         }
 
+        .daily-pulse-roster-note {
+            border: 1px solid #fed7aa;
+            border-radius: 8px;
+            background: #fff7ed;
+            color: #9a3412;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.45;
+            margin-top: 10px;
+            padding: 10px 12px;
+        }
+
+        .daily-pulse-roster-note[hidden] {
+            display: none;
+        }
+
+        .daily-pulse-chart-grid {
+            display: grid;
+            grid-template-columns: minmax(240px, 1.35fr) minmax(220px, 0.9fr);
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .daily-pulse-chart-card {
+            border: 1px solid #eef2f7;
+            border-radius: 10px;
+            background: #ffffff;
+            padding: 12px;
+            min-width: 0;
+        }
+
+        .daily-pulse-chart-card.wide {
+            grid-row: span 2;
+        }
+
+        .daily-pulse-chart-title {
+            color: #111827;
+            font-size: 13px;
+            font-weight: 950;
+            line-height: 1.25;
+        }
+
+        .daily-pulse-chart-subtitle {
+            color: #667085;
+            font-size: 11px;
+            line-height: 1.35;
+            margin-top: 3px;
+        }
+
+        .daily-pulse-chart-canvas {
+            height: 210px;
+            margin-top: 10px;
+            position: relative;
+        }
+
+        .daily-pulse-chart-card.wide .daily-pulse-chart-canvas {
+            height: 300px;
+        }
+
+        .daily-pulse-detail-log {
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            margin-top: 14px;
+            overflow: hidden;
+        }
+
+        .daily-pulse-detail-log summary {
+            background: #f8fafc;
+            color: #111827;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 900;
+            list-style-position: inside;
+            padding: 12px 14px;
+        }
+
         .pulse-risk-stat {
             border: 1px solid #eef2f7;
             border-radius: 8px;
@@ -2519,6 +2595,14 @@
 
             .daily-pulse-hero {
                 grid-template-columns: 1fr;
+            }
+
+            .daily-pulse-chart-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .daily-pulse-chart-card.wide {
+                grid-row: auto;
             }
         }
 
@@ -3955,21 +4039,42 @@
                     </div>
                     <div id="dailyPulseHistorySummary" class="daily-pulse-history-summary"></div>
                     <div id="dailyPulseHistoryNote" class="daily-pulse-history-note">Choose an advisor to review their saved Daily Pulse history.</div>
-                    <div style="overflow-x:auto;margin-top:12px;">
-                        <table class="daily-pulse-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Pulse</th>
-                                    <th>Boxes Checked</th>
-                                    <th>Numbers Entered</th>
-                                    <th>Notes</th>
-                                    <th>Manager Move</th>
-                                </tr>
-                            </thead>
-                            <tbody id="dailyPulseHistoryBody"></tbody>
-                        </table>
+                    <div id="dailyPulseRosterNote" class="daily-pulse-roster-note" hidden></div>
+                    <div class="daily-pulse-chart-grid">
+                        <div class="daily-pulse-chart-card wide">
+                            <div class="daily-pulse-chart-title">Daily Pulse Trend</div>
+                            <div class="daily-pulse-chart-subtitle">Shows whether the end-of-shift habits are staying consistent through the month.</div>
+                            <div class="daily-pulse-chart-canvas"><canvas id="dailyPulseTrendChart"></canvas></div>
+                        </div>
+                        <div class="daily-pulse-chart-card">
+                            <div class="daily-pulse-chart-title">Open Risk Mix</div>
+                            <div class="daily-pulse-chart-subtitle">Where manager attention is being created.</div>
+                            <div class="daily-pulse-chart-canvas"><canvas id="dailyPulseRiskChart"></canvas></div>
+                        </div>
+                        <div class="daily-pulse-chart-card">
+                            <div class="daily-pulse-chart-title">Checklist Consistency</div>
+                            <div class="daily-pulse-chart-subtitle">Which habits are being completed most often.</div>
+                            <div class="daily-pulse-chart-canvas"><canvas id="dailyPulseChecklistChart"></canvas></div>
+                        </div>
                     </div>
+                    <details class="daily-pulse-detail-log">
+                        <summary>Daily detail log</summary>
+                        <div style="overflow-x:auto;">
+                            <table class="daily-pulse-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Pulse</th>
+                                        <th>Boxes Checked</th>
+                                        <th>Numbers Entered</th>
+                                        <th>Notes</th>
+                                        <th>Manager Move</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dailyPulseHistoryBody"></tbody>
+                            </table>
+                        </div>
+                    </details>
                 </div>
                 <div style="overflow-x:auto;margin-top:16px;">
                     <table class="daily-pulse-table">
@@ -8066,8 +8171,8 @@
                 });
             }
             const pulseRole = document.getElementById('dailyPulseRole');
-            if (pulseRole) pulseRole.addEventListener('change', () => {
-                populateDailyPulsePeople();
+            if (pulseRole) pulseRole.addEventListener('change', async () => {
+                populateDailyPulsePeople(await LS.getDailyPulseEntries());
                 renderDailyPulseQuestions();
                 syncDailyPulseHistorySelectionFromForm(true);
             });
@@ -12519,15 +12624,48 @@
             }
         }
 
-        function populateDailyPulsePeople() {
+        function populateDailyPulsePeople(entries = []) {
             const role = document.getElementById('dailyPulseRole')?.value || 'service_advisor';
             const select = document.getElementById('dailyPulsePerson');
             if (!select) return;
+            const previousValue = select.value;
+            const previousStore = select.selectedOptions?.[0]?.dataset.store || '';
             const people = getDailyPulsePeople(role);
-            select.innerHTML = people.length
-                ? people.map(p => `<option value="${accountabilityEscape(p.id)}" data-store="${accountabilityEscape(p.store_id || '')}" data-name="${accountabilityEscape(p.name || '')}">${accountabilityEscape(p.name || 'Unnamed')} ${p.store_id ? '· ' + accountabilityEscape(accountabilityStoreName(p.store_id)) : ''}</option>`).join('')
+            const scopedIds = new Set(dailyPulseScopedStores().map(s => String(s.id)));
+            const rosterIds = new Set(people.map(p => `${String(p.store_id || '')}|${String(p.id || '')}`));
+            const submittedOnly = isDailyPulseFrontlineUser() ? [] : (entries || [])
+                .filter(entry =>
+                    entry.entry_date === dailyPulseSelectedDate() &&
+                    entry.role_type === role &&
+                    scopedIds.has(String(entry.store_id || ''))
+                )
+                .filter(entry => {
+                    const idKey = `${String(entry.store_id || '')}|${String(entry.person_id || '')}`;
+                    const nameMatched = people.some(person =>
+                        String(person.store_id || '') === String(entry.store_id || '') &&
+                        dailyPulseNamesLikelyMatch(person.name, entry.person_name)
+                    );
+                    return !rosterIds.has(idKey) && !nameMatched;
+                })
+                .map(entry => ({
+                    id: String(entry.person_id || ''),
+                    name: entry.person_name || 'Submitted team member',
+                    store_id: entry.store_id,
+                    source: 'submitted'
+                }));
+            const combined = people.concat(submittedOnly);
+            select.innerHTML = combined.length
+                ? combined.map(p => {
+                    const sourceLabel = p.source === 'submitted' ? ' (submitted - match roster)' : '';
+                    return `<option value="${accountabilityEscape(p.id)}" data-store="${accountabilityEscape(p.store_id || '')}" data-name="${accountabilityEscape(p.name || '')}" data-source="${accountabilityEscape(p.source || 'roster')}">${accountabilityEscape(p.name || 'Unnamed')} ${p.store_id ? '- ' + accountabilityEscape(accountabilityStoreName(p.store_id)) : ''}${accountabilityEscape(sourceLabel)}</option>`;
+                }).join('')
                 : '<option value="">No team members available</option>';
-            select.disabled = isDailyPulseFrontlineUser() || !people.length;
+            const previousOption = Array.from(select.options).find(option =>
+                option.value === previousValue &&
+                (!previousStore || option.dataset.store === previousStore)
+            );
+            if (previousOption) previousOption.selected = true;
+            select.disabled = isDailyPulseFrontlineUser() || !combined.length;
             select.onchange = () => {
                 fillDailyPulseExistingEntry();
                 syncDailyPulseHistorySelectionFromForm(true);
@@ -12580,7 +12718,7 @@
                 String(e.store_id || '') === String(selectedStore || '') &&
                 (
                     String(e.person_id) === String(person.value) ||
-                    (selectedName && dailyPulseNormalizeName(e.person_name) === selectedName)
+                    (selectedName && dailyPulseNamesLikelyMatch(e.person_name, selected?.dataset.name || selected?.textContent || ''))
                 )
             );
             document.querySelectorAll('[data-pulse-question]').forEach(cb => {
@@ -12697,12 +12835,133 @@
             `;
         }
 
+        function dailyPulseDestroyHistoryCharts() {
+            ['dailyPulseTrendChart', 'dailyPulseRiskChart', 'dailyPulseChecklistChart'].forEach(id => {
+                if (charts[id]) {
+                    charts[id].destroy();
+                    delete charts[id];
+                }
+            });
+        }
+
+        function dailyPulseRenderHistoryCharts(rows, template, totals) {
+            if (!window.Chart) return;
+            dailyPulseDestroyHistoryCharts();
+            if (!rows.length) return;
+
+            const trendCanvas = document.getElementById('dailyPulseTrendChart');
+            const riskCanvas = document.getElementById('dailyPulseRiskChart');
+            const checklistCanvas = document.getElementById('dailyPulseChecklistChart');
+            const chronological = [...rows].sort((a, b) => String(a.entry_date || '').localeCompare(String(b.entry_date || '')));
+
+            if (trendCanvas) {
+                const gradient = trendCanvas.getContext('2d').createLinearGradient(0, 0, 0, 260);
+                gradient.addColorStop(0, 'rgba(204, 0, 0, 0.24)');
+                gradient.addColorStop(1, 'rgba(204, 0, 0, 0.02)');
+                charts.dailyPulseTrendChart = new Chart(trendCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: chronological.map(entry => entry.entry_date.slice(5)),
+                        datasets: [{
+                            label: 'Pulse score',
+                            data: chronological.map(entry => parseFloat(entry.pulse_score) || 0),
+                            borderColor: '#cc0000',
+                            backgroundColor: gradient,
+                            fill: true,
+                            pointBackgroundColor: chronological.map(entry => {
+                                const score = parseFloat(entry.pulse_score) || 0;
+                                return score >= 90 ? '#16a34a' : score >= 75 ? '#f59e0b' : '#dc2626';
+                            }),
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            tension: 0.35
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { callbacks: { label: ctx => `Pulse: ${ctx.parsed.y}%` } }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, max: 100, ticks: { callback: value => `${value}%` } },
+                            x: { ticks: { maxRotation: 0, autoSkip: true, font: { size: 11 } } }
+                        }
+                    }
+                });
+            }
+
+            if (riskCanvas) {
+                const riskValues = [totals.riskOne, totals.riskTwo, totals.riskThree];
+                const hasRisk = riskValues.some(value => value > 0);
+                charts.dailyPulseRiskChart = new Chart(riskCanvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: hasRisk ? template.risks : ['No open risks'],
+                        datasets: [{
+                            data: hasRisk ? riskValues : [1],
+                            backgroundColor: hasRisk ? ['#f59e0b', '#dc2626', '#6366f1'] : ['#e5e7eb'],
+                            borderColor: '#ffffff',
+                            borderWidth: 3,
+                            hoverOffset: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '68%',
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } }
+                        }
+                    }
+                });
+            }
+
+            if (checklistCanvas) {
+                const checklist = template.questions.map(question => {
+                    const completed = rows.filter(entry => entry.answers?.[question.key]).length;
+                    return {
+                        label: question.label.replace(/\.$/, ''),
+                        pct: Math.round(completed / rows.length * 100)
+                    };
+                });
+                charts.dailyPulseChecklistChart = new Chart(checklistCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: checklist.map(item => item.label),
+                        datasets: [{
+                            label: 'Completed',
+                            data: checklist.map(item => item.pct),
+                            backgroundColor: checklist.map(item => item.pct >= 90 ? '#16a34a' : item.pct >= 70 ? '#f59e0b' : '#dc2626'),
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { callbacks: { label: ctx => `${ctx.parsed.x}% completed` } }
+                        },
+                        scales: {
+                            x: { beginAtZero: true, max: 100, ticks: { callback: value => `${value}%` } },
+                            y: { ticks: { font: { size: 10 } } }
+                        }
+                    }
+                });
+            }
+        }
+
         function renderDailyPulseHistory(entries, scopedStores, pulseDate, options = {}) {
             const advisorSelect = document.getElementById('dailyPulseHistoryAdvisor');
             const monthInput = document.getElementById('dailyPulseHistoryMonth');
             const rateEl = document.getElementById('dailyPulseHistoryRate');
             const summaryEl = document.getElementById('dailyPulseHistorySummary');
             const noteEl = document.getElementById('dailyPulseHistoryNote');
+            const rosterNoteEl = document.getElementById('dailyPulseRosterNote');
             const body = document.getElementById('dailyPulseHistoryBody');
             if (!advisorSelect || !monthInput || !rateEl || !summaryEl || !noteEl || !body) return;
 
@@ -12710,7 +12969,7 @@
             const previousValue = advisorSelect.value;
             const formValue = dailyPulseHistoryValueFromForm();
             advisorSelect.innerHTML = choices.length
-                ? choices.map(choice => `<option value="${accountabilityEscape(choice.value)}" data-store="${accountabilityEscape(choice.store_id)}" data-person="${accountabilityEscape(choice.id)}" data-name="${accountabilityEscape(choice.name)}">${accountabilityEscape(choice.name)} - ${accountabilityEscape(accountabilityStoreName(choice.store_id))}${choice.source === 'Submitted' ? ' (submitted)' : ''}</option>`).join('')
+                ? choices.map(choice => `<option value="${accountabilityEscape(choice.value)}" data-store="${accountabilityEscape(choice.store_id)}" data-person="${accountabilityEscape(choice.id)}" data-name="${accountabilityEscape(choice.name)}" data-source="${accountabilityEscape(choice.source || 'Roster')}">${accountabilityEscape(choice.name)} - ${accountabilityEscape(accountabilityStoreName(choice.store_id))}${choice.source === 'Submitted' ? ' (submitted)' : ''}</option>`).join('')
                 : '<option value="">No advisors available</option>';
 
             const choiceValues = new Set(choices.map(choice => choice.value));
@@ -12725,10 +12984,15 @@
             monthInput.value = monthKey;
 
             if (!choices.length || !selectedValue) {
+                dailyPulseDestroyHistoryCharts();
                 rateEl.className = 'pulse-score-pill low';
                 rateEl.textContent = 'No data';
                 summaryEl.innerHTML = '';
                 noteEl.textContent = 'No active advisors or submitted advisor Pulse entries were found for this scope.';
+                if (rosterNoteEl) {
+                    rosterNoteEl.hidden = true;
+                    rosterNoteEl.textContent = '';
+                }
                 body.innerHTML = '<tr><td colspan="6" class="empty-state">No advisor history available.</td></tr>';
                 return;
             }
@@ -12736,6 +13000,7 @@
             const selected = dailyPulseParseHistoryOption(selectedValue);
             const selectedOption = advisorSelect.selectedOptions[0];
             const selectedName = selectedOption?.dataset.name || '';
+            const selectedSource = String(selectedOption?.dataset.source || 'roster').toLowerCase();
             const normalizedSelectedName = dailyPulseNormalizeName(selectedName);
             const rows = (entries || [])
                 .filter(entry => {
@@ -12743,7 +13008,7 @@
                     if (!String(entry.entry_date || '').startsWith(`${monthKey}-`)) return false;
                     if (String(entry.store_id || '') !== String(selected.store_id || '')) return false;
                     const idMatch = String(entry.person_id || '') === String(selected.person_id || '');
-                    const nameMatch = normalizedSelectedName && dailyPulseNormalizeName(entry.person_name) === normalizedSelectedName;
+                    const nameMatch = normalizedSelectedName && dailyPulseNamesLikelyMatch(entry.person_name, selectedName);
                     return idMatch || nameMatch;
                 })
                 .sort((a, b) => String(b.entry_date || '').localeCompare(String(a.entry_date || '')));
@@ -12760,6 +13025,7 @@
                 return acc;
             }, { riskOne: 0, riskTwo: 0, riskThree: 0, totalRisks: 0 });
             const tone = avgScore == null ? 'low' : (avgScore >= 90 ? 'above' : (avgScore >= 75 ? 'watch' : 'below'));
+            const template = DAILY_PULSE_TEMPLATES.service_advisor;
 
             rateEl.className = `pulse-score-pill ${tone}`;
             rateEl.textContent = avgScore == null ? 'No pulse' : `${avgScore}%`;
@@ -12778,6 +13044,16 @@
             noteEl.textContent = rows.length
                 ? `Reviewing ${dailyPulseMonthLabel(monthKey)} for ${selectedName || 'selected advisor'} - ${rows.length} submitted day${rows.length === 1 ? '' : 's'} found.`
                 : `No saved Daily Pulse entries for ${selectedName || 'this advisor'} in ${dailyPulseMonthLabel(monthKey)}.`;
+            if (rosterNoteEl) {
+                if (selectedSource === 'submitted') {
+                    rosterNoteEl.hidden = false;
+                    rosterNoteEl.textContent = 'This report is saved, but the submitting login does not cleanly match an active advisor row in the roster. You can still review it here; matching the login name to the roster advisor will remove this warning.';
+                } else {
+                    rosterNoteEl.hidden = true;
+                    rosterNoteEl.textContent = '';
+                }
+            }
+            dailyPulseRenderHistoryCharts(rows, template, totals);
 
             body.innerHTML = rows.length
                 ? rows.map(entry => {
@@ -12884,6 +13160,27 @@
                 .trim();
         }
 
+        function dailyPulseNamesLikelyMatch(a, b) {
+            const left = dailyPulseNormalizeName(a);
+            const right = dailyPulseNormalizeName(b);
+            if (!left || !right) return false;
+            if (left === right) return true;
+            const leftTokens = left.split(/\s+/).filter(Boolean);
+            const rightTokens = right.split(/\s+/).filter(Boolean);
+            if (!leftTokens.length || !rightTokens.length) return false;
+            const needed = Math.min(2, leftTokens.length, rightTokens.length);
+            const overlap = leftTokens.filter(token =>
+                rightTokens.some(other =>
+                    token === other ||
+                    (token.length >= 2 && other.startsWith(token)) ||
+                    (other.length >= 2 && token.startsWith(other)) ||
+                    (token.length === 1 && other.startsWith(token)) ||
+                    (other.length === 1 && token.startsWith(other))
+                )
+            ).length;
+            return overlap >= needed;
+        }
+
         function renderDailyPulseCompletion(todays, scopedStores) {
             const rateEl = document.getElementById('dailyPulseCompletionRate');
             const summaryEl = document.getElementById('dailyPulseCompletionSummary');
@@ -12910,7 +13207,7 @@
                 const byName = byId || advisorEntries.find(entry =>
                     !usedEntryKeys.has(`${entry.role_type}|${entry.person_id}|${entry.store_id}`) &&
                     String(entry.store_id) === String(advisor.store_id) &&
-                    dailyPulseNormalizeName(entry.person_name) === dailyPulseNormalizeName(advisor.name)
+                    dailyPulseNamesLikelyMatch(entry.person_name, advisor.name)
                 );
                 const entry = byId || byName || null;
                 if (entry) usedEntryKeys.add(`${entry.role_type}|${entry.person_id}|${entry.store_id}`);
@@ -12943,7 +13240,7 @@
             rateEl.className = `pulse-score-pill ${tone}`;
             rateEl.textContent = rate == null ? 'No roster' : `${rate}%`;
             summaryEl.textContent = expected.length
-                ? `${submittedCount} of ${expected.length} active advisor${expected.length === 1 ? '' : 's'} submitted. ${missingCount} missing${unmatched.length ? `, plus ${unmatched.length} submitted report${unmatched.length === 1 ? '' : 's'} needing roster/login match` : ''}.`
+                ? `${submittedCount} of ${expected.length} active advisor${expected.length === 1 ? '' : 's'} submitted. ${missingCount} missing${unmatched.length ? `, plus ${unmatched.length} saved report${unmatched.length === 1 ? '' : 's'} that need the submitting login matched to the advisor roster` : ''}.`
                 : 'No active advisors found for this scope.';
 
             const completionRows = rows.concat(unmatched).sort((a, b) =>
@@ -12959,18 +13256,18 @@
                     const statusBadge = row.status === 'submitted'
                         ? accountabilityBadge('Submitted', 'above')
                         : row.status === 'unmatched'
-                            ? accountabilityBadge('Roster Link Needed', 'watch')
+                            ? accountabilityBadge('Submitted - Match Roster', 'watch')
                             : accountabilityBadge('Missing', 'below');
                     const followUp = row.status === 'submitted'
                         ? dailyPulseManagerMove(entry)
                         : row.status === 'unmatched'
-                            ? 'Submission exists, but the login does not cleanly match the advisor roster. Confirm the user profile or advisor name.'
+                            ? 'Saved report exists. Match this login/display name to the advisor roster so completion tracking counts it automatically.'
                             : 'Confirm the end-of-shift Pulse before the advisor leaves or review it first thing tomorrow.';
                     return `
                         <tr>
                             <td>
                                 <div class="pulse-person-name">${accountabilityEscape(row.advisor.name)}</div>
-                                <div class="pulse-person-meta">${row.status === 'unmatched' ? accountabilityEscape(String(row.advisor.id)) : 'Advisor roster'}</div>
+                                <div class="pulse-person-meta">${row.status === 'unmatched' ? 'Saved report not matched to roster' : 'Advisor roster'}</div>
                             </td>
                             <td>${accountabilityEscape(accountabilityStoreName(row.advisor.store_id))}</td>
                             <td>${statusBadge}</td>
@@ -13139,10 +13436,10 @@
                     console.warn('Daily Pulse department staff load skipped', e);
                 }
                 configureDailyPulseRoleForUser();
-                populateDailyPulsePeople();
+                const pulseEntries = await LS.getDailyPulseEntries();
+                populateDailyPulsePeople(pulseEntries);
                 renderDailyPulseQuestions();
                 syncDailyPulseFrontlineControls();
-                const pulseEntries = await LS.getDailyPulseEntries();
                 renderDailyPulseSummary(pulseEntries, scopedStores, dailyPulseSelectedDate());
 
                 if (frontlinePulseOnly) return;
