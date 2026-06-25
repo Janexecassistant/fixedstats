@@ -5089,11 +5089,15 @@
                     <div class="control-group" id="advisorRosterLinkGroup" style="display:none;margin-top:16px;">
                         <label>Linked Advisor Roster Record</label>
                         <select id="formAdvisorLink" onchange="applyAdvisorRosterLinkToUserForm()">
-                            <option value="">Not linked</option>
+                            <option value="">Create / auto-link from this user</option>
                         </select>
                         <div style="font-size:12px;color:#667085;line-height:1.45;margin-top:6px;">
-                            Advisor information should be entered once in Manage Advisors. Link the user account here so Daily Pulse, onboarding, and advisor tracking use that same roster record.
+                            Add advisors here as users. Fixedstats will create or match the advisor roster record and link Daily Pulse, onboarding, and dashboards automatically.
                         </div>
+                    </div>
+                    <div class="control-group" id="advisorEmployeeIdGroup" style="display:none;margin-top:12px;">
+                        <label>Advisor Employee ID</label>
+                        <input type="text" id="formAdvisorEmployeeId" placeholder="Optional employee ID">
                     </div>
                     <div style="margin-top: 20px;">
                         <label style="font-weight: 600; color: #555;">Store Access:</label>
@@ -5116,6 +5120,9 @@
 
             <div class="card">
                 <h2 class="card-title">Manage Advisors</h2>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">
+                    New advisors should be added from User Accounts. This roster view is created from advisor users and keeps legacy advisor rows available for editing.
+                </p>
                 <div style="overflow-x: auto;">
                     <table id="staffAdvisorTable">
                         <thead>
@@ -5131,7 +5138,7 @@
                     </table>
                 </div>
                 <div class="btn-group">
-                    <button class="btn" id="addAdvisorBtn">+ Add Advisor</button>
+                    <button class="btn" id="addAdvisorBtn" type="button">+ Add Advisor User</button>
                 </div>
             </div>
 
@@ -6054,14 +6061,22 @@
             location.reload();
         }
 
-        function openAddUserForm() {
+        function openAddUserForm(defaultRole = '') {
             resetUserForm();
             document.getElementById('addUserFormCard').style.display = 'block';
             document.getElementById('addUserForm').reset();
             document.getElementById('addUserFormTitle').textContent = 'Add New User';
             populateStoreCheckboxes();
+            if (defaultRole) {
+                document.getElementById('formRole').value = defaultRole;
+            }
             populateAdvisorRosterLinkSelect();
             updateAdvisorRosterLinkVisibility();
+        }
+
+        function openAddAdvisorUserForm() {
+            openAddUserForm('advisor');
+            document.getElementById('formDisplayName')?.focus();
         }
 
         function closeAddUserForm() {
@@ -6209,8 +6224,10 @@
         function updateAdvisorRosterLinkVisibility() {
             const role = document.getElementById('formRole')?.value || '';
             const group = document.getElementById('advisorRosterLinkGroup');
+            const employeeGroup = document.getElementById('advisorEmployeeIdGroup');
             if (!group) return;
             group.style.display = role === 'advisor' ? '' : 'none';
+            if (employeeGroup) employeeGroup.style.display = role === 'advisor' ? '' : 'none';
             if (role === 'advisor') populateAdvisorRosterLinkSelect();
         }
 
@@ -6221,8 +6238,10 @@
             const nameEl = document.getElementById('formDisplayName');
             const roleEl = document.getElementById('formRole');
             const defaultStoreEl = document.getElementById('formDefaultStore');
+            const employeeIdEl = document.getElementById('formAdvisorEmployeeId');
             if (nameEl) nameEl.value = advisor.name || nameEl.value;
             if (roleEl) roleEl.value = 'advisor';
+            if (employeeIdEl) employeeIdEl.value = advisor.employee_id || '';
             document.querySelectorAll('.storeAccessCheckbox').forEach(cb => {
                 if (cb.value === advisor.store_id) cb.checked = true;
             });
@@ -6237,6 +6256,60 @@
                 return `${advisor.name || 'Advisor'} - ${accountabilityStoreName(advisor.store_id)}`;
             }
             return 'Needs link';
+        }
+
+        function advisorRosterStoreFromUserForm(role, storeAccess, defaultStore, selectedAdvisor) {
+            if (role !== 'advisor') return null;
+            if (selectedAdvisor?.store_id) return selectedAdvisor.store_id;
+            if (defaultStore) return defaultStore;
+            return storeAccess.length === 1 ? storeAccess[0] : null;
+        }
+
+        function findAdvisorRosterMatch(name, storeId) {
+            return advisors.find(advisor =>
+                advisor.is_active !== false &&
+                String(advisor.store_id || '') === String(storeId || '') &&
+                dailyPulseNamesLikelyMatch(advisor.name, name)
+            ) || null;
+        }
+
+        function nextAdvisorRosterId() {
+            const numericIds = advisors.map(advisor => parseInt(advisor.id, 10)).filter(Number.isFinite);
+            return (numericIds.length ? Math.max(...numericIds) : 0) + 1;
+        }
+
+        async function ensureAdvisorRosterForUser({ displayName, storeId, employeeId, selectedAdvisor }) {
+            if (!displayName || !storeId) return null;
+            let advisor = selectedAdvisor || findAdvisorRosterMatch(displayName, storeId);
+            const nowIso = new Date().toISOString();
+
+            if (advisor) {
+                const updated = {
+                    ...advisor,
+                    name: displayName,
+                    employee_id: employeeId || advisor.employee_id || null,
+                    store_id: storeId,
+                    is_active: true,
+                    updated_by: currentUser ? currentUser.id : null,
+                    updated_at: nowIso
+                };
+                Object.assign(advisor, updated);
+                await LS.recordStaffChange('advisor', advisor.id, updated, 'update');
+                return advisor;
+            }
+
+            advisor = {
+                id: nextAdvisorRosterId(),
+                store_id: storeId,
+                name: displayName,
+                employee_id: employeeId || null,
+                is_active: true,
+                updated_by: currentUser ? currentUser.id : null,
+                updated_at: nowIso
+            };
+            advisors.push(advisor);
+            await LS.recordStaffChange('advisor', advisor.id, advisor, 'add');
+            return advisor;
         }
 
         async function handleExistingUser(username) {
@@ -6284,12 +6357,18 @@
                 .map(cb => cb.value);
             let defaultStore = document.getElementById('formDefaultStore').value || null;
             const advisorLinkValue = document.getElementById('formAdvisorLink')?.value || '';
-            const linkedAdvisor = role === 'advisor' ? getAdvisorByLinkValue(advisorLinkValue) : null;
-            if (linkedAdvisor) {
-                if (!storeAccess.includes(linkedAdvisor.store_id)) {
-                    storeAccess = storeAccess.concat(linkedAdvisor.store_id);
+            const advisorEmployeeId = document.getElementById('formAdvisorEmployeeId')?.value.trim() || '';
+            const selectedLinkedAdvisor = role === 'advisor' ? getAdvisorByLinkValue(advisorLinkValue) : null;
+            let advisorRosterStore = advisorRosterStoreFromUserForm(role, storeAccess, defaultStore, selectedLinkedAdvisor);
+            if (role === 'advisor') {
+                if (!advisorRosterStore) {
+                    showToast('Choose one default store for this advisor so the roster record can be created and linked', 'error');
+                    return;
                 }
-                defaultStore = defaultStore || linkedAdvisor.store_id;
+                if (!storeAccess.includes(advisorRosterStore)) {
+                    storeAccess = storeAccess.concat(advisorRosterStore);
+                }
+                defaultStore = advisorRosterStore;
             }
 
             if (storeAccess.length === 0 && (role === 'manager' || role === 'parts_manager' || role === 'collision_manager' || role === 'advisor' || role === 'technician')) {
@@ -6364,12 +6443,21 @@
                         if (accErr) { console.error('Insert store access error:', accErr); showToast('Failed to save store access: ' + formatDbError(accErr), 'error'); return; }
                     }
 
-                    await LS.saveUserStaffLink(editingUserId, linkedAdvisor ? {
-                        advisor_id: linkedAdvisor.id,
-                        store_id: linkedAdvisor.store_id
+                    const resolvedAdvisor = role === 'advisor'
+                        ? await ensureAdvisorRosterForUser({
+                            displayName,
+                            storeId: advisorRosterStore,
+                            employeeId: advisorEmployeeId,
+                            selectedAdvisor: selectedLinkedAdvisor
+                        })
+                        : null;
+
+                    await LS.saveUserStaffLink(editingUserId, resolvedAdvisor ? {
+                        advisor_id: resolvedAdvisor.id,
+                        store_id: resolvedAdvisor.store_id
                     } : null);
 
-                    showToast('User updated successfully');
+                    showToast(role === 'advisor' ? 'Advisor user and roster link updated' : 'User updated successfully');
                 } else {
                     // INSERT new user
                     const { data: userData, error: userError } = await db.from('app_users').insert({
@@ -6411,16 +6499,27 @@
                         }
                     }
 
-                    await LS.saveUserStaffLink(userId, linkedAdvisor ? {
-                        advisor_id: linkedAdvisor.id,
-                        store_id: linkedAdvisor.store_id
+                    const resolvedAdvisor = role === 'advisor'
+                        ? await ensureAdvisorRosterForUser({
+                            displayName,
+                            storeId: advisorRosterStore,
+                            employeeId: advisorEmployeeId,
+                            selectedAdvisor: selectedLinkedAdvisor
+                        })
+                        : null;
+
+                    await LS.saveUserStaffLink(userId, resolvedAdvisor ? {
+                        advisor_id: resolvedAdvisor.id,
+                        store_id: resolvedAdvisor.store_id
                     } : null);
 
-                    showToast('User created successfully');
+                    showToast(role === 'advisor' ? 'Advisor user created and roster linked' : 'User created successfully');
                 }
 
                 closeAddUserForm();
+                if (role === 'advisor') populateAdvisorSelect();
                 await loadAdminUsers();
+                if (role === 'advisor') await loadStaffManagement();
             } catch (error) {
                 console.error('Save user error:', error);
                 showToast('Failed to save user: ' + formatDbError(error), 'error');
@@ -6550,6 +6649,8 @@
                 if (linkedAdvisor) {
                     const linkSelect = document.getElementById('formAdvisorLink');
                     if (linkSelect) linkSelect.value = advisorRosterLinkValue(linkedAdvisor);
+                    const employeeIdEl = document.getElementById('formAdvisorEmployeeId');
+                    if (employeeIdEl) employeeIdEl.value = linkedAdvisor.employee_id || '';
                 }
             }, 100);
 
@@ -6565,6 +6666,8 @@
             document.getElementById('formDefaultStore').value = '';
             const linkSelect = document.getElementById('formAdvisorLink');
             if (linkSelect) linkSelect.value = '';
+            const employeeIdEl = document.getElementById('formAdvisorEmployeeId');
+            if (employeeIdEl) employeeIdEl.value = '';
             updateAdvisorRosterLinkVisibility();
         }
 
@@ -8510,7 +8613,7 @@
             }
 
             // Staff management
-            document.getElementById('addAdvisorBtn').addEventListener('click', addNewAdvisor);
+            document.getElementById('addAdvisorBtn').addEventListener('click', openAddAdvisorUserForm);
             document.getElementById('addTechnicianBtn').addEventListener('click', addNewTechnician);
             document.getElementById('addTechBtn').addEventListener('click', addNewTech);
             document.getElementById('addApprenticeBtn').addEventListener('click', addNewApprentice);
