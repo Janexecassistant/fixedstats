@@ -2337,6 +2337,59 @@
             line-height: 1.35;
         }
 
+        .daily-pulse-history-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .daily-pulse-history-controls .control-group select,
+        .daily-pulse-history-controls .control-group input {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .daily-pulse-history-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .daily-pulse-history-card {
+            border: 1px solid #eef2f7;
+            border-radius: 8px;
+            background: #f8fafc;
+            padding: 10px;
+            min-width: 0;
+        }
+
+        .daily-pulse-history-card strong {
+            display: block;
+            color: #111827;
+            font-size: 20px;
+            font-weight: 950;
+            line-height: 1;
+        }
+
+        .daily-pulse-history-card span {
+            display: block;
+            color: #667085;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.2px;
+            margin-top: 6px;
+            text-transform: uppercase;
+        }
+
+        .daily-pulse-history-note {
+            color: #667085;
+            font-size: 12px;
+            line-height: 1.45;
+            margin-top: 10px;
+        }
+
         .pulse-risk-stat {
             border: 1px solid #eef2f7;
             border-radius: 8px;
@@ -2425,6 +2478,37 @@
             color: #667085;
             font-size: 11px;
             margin-top: 4px;
+            line-height: 1.35;
+        }
+
+        .pulse-check-list,
+        .pulse-number-list {
+            display: grid;
+            gap: 6px;
+            min-width: 230px;
+        }
+
+        .pulse-check-item,
+        .pulse-number-line {
+            display: grid;
+            grid-template-columns: 40px minmax(0, 1fr);
+            gap: 8px;
+            align-items: start;
+            color: #475467;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .pulse-check-item.done {
+            color: #047857;
+            font-weight: 800;
+        }
+
+        .pulse-check-value,
+        .pulse-number-line strong {
+            color: #111827;
+            font-size: 12px;
+            font-weight: 950;
             line-height: 1.35;
         }
 
@@ -3848,6 +3932,42 @@
                                 </tr>
                             </thead>
                             <tbody id="dailyPulseCompletionBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="daily-pulse-completion-panel">
+                    <div class="daily-pulse-completion-head">
+                        <div>
+                            <h4>Advisor Daily Pulse History</h4>
+                            <p>Pick an advisor and month to review the boxes checked, numbers entered, notes, and manager follow-up by day.</p>
+                        </div>
+                        <div id="dailyPulseHistoryRate" class="pulse-score-pill low">—</div>
+                    </div>
+                    <div class="daily-pulse-history-controls">
+                        <div class="control-group">
+                            <label>Advisor</label>
+                            <select id="dailyPulseHistoryAdvisor"></select>
+                        </div>
+                        <div class="control-group">
+                            <label>Month</label>
+                            <input type="month" id="dailyPulseHistoryMonth">
+                        </div>
+                    </div>
+                    <div id="dailyPulseHistorySummary" class="daily-pulse-history-summary"></div>
+                    <div id="dailyPulseHistoryNote" class="daily-pulse-history-note">Choose an advisor to review their saved Daily Pulse history.</div>
+                    <div style="overflow-x:auto;margin-top:12px;">
+                        <table class="daily-pulse-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Pulse</th>
+                                    <th>Boxes Checked</th>
+                                    <th>Numbers Entered</th>
+                                    <th>Notes</th>
+                                    <th>Manager Move</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dailyPulseHistoryBody"></tbody>
                         </table>
                     </div>
                 </div>
@@ -7937,13 +8057,32 @@
             const pulseDate = document.getElementById('dailyPulseDate');
             if (pulseDate) {
                 pulseDate.value = dateToString(now);
-                pulseDate.addEventListener('change', loadAccountability);
+                pulseDate.addEventListener('change', () => {
+                    const historyMonth = document.getElementById('dailyPulseHistoryMonth');
+                    if (historyMonth && !historyMonth.dataset.userPicked) {
+                        historyMonth.value = dailyPulseMonthKey(pulseDate.value);
+                    }
+                    loadAccountability();
+                });
             }
             const pulseRole = document.getElementById('dailyPulseRole');
             if (pulseRole) pulseRole.addEventListener('change', () => {
                 populateDailyPulsePeople();
                 renderDailyPulseQuestions();
+                syncDailyPulseHistorySelectionFromForm(true);
             });
+            const pulseHistoryAdvisor = document.getElementById('dailyPulseHistoryAdvisor');
+            if (pulseHistoryAdvisor) {
+                pulseHistoryAdvisor.addEventListener('change', () => refreshDailyPulseHistory(false));
+            }
+            const pulseHistoryMonth = document.getElementById('dailyPulseHistoryMonth');
+            if (pulseHistoryMonth) {
+                pulseHistoryMonth.value = currentMonthStr;
+                pulseHistoryMonth.addEventListener('change', () => {
+                    pulseHistoryMonth.dataset.userPicked = 'true';
+                    refreshDailyPulseHistory(false);
+                });
+            }
             const savePulseBtn = document.getElementById('saveDailyPulseBtn');
             if (savePulseBtn) savePulseBtn.addEventListener('click', saveDailyPulse);
             const partsAccountabilityMP = document.getElementById('partsAccountabilityMonthPicker');
@@ -12389,7 +12528,10 @@
                 ? people.map(p => `<option value="${accountabilityEscape(p.id)}" data-store="${accountabilityEscape(p.store_id || '')}" data-name="${accountabilityEscape(p.name || '')}">${accountabilityEscape(p.name || 'Unnamed')} ${p.store_id ? '· ' + accountabilityEscape(accountabilityStoreName(p.store_id)) : ''}</option>`).join('')
                 : '<option value="">No team members available</option>';
             select.disabled = isDailyPulseFrontlineUser() || !people.length;
-            select.onchange = () => fillDailyPulseExistingEntry();
+            select.onchange = () => {
+                fillDailyPulseExistingEntry();
+                syncDailyPulseHistorySelectionFromForm(true);
+            };
         }
 
         function syncDailyPulseFrontlineControls() {
@@ -12428,11 +12570,18 @@
             const role = document.getElementById('dailyPulseRole')?.value || 'service_advisor';
             const person = document.getElementById('dailyPulsePerson');
             if (!person || !person.value) return;
+            const selected = person.selectedOptions[0];
+            const selectedStore = selected?.dataset.store || dailyPulseUserStore();
+            const selectedName = dailyPulseNormalizeName(selected?.dataset.name || selected?.textContent || '');
             const entries = await LS.getDailyPulseEntries();
             const entry = (entries || []).find(e =>
                 e.entry_date === dailyPulseSelectedDate() &&
                 e.role_type === role &&
-                String(e.person_id) === String(person.value)
+                String(e.store_id || '') === String(selectedStore || '') &&
+                (
+                    String(e.person_id) === String(person.value) ||
+                    (selectedName && dailyPulseNormalizeName(e.person_name) === selectedName)
+                )
             );
             document.querySelectorAll('[data-pulse-question]').forEach(cb => {
                 cb.checked = !!entry?.answers?.[cb.dataset.pulseQuestion];
@@ -12441,6 +12590,223 @@
             document.getElementById('dailyPulseRiskTwo').value = entry?.risk_counts?.risk_two ?? 0;
             document.getElementById('dailyPulseRiskThree').value = entry?.risk_counts?.risk_three ?? 0;
             document.getElementById('dailyPulseNotes').value = entry?.notes || '';
+        }
+
+        function dailyPulseMonthKey(dateValue) {
+            const fallback = dateToString(new Date()).slice(0, 7);
+            const value = String(dateValue || '').trim();
+            return /^\d{4}-\d{2}/.test(value) ? value.slice(0, 7) : fallback;
+        }
+
+        function dailyPulseMonthLabel(monthKey) {
+            const [year, month] = String(monthKey || dailyPulseMonthKey()).split('-').map(Number);
+            if (!year || !month) return 'selected month';
+            return new Date(year, month - 1, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+        }
+
+        function dailyPulseHistoryOptionValue(storeId, personId) {
+            return `${String(storeId || '')}|${String(personId || '')}`;
+        }
+
+        function dailyPulseParseHistoryOption(value) {
+            const parts = String(value || '').split('|');
+            return {
+                store_id: parts.shift() || '',
+                person_id: parts.join('|') || ''
+            };
+        }
+
+        function dailyPulseHistoryValueFromForm() {
+            const role = document.getElementById('dailyPulseRole')?.value || 'service_advisor';
+            const person = document.getElementById('dailyPulsePerson');
+            const selected = person?.selectedOptions?.[0];
+            if (role !== 'service_advisor' || !person?.value || !selected) return '';
+            return dailyPulseHistoryOptionValue(selected.dataset.store || dailyPulseUserStore(), person.value);
+        }
+
+        function dailyPulseHistoryOptions(entries, scopedStores) {
+            const scopedIds = new Set((scopedStores || []).map(store => String(store.id)));
+            const options = new Map();
+
+            advisors
+                .filter(advisor => advisor.is_active !== false && scopedIds.has(String(advisor.store_id)))
+                .forEach(advisor => {
+                    const value = dailyPulseHistoryOptionValue(advisor.store_id, advisor.id);
+                    options.set(value, {
+                        value,
+                        id: String(advisor.id),
+                        name: advisor.name || 'Unnamed advisor',
+                        store_id: String(advisor.store_id || ''),
+                        source: 'Roster'
+                    });
+                });
+
+            (entries || [])
+                .filter(entry => entry.role_type === 'service_advisor' && scopedIds.has(String(entry.store_id)))
+                .forEach(entry => {
+                    const value = dailyPulseHistoryOptionValue(entry.store_id, entry.person_id);
+                    if (options.has(value)) return;
+                    options.set(value, {
+                        value,
+                        id: String(entry.person_id || ''),
+                        name: entry.person_name || 'Submitted advisor',
+                        store_id: String(entry.store_id || ''),
+                        source: 'Submitted'
+                    });
+                });
+
+            return Array.from(options.values()).sort((a, b) =>
+                String(a.store_id || '').localeCompare(String(b.store_id || '')) ||
+                String(a.name || '').localeCompare(String(b.name || ''))
+            );
+        }
+
+        function dailyPulseQuestionReview(entry) {
+            const template = DAILY_PULSE_TEMPLATES[entry.role_type] || DAILY_PULSE_TEMPLATES.service_advisor;
+            const answers = entry.answers || {};
+            return `
+                <div class="pulse-check-list">
+                    ${template.questions.map(question => {
+                        const checked = !!answers[question.key];
+                        return `
+                            <div class="pulse-check-item ${checked ? 'done' : ''}">
+                                <span class="pulse-check-value">${checked ? 'Yes' : 'No'}</span>
+                                <span>${accountabilityEscape(question.label)}</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function dailyPulseRiskReview(entry) {
+            const template = DAILY_PULSE_TEMPLATES[entry.role_type] || DAILY_PULSE_TEMPLATES.service_advisor;
+            const risks = entry.risk_counts || {};
+            return `
+                <div class="pulse-number-list">
+                    ${template.risks.map((label, index) => {
+                        const key = ['risk_one', 'risk_two', 'risk_three'][index];
+                        return `
+                            <div class="pulse-number-line">
+                                <strong>${parseInt(risks[key]) || 0}</strong>
+                                <span>${accountabilityEscape(label)}</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function renderDailyPulseHistory(entries, scopedStores, pulseDate, options = {}) {
+            const advisorSelect = document.getElementById('dailyPulseHistoryAdvisor');
+            const monthInput = document.getElementById('dailyPulseHistoryMonth');
+            const rateEl = document.getElementById('dailyPulseHistoryRate');
+            const summaryEl = document.getElementById('dailyPulseHistorySummary');
+            const noteEl = document.getElementById('dailyPulseHistoryNote');
+            const body = document.getElementById('dailyPulseHistoryBody');
+            if (!advisorSelect || !monthInput || !rateEl || !summaryEl || !noteEl || !body) return;
+
+            const choices = dailyPulseHistoryOptions(entries, scopedStores);
+            const previousValue = advisorSelect.value;
+            const formValue = dailyPulseHistoryValueFromForm();
+            advisorSelect.innerHTML = choices.length
+                ? choices.map(choice => `<option value="${accountabilityEscape(choice.value)}" data-store="${accountabilityEscape(choice.store_id)}" data-person="${accountabilityEscape(choice.id)}" data-name="${accountabilityEscape(choice.name)}">${accountabilityEscape(choice.name)} - ${accountabilityEscape(accountabilityStoreName(choice.store_id))}${choice.source === 'Submitted' ? ' (submitted)' : ''}</option>`).join('')
+                : '<option value="">No advisors available</option>';
+
+            const choiceValues = new Set(choices.map(choice => choice.value));
+            let selectedValue = previousValue && choiceValues.has(previousValue) ? previousValue : '';
+            if (options.syncFromForm && formValue && choiceValues.has(formValue)) selectedValue = formValue;
+            if (!selectedValue && formValue && choiceValues.has(formValue)) selectedValue = formValue;
+            if (!selectedValue && choices[0]) selectedValue = choices[0].value;
+            advisorSelect.value = selectedValue;
+
+            if (!monthInput.value) monthInput.value = dailyPulseMonthKey(pulseDate);
+            const monthKey = dailyPulseMonthKey(monthInput.value || pulseDate);
+            monthInput.value = monthKey;
+
+            if (!choices.length || !selectedValue) {
+                rateEl.className = 'pulse-score-pill low';
+                rateEl.textContent = 'No data';
+                summaryEl.innerHTML = '';
+                noteEl.textContent = 'No active advisors or submitted advisor Pulse entries were found for this scope.';
+                body.innerHTML = '<tr><td colspan="6" class="empty-state">No advisor history available.</td></tr>';
+                return;
+            }
+
+            const selected = dailyPulseParseHistoryOption(selectedValue);
+            const selectedOption = advisorSelect.selectedOptions[0];
+            const selectedName = selectedOption?.dataset.name || '';
+            const normalizedSelectedName = dailyPulseNormalizeName(selectedName);
+            const rows = (entries || [])
+                .filter(entry => {
+                    if (entry.role_type !== 'service_advisor') return false;
+                    if (!String(entry.entry_date || '').startsWith(`${monthKey}-`)) return false;
+                    if (String(entry.store_id || '') !== String(selected.store_id || '')) return false;
+                    const idMatch = String(entry.person_id || '') === String(selected.person_id || '');
+                    const nameMatch = normalizedSelectedName && dailyPulseNormalizeName(entry.person_name) === normalizedSelectedName;
+                    return idMatch || nameMatch;
+                })
+                .sort((a, b) => String(b.entry_date || '').localeCompare(String(a.entry_date || '')));
+
+            const avgScore = rows.length
+                ? Math.round(rows.reduce((sum, entry) => sum + (parseFloat(entry.pulse_score) || 0), 0) / rows.length)
+                : null;
+            const totals = rows.reduce((acc, entry) => {
+                const risks = entry.risk_counts || {};
+                acc.riskOne += parseInt(risks.risk_one) || 0;
+                acc.riskTwo += parseInt(risks.risk_two) || 0;
+                acc.riskThree += parseInt(risks.risk_three) || 0;
+                acc.totalRisks += dailyPulseRiskTotal(entry);
+                return acc;
+            }, { riskOne: 0, riskTwo: 0, riskThree: 0, totalRisks: 0 });
+            const tone = avgScore == null ? 'low' : (avgScore >= 90 ? 'above' : (avgScore >= 75 ? 'watch' : 'below'));
+
+            rateEl.className = `pulse-score-pill ${tone}`;
+            rateEl.textContent = avgScore == null ? 'No pulse' : `${avgScore}%`;
+            summaryEl.innerHTML = [
+                { value: rows.length, label: 'Submitted days' },
+                { value: avgScore == null ? '-' : `${avgScore}%`, label: 'Average pulse' },
+                { value: totals.riskOne, label: 'Open Numa / calls' },
+                { value: totals.riskTwo, label: 'At-risk customers' },
+                { value: totals.riskThree, label: 'Stalled ROs' }
+            ].map(metric => `
+                <div class="daily-pulse-history-card">
+                    <strong>${accountabilityEscape(metric.value)}</strong>
+                    <span>${accountabilityEscape(metric.label)}</span>
+                </div>
+            `).join('');
+            noteEl.textContent = rows.length
+                ? `Reviewing ${dailyPulseMonthLabel(monthKey)} for ${selectedName || 'selected advisor'} - ${rows.length} submitted day${rows.length === 1 ? '' : 's'} found.`
+                : `No saved Daily Pulse entries for ${selectedName || 'this advisor'} in ${dailyPulseMonthLabel(monthKey)}.`;
+
+            body.innerHTML = rows.length
+                ? rows.map(entry => {
+                    const score = parseFloat(entry.pulse_score) || 0;
+                    const rowTone = dailyPulseTone(score, dailyPulseRiskTotal(entry));
+                    return `
+                        <tr>
+                            <td>
+                                <div class="pulse-person-name">${accountabilityEscape(entry.entry_date)}</div>
+                                <div class="pulse-person-meta">${accountabilityEscape(accountabilityStoreName(entry.store_id))}</div>
+                            </td>
+                            <td>${accountabilityBadge(`${score}%`, rowTone)}</td>
+                            <td>${dailyPulseQuestionReview(entry)}</td>
+                            <td>${dailyPulseRiskReview(entry)}</td>
+                            <td class="accountability-action">${entry.notes ? accountabilityEscape(entry.notes) : '-'}</td>
+                            <td class="accountability-action">${accountabilityEscape(dailyPulseManagerMove(entry))}</td>
+                        </tr>
+                    `;
+                }).join('')
+                : '<tr><td colspan="6" class="empty-state">No submitted Pulse details for this advisor and month.</td></tr>';
+        }
+
+        async function refreshDailyPulseHistory(syncFromForm = false) {
+            const entries = await LS.getDailyPulseEntries();
+            renderDailyPulseHistory(entries, dailyPulseScopedStores(), dailyPulseSelectedDate(), { syncFromForm });
+        }
+
+        function syncDailyPulseHistorySelectionFromForm(syncFromForm = false) {
+            refreshDailyPulseHistory(syncFromForm);
         }
 
         function dailyPulseScore(answers, role) {
@@ -12673,6 +13039,7 @@
             }
 
             renderDailyPulseCompletion(todays, scopedStores);
+            renderDailyPulseHistory(entries, scopedStores, pulseDate);
 
             const body = document.getElementById('dailyPulseTeamBody');
             if (body) {
