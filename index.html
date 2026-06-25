@@ -13457,6 +13457,13 @@
             return 'below';
         }
 
+        function dailyPulseCompletionTone(rate) {
+            if (rate == null) return 'low';
+            if (rate >= 90) return 'above';
+            if (rate >= 75) return 'watch';
+            return 'below';
+        }
+
         function updateDailyPulseVisual(score) {
             const panel = document.querySelector('.daily-pulse-panel.dark');
             const wave = document.getElementById('dailyPulseWave');
@@ -13535,12 +13542,7 @@
             return overlap >= needed;
         }
 
-        function renderDailyPulseCompletion(todays, scopedStores) {
-            const rateEl = document.getElementById('dailyPulseCompletionRate');
-            const summaryEl = document.getElementById('dailyPulseCompletionSummary');
-            const body = document.getElementById('dailyPulseCompletionBody');
-            if (!rateEl || !summaryEl || !body) return;
-
+        function dailyPulseAdvisorCompletionStats(todays, scopedStores) {
             const scopedIds = new Set(scopedStores.map(store => String(store.id)));
             const expected = advisors
                 .filter(advisor => advisor.is_active !== false && scopedIds.has(String(advisor.store_id)))
@@ -13589,7 +13591,31 @@
             const submittedCount = rows.filter(row => row.status === 'submitted').length;
             const missingCount = rows.filter(row => row.status === 'missing').length;
             const rate = expected.length ? Math.round(submittedCount / expected.length * 100) : null;
-            const tone = rate == null ? 'low' : (rate >= 90 ? 'above' : (rate >= 75 ? 'watch' : 'below'));
+            const avgSubmittedScore = advisorEntries.length
+                ? Math.round(advisorEntries.reduce((sum, entry) => sum + (parseFloat(entry.pulse_score) || 0), 0) / advisorEntries.length)
+                : null;
+
+            return {
+                expected,
+                advisorEntries,
+                rows,
+                unmatched,
+                submittedCount,
+                missingCount,
+                rate,
+                avgSubmittedScore
+            };
+        }
+
+        function renderDailyPulseCompletion(todays, scopedStores) {
+            const rateEl = document.getElementById('dailyPulseCompletionRate');
+            const summaryEl = document.getElementById('dailyPulseCompletionSummary');
+            const body = document.getElementById('dailyPulseCompletionBody');
+            if (!rateEl || !summaryEl || !body) return;
+
+            const stats = dailyPulseAdvisorCompletionStats(todays, scopedStores);
+            const { expected, rows, unmatched, submittedCount, missingCount, rate } = stats;
+            const tone = dailyPulseCompletionTone(rate);
 
             rateEl.className = `pulse-score-pill ${tone}`;
             rateEl.textContent = rate == null ? 'No roster' : `${rate}%`;
@@ -13636,39 +13662,44 @@
         function renderDailyPulseSummary(entries, scopedStores, pulseDate) {
             const scopedIds = new Set(scopedStores.map(s => s.id));
             const todays = (entries || []).filter(e => e.entry_date === pulseDate && scopedIds.has(e.store_id));
-            const avgScore = todays.length
-                ? Math.round(todays.reduce((sum, e) => sum + (parseFloat(e.pulse_score) || 0), 0) / todays.length)
-                : null;
+            const completionStats = dailyPulseAdvisorCompletionStats(todays, scopedStores);
             const totalRisks = todays.reduce((sum, e) => sum + dailyPulseRiskTotal(e), 0);
             const scoreEl = document.getElementById('dailyPulseTodayScore');
             const noteEl = document.getElementById('dailyPulseTodayNote');
-            if (scoreEl) scoreEl.textContent = avgScore == null ? '—' : `${avgScore}%`;
-            updateDailyPulseVisual(avgScore);
+            if (scoreEl) scoreEl.textContent = completionStats.rate == null ? '—' : `${completionStats.rate}%`;
+            updateDailyPulseVisual(completionStats.rate);
             if (noteEl) {
-                noteEl.textContent = todays.length
-                    ? `${todays.length} check-in${todays.length === 1 ? '' : 's'} submitted today with ${totalRisks} open risk${totalRisks === 1 ? '' : 's'}.`
-                    : 'No pulse submitted for this scope yet.';
+                if (completionStats.expected.length) {
+                    const scoreNote = completionStats.avgSubmittedScore == null
+                        ? 'No submitted pulse score yet'
+                        : `average submitted habit score ${completionStats.avgSubmittedScore}%`;
+                    noteEl.textContent = `${completionStats.submittedCount} of ${completionStats.expected.length} active advisor${completionStats.expected.length === 1 ? '' : 's'} submitted today. ${scoreNote}. ${totalRisks} open risk${totalRisks === 1 ? '' : 's'}.`;
+                } else {
+                    noteEl.textContent = 'No active advisors found for this Daily Pulse scope.';
+                }
             }
 
             const storeGrid = document.getElementById('dailyPulseStoreGrid');
             if (storeGrid) {
                 storeGrid.innerHTML = scopedStores.map(store => {
                     const rows = todays.filter(e => e.store_id === store.id);
-                    const storeAvg = rows.length
-                        ? Math.round(rows.reduce((sum, e) => sum + (parseFloat(e.pulse_score) || 0), 0) / rows.length)
-                        : null;
+                    const storeCompletion = dailyPulseAdvisorCompletionStats(todays, [store]);
                     const riskOne = rows.reduce((sum, e) => sum + (parseInt(e.risk_counts?.risk_one) || 0), 0);
                     const riskTwo = rows.reduce((sum, e) => sum + (parseInt(e.risk_counts?.risk_two) || 0), 0);
                     const riskThree = rows.reduce((sum, e) => sum + (parseInt(e.risk_counts?.risk_three) || 0), 0);
-                    const tone = storeAvg == null ? 'low' : dailyPulseTone(storeAvg, riskOne + riskTwo + riskThree);
+                    const tone = dailyPulseCompletionTone(storeCompletion.rate);
+                    const scoreText = storeCompletion.rate == null ? 'No roster' : `${storeCompletion.rate}%`;
+                    const metaText = storeCompletion.expected.length
+                        ? `${storeCompletion.submittedCount} of ${storeCompletion.expected.length} advisor${storeCompletion.expected.length === 1 ? '' : 's'} submitted today`
+                        : 'No active advisors in roster';
                     return `
                         <div class="daily-pulse-store-card">
                             <div class="daily-pulse-store-top">
                                 <div>
                                     <div class="store-name">${accountabilityEscape(store.code || store.name)}</div>
-                                    <div class="store-meta">${rows.length} check-in${rows.length === 1 ? '' : 's'} submitted today</div>
+                                    <div class="store-meta">${accountabilityEscape(metaText)}</div>
                                 </div>
-                                <div class="pulse-score-pill ${tone}">${accountabilityEscape(storeAvg == null ? 'No pulse' : storeAvg + '%')}</div>
+                                <div class="pulse-score-pill ${tone}">${accountabilityEscape(scoreText)}</div>
                             </div>
                             <div class="store-risks">
                                 <div class="pulse-risk-stat ${riskOne ? 'risk-alert' : ''}">
