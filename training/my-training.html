@@ -268,25 +268,29 @@
           latestQuiz.score + '% · ' + (latestQuiz.passed ? 'Passed' : 'Below 80%') +
           '</span>';
       }
+      const moduleComplete = completedCount >= m.totalLessons || !!(latestQuiz && latestQuiz.passed);
+      const displayCount = moduleComplete ? m.totalLessons : completedCount;
+      const displayPct = moduleComplete ? 100 : pct;
+      const lastActivityAt = maxDate(lastLessonAt, latestQuiz ? latestQuiz.attempted_at : null);
 
       const card = document.createElement("div");
       card.className = "module-status";
       card.innerHTML =
         '<div class="module-tag-line">' + escapeHtml(m.audience) + '</div>' +
         '<h3>' + escapeHtml(m.name) + '</h3>' +
-        '<div class="progress-bar-static"><span style="width:' + pct + '%"></span></div>' +
+        '<div class="progress-bar-static"><span style="width:' + displayPct + '%"></span></div>' +
         '<div class="stats">' +
-          '<div><div class="stat-num">' + completedCount + ' / ' + m.totalLessons + '</div>' +
-          '<div class="stat-label">Lessons</div></div>' +
-          '<div><div class="stat-num">' + pct + '%</div>' +
-          '<div class="stat-label">Complete</div></div>' +
+          '<div><div class="stat-num">' + displayCount + ' / ' + m.totalLessons + '</div>' +
+          '<div class="stat-label">Module Progress</div></div>' +
+          '<div><div class="stat-num">' + (moduleComplete ? 'Complete' : displayPct + '%') + '</div>' +
+          '<div class="stat-label">Module Complete</div></div>' +
         '</div>' +
         '<div class="status-line"><strong>Knowledge Check:</strong> ' + quizPill + '</div>' +
-        (lastLessonAt
-          ? '<div class="status-line">Last lesson completed: ' + formatDate(lastLessonAt) + '</div>'
+        (lastActivityAt
+          ? '<div class="status-line">Last activity: ' + formatDate(lastActivityAt) + '</div>'
           : '<div class="status-line">Not started yet.</div>') +
         '<a href="' + m.url + '" class="btn" style="margin-top:6px;">' +
-          (completedCount === 0 ? 'Start Module' : 'Continue →') + '</a>';
+          (moduleComplete ? 'Review Module' : completedCount === 0 ? 'Start Module' : 'Continue →') + '</a>';
       grid.appendChild(card);
     });
   }
@@ -341,6 +345,12 @@
     } catch (_) {
       return iso;
     }
+  }
+
+  function maxDate(a, b) {
+    if (!a) return b || null;
+    if (!b) return a;
+    return new Date(a) > new Date(b) ? a : b;
   }
 </script>
 </body>

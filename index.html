@@ -5345,6 +5345,9 @@
         let currentUser = null;
         let allUsers = [];
         let userStaffLinks = {};
+        let onboardingTrainingUsers = [];
+        let onboardingTrainingProgressByUser = {};
+        let onboardingTrainingQuizByUser = {};
         const QUICK_REFERENCE_PDF_PATH = 'docs/fixedstats-one-page-quick-reference.pdf';
         const QUICK_REFERENCE_SEEN_PREFIX = 'fixedstats_quick_reference_seen_';
 
@@ -5857,6 +5860,13 @@
                 });
             };
 
+            const enableAdvisorReportFilters = () => {
+                ['advisorPeriod', 'advisorSingleMonth', 'advisorFromMonth', 'advisorToMonth'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.disabled = false;
+                });
+            };
+
             resetNavVisibility();
 
             if (currentUser.role === 'admin') {
@@ -5961,6 +5971,7 @@
                         el.disabled = true;
                     }
                 });
+                enableAdvisorReportFilters();
             } else if (currentUser.role === 'technician') {
                 // Technicians: see Roster, Daily Pulse, onboarding path, training, and SOPs.
                 if (adminTab) adminTab.style.display = 'none';
@@ -17123,6 +17134,40 @@
                 observations: ['Basic MPI observed', 'Documentation reviewed', 'Quality check passed']
             }
         };
+        const TRAINING_MODULE_DEFS = {
+            walkaround: { label: 'Service Drive Customer Flow', totalLessons: 7 },
+            'menu-sales': { label: 'Menu Sales', totalLessons: 7 },
+            'phone-skills': { label: 'Phone Skills', totalLessons: 7 },
+            'customer-comms': { label: 'Customer Communication', totalLessons: 7 },
+            objections: { label: 'Overcoming Customer Objections', totalLessons: 7 },
+            mpvi: { label: 'Technician Video MPVI', totalLessons: 7 }
+        };
+        const ONBOARDING_TRAINING_MODULE_MAP = {
+            advisor: {
+                Walkaround: ['walkaround'],
+                'Menu Sales': ['menu-sales'],
+                'Phone Skills': ['phone-skills'],
+                'Customer Communication': ['customer-comms'],
+                'MPVI Explanation': ['mpvi'],
+                'Promise-Time Control': ['customer-comms'],
+                'Declined Service Follow-Up': ['objections'],
+                'RO Documentation': ['walkaround']
+            },
+            technician: {
+                'RO Review': ['mpvi'],
+                'MPI Standards': ['mpvi'],
+                'Video MPI': ['mpvi'],
+                'Recommendation Documentation': ['mpvi'],
+                'Parts Request Flow': ['mpvi'],
+                'Comeback Prevention': ['mpvi']
+            },
+            lube_technician: {
+                'Basic MPI': ['mpvi'],
+                'Fluid/Tire Documentation': ['mpvi'],
+                'Menu Maintenance Awareness': ['menu-sales'],
+                'Quality Check': ['mpvi']
+            }
+        };
         let onboardingRecords = [];
         let onboardingPeople = [];
         let selectedOnboardingKey = null;
@@ -17168,6 +17213,14 @@
             if (!isEmployeeOnboardingUser()) return null;
             const pathKeys = currentUserOnboardingPathKeys();
             const candidates = onboardingPeople.filter(person => pathKeys.includes(person.path_key));
+            const linked = userStaffLinks[String(currentUser.id || '')];
+            if (linked?.staff_type === 'advisor') {
+                const linkedPerson = candidates.find(person =>
+                    person.person_key === `advisor:${linked.advisor_id}` &&
+                    (!linked.store_id || String(person.store_id || '') === String(linked.store_id || ''))
+                );
+                if (linkedPerson) return linkedPerson;
+            }
             return candidates.find(person => onboardingPersonMatchesCurrentUser(person, true))
                 || candidates.find(person => onboardingPersonMatchesCurrentUser(person, false))
                 || null;
@@ -17201,6 +17254,149 @@
                 }
             });
             return out;
+        }
+
+        function groupTrainingRowsByUser(rows) {
+            const grouped = {};
+            (rows || []).forEach(row => {
+                const userId = String(row.user_id || '');
+                if (!userId) return;
+                if (!grouped[userId]) grouped[userId] = [];
+                grouped[userId].push(row);
+            });
+            return grouped;
+        }
+
+        async function refreshOnboardingTrainingData() {
+            onboardingTrainingUsers = [];
+            onboardingTrainingProgressByUser = {};
+            onboardingTrainingQuizByUser = {};
+            if (!useSupabase) return;
+
+            try {
+                const [usersRes, progressRes, quizRes] = await Promise.all([
+                    db.from('app_users').select('id,display_name,username,email,role,default_store,is_active,user_store_access(store_id)'),
+                    db.from('training_progress').select('user_id,module_id,lesson_id,completed_at'),
+                    db.from('training_quiz_attempts').select('user_id,module_id,score,passed,total_questions,correct_answers,attempted_at')
+                ]);
+                if (usersRes.error) throw usersRes.error;
+                onboardingTrainingUsers = usersRes.data || [];
+                if (progressRes.error) {
+                    console.warn('Training progress could not be loaded for onboarding', progressRes.error);
+                } else {
+                    onboardingTrainingProgressByUser = groupTrainingRowsByUser(progressRes.data);
+                }
+                if (quizRes.error) {
+                    console.warn('Training quiz attempts could not be loaded for onboarding', quizRes.error);
+                } else {
+                    onboardingTrainingQuizByUser = groupTrainingRowsByUser(quizRes.data);
+                }
+            } catch (error) {
+                console.warn('Training data could not be loaded for onboarding', error);
+            }
+        }
+
+        function onboardingUserStoreIds(user) {
+            const ids = new Set();
+            if (user?.default_store) ids.add(String(user.default_store));
+            (user?.user_store_access || []).forEach(row => {
+                if (row?.store_id) ids.add(String(row.store_id));
+            });
+            return ids;
+        }
+
+        function onboardingUserRoleMatchesPath(user, pathKey) {
+            const role = String(user?.role || '').toLowerCase();
+            if (pathKey === 'advisor') return role === 'advisor';
+            if (pathKey === 'technician' || pathKey === 'lube_technician') return role === 'technician';
+            return true;
+        }
+
+        function onboardingNamesLikelyMatch(a, b) {
+            if (typeof dailyPulseNamesLikelyMatch === 'function') return dailyPulseNamesLikelyMatch(a, b);
+            const left = normalizeOnboardingName(a);
+            const right = normalizeOnboardingName(b);
+            return !!left && !!right && (left === right || left.includes(right) || right.includes(left));
+        }
+
+        function findTrainingUserForOnboardingPerson(person) {
+            if (!person) return null;
+            const activeUsers = (onboardingTrainingUsers || []).filter(user => user.is_active !== false);
+
+            if (person.person_key && person.person_key.startsWith('advisor:')) {
+                const linked = Object.values(userStaffLinks || {}).find(link =>
+                    link?.staff_type === 'advisor' &&
+                    String(link.advisor_id || '') === String(person.id || '') &&
+                    (!link.store_id || String(link.store_id) === String(person.store_id || ''))
+                );
+                if (linked) {
+                    const linkedUser = activeUsers.find(user => String(user.id) === String(linked.user_id));
+                    if (linkedUser) return linkedUser;
+                }
+            }
+
+            const scopedUsers = activeUsers.filter(user => {
+                if (!onboardingUserRoleMatchesPath(user, person.path_key)) return false;
+                const storeIds = onboardingUserStoreIds(user);
+                return !storeIds.size || storeIds.has(String(person.store_id || ''));
+            });
+            return scopedUsers.find(user =>
+                onboardingNamesLikelyMatch(user.display_name || user.username || user.email, person.name)
+            ) || activeUsers.find(user =>
+                onboardingUserRoleMatchesPath(user, person.path_key) &&
+                onboardingNamesLikelyMatch(user.display_name || user.username || user.email, person.name)
+            ) || null;
+        }
+
+        function latestTrainingQuizForModule(userId, moduleId) {
+            const rows = (onboardingTrainingQuizByUser[String(userId)] || [])
+                .filter(row => row.module_id === moduleId)
+                .sort((a, b) => String(b.attempted_at || '').localeCompare(String(a.attempted_at || '')));
+            return rows[0] || null;
+        }
+
+        function trainingModuleState(userId, moduleId) {
+            const def = TRAINING_MODULE_DEFS[moduleId] || { label: moduleId, totalLessons: 0 };
+            const lessons = new Set((onboardingTrainingProgressByUser[String(userId)] || [])
+                .filter(row => row.module_id === moduleId)
+                .map(row => row.lesson_id));
+            const lessonCount = lessons.size;
+            const latestQuiz = latestTrainingQuizForModule(userId, moduleId);
+            const lessonsComplete = def.totalLessons > 0 && lessonCount >= def.totalLessons;
+            const quizPassed = !!latestQuiz?.passed;
+            return {
+                moduleId,
+                label: def.label,
+                lessonCount,
+                totalLessons: def.totalLessons || 0,
+                latestQuiz,
+                done: lessonsComplete || quizPassed,
+                source: quizPassed ? 'quiz' : lessonsComplete ? 'lessons' : latestQuiz ? 'quiz_incomplete' : lessonCount > 0 ? 'lessons_partial' : 'none'
+            };
+        }
+
+        function onboardingTrainingModulesForRequirement(pathKey, moduleName) {
+            return (ONBOARDING_TRAINING_MODULE_MAP[pathKey] || {})[moduleName] || [];
+        }
+
+        function getOnboardingModuleStates(person, path) {
+            const trainingUser = findTrainingUserForOnboardingPerson(person);
+            return (path.modules || []).map(moduleName => {
+                const moduleIds = onboardingTrainingModulesForRequirement(person.path_key, moduleName);
+                const linkedStates = trainingUser
+                    ? moduleIds.map(moduleId => trainingModuleState(trainingUser.id, moduleId))
+                    : [];
+                const doneState = linkedStates.find(state => state.done);
+                return {
+                    moduleName,
+                    moduleIds,
+                    trainingUser,
+                    linkedStates,
+                    done: !!doneState,
+                    source: doneState?.source || (linkedStates[0]?.source || 'none'),
+                    latestQuiz: doneState?.latestQuiz || linkedStates.find(state => state.latestQuiz)?.latestQuiz || null
+                };
+            });
         }
 
         function classifyManagementPath(person) {
@@ -17307,24 +17503,27 @@
             const record = getOnboardingRecord(person);
             const rosterComplete = person.roster_training_status === 'Complete';
             const rosterInProgress = person.roster_training_status === 'In Progress';
-            const trainingComplete = !!record.training_complete || rosterComplete;
+            const path = ONBOARDING_PATHS[person.path_key] || ONBOARDING_PATHS.advisor;
+            const moduleStates = getOnboardingModuleStates(person, path);
+            const moduleDoneFromTraining = moduleStates.filter(module => module.done).length;
+            const manualTrainingComplete = !!record.training_complete || rosterComplete;
+            const trainingComplete = manualTrainingComplete || (path.modules.length > 0 && moduleDoneFromTraining >= path.modules.length);
             const observationComplete = !!record.observation_complete;
             const goLiveReady = !!record.go_live_ready || (trainingComplete && observationComplete && rosterComplete);
             const commissionReleased = !!record.commission_released && goLiveReady;
             let status = 'not_started';
             if (goLiveReady) status = 'go_live_ready';
             else if (trainingComplete) status = 'needs_manager';
-            else if (rosterInProgress || observationComplete || record.training_complete) status = 'in_progress';
+            else if (moduleDoneFromTraining > 0 || rosterInProgress || observationComplete || record.training_complete) status = 'in_progress';
 
-            const path = ONBOARDING_PATHS[person.path_key] || ONBOARDING_PATHS.advisor;
             const moduleCount = path.modules.length;
             const obsCount = path.observations.length;
-            const moduleDone = trainingComplete ? moduleCount : (rosterInProgress ? Math.max(1, Math.ceil(moduleCount / 2)) : 0);
+            const moduleDone = trainingComplete ? moduleCount : Math.max(moduleDoneFromTraining, rosterInProgress ? Math.max(1, Math.ceil(moduleCount / 2)) : 0);
             const obsDone = observationComplete ? obsCount : 0;
             const completed = moduleDone + obsDone + (goLiveReady ? 1 : 0);
             const total = moduleCount + obsCount + 1;
             const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
-            return { record, path, status, trainingComplete, observationComplete, goLiveReady, commissionReleased, moduleDone, obsDone, pct };
+            return { record, path, status, trainingComplete, observationComplete, goLiveReady, commissionReleased, moduleDone, obsDone, pct, moduleStates, moduleDoneFromTraining };
         }
 
         function getOnboardingTrainingPath(moduleName, pathKey) {
@@ -17364,6 +17563,12 @@
             if (typeof loadManagementAndExecutiveStaff === 'function') {
                 await loadManagementAndExecutiveStaff();
             }
+            try {
+                userStaffLinks = LS.extractUserStaffLinks(await LS.getStaffOverrides());
+            } catch (e) {
+                console.warn('User roster links could not be loaded for onboarding', e);
+            }
+            await refreshOnboardingTrainingData();
             onboardingRecords = await LS.getOnboardingRecords();
             const rosterEntries = await LS.getRosterEntries();
             onboardingPeople = buildOnboardingPeople(rosterEntries);
@@ -17578,7 +17783,17 @@
                         <span class="onboarding-pill ${state.trainingComplete ? 'good' : 'watch'}">${state.moduleDone} of ${path.modules.length} complete</span>
                     </div>
                     ${path.modules.map((module, index) => {
-                        const done = index < state.moduleDone;
+                        const moduleState = state.moduleStates?.[index] || {};
+                        const done = state.trainingComplete || !!moduleState.done;
+                        const latestQuiz = moduleState.latestQuiz;
+                        const linkedLabels = (moduleState.linkedStates || []).map(item => item.label).filter(Boolean).join(', ');
+                        const completionNote = done
+                            ? latestQuiz?.passed
+                                ? `Complete - passed ${linkedLabels || 'training'} knowledge check at ${latestQuiz.score}%`
+                                : 'Complete in Training app or verified by manager'
+                            : linkedLabels
+                                ? `Required before go-live. Open ${linkedLabels}, complete the lessons, and pass the knowledge check.`
+                                : 'Required before go-live. Open the assigned training, complete the lessons, and pass the knowledge check.';
                         const trainingPath = getOnboardingTrainingPath(module, person.path_key);
                         return `
                             <div class="onboarding-module-row onboarding-training-row" role="button" tabindex="0" data-training-path="${onboardingEscape(trainingPath)}" aria-label="Open training for ${onboardingEscape(module)}">
@@ -17586,7 +17801,7 @@
                                     <span class="onboarding-check ${done ? 'good' : 'watch'}">${done ? 'OK' : '!'}</span>
                                     <div>
                                         <div class="onboarding-person-name">${onboardingEscape(module)}</div>
-                                        <div class="onboarding-person-sub">${done ? 'Complete in Training app or verified by manager' : 'Required before go-live. Open the assigned training, complete the lessons, and pass the knowledge check.'}</div>
+                                        <div class="onboarding-person-sub">${onboardingEscape(completionNote)}</div>
                                     </div>
                                 </div>
                                 <div class="onboarding-row-actions">
@@ -17809,17 +18024,19 @@
             if (!person) return;
             const current = getOnboardingRecord(person);
             const next = { ...current, person_key: person.person_key, path_key: person.path_key };
+            const state = getOnboardingStatus(person);
+            const trainingSatisfied = !!next.training_complete || person.roster_training_status === 'Complete' || state.trainingComplete;
 
             if (step === 'training_complete') next.training_complete = true;
             if (step === 'observation_complete') {
-                if (!next.training_complete && person.roster_training_status !== 'Complete') {
+                if (!trainingSatisfied) {
                     showToast('Complete the required training before manager observation sign-off', 'error');
                     return;
                 }
                 next.observation_complete = true;
             }
             if (step === 'go_live_ready') {
-                if (!(next.training_complete || person.roster_training_status === 'Complete') || !next.observation_complete) {
+                if (!trainingSatisfied || !next.observation_complete) {
                     showToast('Training and manager observation are required before go-live approval', 'error');
                     return;
                 }

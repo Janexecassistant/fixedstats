@@ -318,16 +318,19 @@
           .filter(q => q.module_id === m.id)
           .sort((a, b) => new Date(b.attempted_at) - new Date(a.attempted_at))[0] || null;
         const lastActivity = maxDate(lastLesson, moduleQuiz ? moduleQuiz.attempted_at : null);
+        const moduleComplete = lessons.size >= m.totalLessons || !!(moduleQuiz && moduleQuiz.passed);
+        const moduleStarted = lessons.size > 0 || !!moduleQuiz;
         return {
           id: m.id, name: m.name, audience: m.audience, total: m.totalLessons,
           done: Math.min(lessons.size, m.totalLessons),
-          latestQuiz: moduleQuiz, lastActivity: lastActivity
+          moduleStarted, moduleComplete, latestQuiz: moduleQuiz, lastActivity: lastActivity
         };
       });
 
       const lessonsDone = perModule.reduce((s, m) => s + m.done, 0);
-      const modulesStarted = perModule.filter(m => m.done > 0).length;
-      const modulesCompleted = perModule.filter(m => m.done >= m.total).length;
+      const moduleProgressDone = perModule.reduce((s, m) => s + (m.moduleComplete ? m.total : m.done), 0);
+      const modulesStarted = perModule.filter(m => m.moduleStarted).length;
+      const modulesCompleted = perModule.filter(m => m.moduleComplete).length;
       const quizzesPassed = perModule.filter(m => m.latestQuiz && m.latestQuiz.passed).length;
       const lastActivity = perModule.reduce((acc, m) => maxDate(acc, m.lastActivity), null);
 
@@ -340,7 +343,7 @@
         store: u.default_store || "",
         isActive: u.is_active !== false,
         lastLogin: u.last_login || null,
-        perModule, lessonsDone, modulesStarted, modulesCompleted,
+        perModule, lessonsDone, moduleProgressDone, modulesStarted, modulesCompleted,
         quizzesPassed, lastActivity
       };
     });
@@ -395,8 +398,8 @@
       switch (sort) {
         case "stale":  return t(a) - t(b);
         case "name":   return a.name.localeCompare(b.name);
-        case "most":   return b.lessonsDone - a.lessonsDone || t(b) - t(a);
-        case "least":  return a.lessonsDone - b.lessonsDone || t(b) - t(a);
+        case "most":   return b.moduleProgressDone - a.moduleProgressDone || t(b) - t(a);
+        case "least":  return a.moduleProgressDone - b.moduleProgressDone || t(b) - t(a);
         case "recent":
         default:       return t(b) - t(a) || a.name.localeCompare(b.name);
       }
@@ -415,16 +418,16 @@
     const finishedAll = active.filter(u => u.modulesCompleted === MODULES.length).length;
     const now = Date.now();
     const last7 = active.filter(u => u.lastActivity && (now - new Date(u.lastActivity).getTime()) <= 7 * 864e5).length;
-    const totalLessonsDone = active.reduce((s, u) => s + u.lessonsDone, 0);
+    const totalModuleProgressDone = active.reduce((s, u) => s + u.moduleProgressDone, 0);
     const possible = active.length * TOTAL_LESSONS;
-    const teamPct = possible ? Math.round((totalLessonsDone / possible) * 100) : 0;
+    const teamPct = possible ? Math.round((totalModuleProgressDone / possible) * 100) : 0;
 
     const cards = [
       { num: active.length, label: "Team Members" },
       { num: started, label: "Started Training", accent: true },
       { num: finishedAll, label: "Completed All 6 Modules", accent: true },
       { num: last7, label: "Active in Last 7 Days" },
-      { num: teamPct + "%", label: "Team Lessons Complete" }
+      { num: teamPct + "%", label: "Team Module Progress" }
     ];
     document.getElementById("kpi-grid").innerHTML = cards.map(c =>
       '<div class="kpi-card' + (c.accent ? ' accent' : '') + '">' +
@@ -442,11 +445,11 @@
 
     let html = '<table class="roster"><thead><tr>' +
       '<th>Name</th><th>Role</th><th>Store</th><th>Modules</th>' +
-      '<th>Lessons</th><th>Quizzes&nbsp;Passed</th><th>Last&nbsp;Training&nbsp;Activity</th>' +
+      '<th>Progress</th><th>Quizzes&nbsp;Passed</th><th>Last&nbsp;Training&nbsp;Activity</th>' +
       '</tr></thead><tbody>';
 
     rows.forEach(u => {
-      const pct = Math.round((u.lessonsDone / TOTAL_LESSONS) * 100);
+      const pct = Math.round((u.moduleProgressDone / TOTAL_LESSONS) * 100);
       const allDone = u.modulesCompleted === MODULES.length;
       const isExpanded = !!expanded[u.id];
       html +=
@@ -458,7 +461,7 @@
           '<td>' + u.modulesStarted + ' / ' + MODULES.length +
             (u.modulesCompleted ? ' <span class="pct-text">(' + u.modulesCompleted + ' done)</span>' : '') + '</td>' +
           '<td><span class="mini-bar' + (allDone ? ' done' : '') + '"><span style="width:' + pct + '%"></span></span>' +
-            '<span class="pct-text">' + u.lessonsDone + '/' + TOTAL_LESSONS + '</span></td>' +
+            '<span class="pct-text">' + u.moduleProgressDone + '/' + TOTAL_LESSONS + '</span></td>' +
           '<td>' + u.quizzesPassed + ' / ' + MODULES.length + '</td>' +
           '<td>' + activityCell(u.lastActivity) + '</td>' +
         '</tr>';
@@ -478,11 +481,12 @@
 
   function detailRow(u) {
     let inner = '<table class="detail"><thead><tr>' +
-      '<th>Module</th><th>For</th><th>Lessons</th><th>Knowledge Check</th><th>Last Activity</th>' +
+      '<th>Module</th><th>For</th><th>Progress</th><th>Knowledge Check</th><th>Last Activity</th>' +
       '</tr></thead><tbody>';
     u.perModule.forEach(m => {
       const pct = Math.round((m.done / m.total) * 100);
-      const allDone = m.done >= m.total;
+      const allDone = m.moduleComplete;
+      const displayDone = allDone ? m.total : m.done;
       let quizCell = '<span class="pass-pill none">Not taken</span>';
       if (m.latestQuiz) {
         const cls = m.latestQuiz.passed ? "pass" : "fail";
@@ -493,8 +497,8 @@
         '<tr>' +
           '<td><strong>' + esc(m.name) + '</strong></td>' +
           '<td>' + esc(m.audience) + '</td>' +
-          '<td><span class="mini-bar' + (allDone ? ' done' : '') + '" style="width:64px;"><span style="width:' + pct + '%"></span></span> ' +
-            m.done + '/' + m.total + '</td>' +
+          '<td><span class="mini-bar' + (allDone ? ' done' : '') + '" style="width:64px;"><span style="width:' + (allDone ? 100 : pct) + '%"></span></span> ' +
+            displayDone + '/' + m.total + '</td>' +
           '<td>' + quizCell + '</td>' +
           '<td>' + activityCell(m.lastActivity) + '</td>' +
         '</tr>';

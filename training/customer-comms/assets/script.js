@@ -23,37 +23,68 @@ function markComplete(lessonId) {
 async function hydrateProgressFromDb() {
   if (!window.dyerTraining || !window.dyerTraining.fetchMyProgress) return;
   try {
-    const res = await window.dyerTraining.fetchMyProgress("customer-comms");
+    const [res, quizRes] = await Promise.all([
+      window.dyerTraining.fetchMyProgress("customer-comms"),
+      window.dyerTraining.fetchMyQuizAttempts
+        ? window.dyerTraining.fetchMyQuizAttempts("customer-comms")
+        : Promise.resolve(null)
+    ]);
+    const p = loadProgress();
+    let changed = false;
     if (res && res.ok && Array.isArray(res.data)) {
-      const p = loadProgress();
       const serverLessons = res.data.map(r => r.lesson_id);
       const merged = Array.from(new Set([...(p.completed || []), ...serverLessons]));
-      if (merged.length !== (p.completed || []).length) { p.completed = merged; saveProgress(p); renderProgress(); }
+      if (merged.length !== (p.completed || []).length) { p.completed = merged; changed = true; }
+    }
+    if (quizRes && quizRes.ok && Array.isArray(quizRes.data) && quizRes.data.length) {
+      const latest = quizRes.data[0];
+      const latestLocalWhen = p.quiz && p.quiz.when ? new Date(p.quiz.when).getTime() : 0;
+      const latestServerWhen = latest.attempted_at ? new Date(latest.attempted_at).getTime() : 0;
+      if (!p.quiz || latestServerWhen >= latestLocalWhen) {
+        p.quiz = {
+          score: latest.score,
+          right: latest.correct_answers,
+          total: latest.total_questions,
+          passed: !!latest.passed,
+          when: latest.attempted_at
+        };
+        changed = true;
+      }
+    }
+    if (changed) {
+      saveProgress(p);
+      renderProgress();
     }
   } catch (e) {}
 }
 function resetProgress() {
   if (confirm("Reset all module progress, quiz scores, and checklists? This cannot be undone.")) {
     localStorage.removeItem(MODULE_KEY);
-    Object.keys(localStorage).filter(k => k.startsWith("dyer_phone_skills_")).forEach(k => localStorage.removeItem(k));
+    Object.keys(localStorage).filter(k => k.startsWith("dyer_customer_comms_")).forEach(k => localStorage.removeItem(k));
     location.reload();
   }
 }
 function renderProgress() {
   const p = loadProgress();
-  const pct = Math.round((p.completed.length / TOTAL_LESSONS) * 100);
+  const passedQuiz = p.quiz && (p.quiz.passed === true || Number(p.quiz.score) >= 80);
+  const completedCount = Array.isArray(p.completed) ? p.completed.length : 0;
+  const pct = passedQuiz ? 100 : Math.round((completedCount / TOTAL_LESSONS) * 100);
   const fill = document.querySelector(".progress-fill");
   const text = document.querySelector(".progress-text");
   if (fill) fill.style.width = pct + "%";
-  if (text) text.textContent = `${p.completed.length} of ${TOTAL_LESSONS} lessons complete (${pct}%)`;
+  if (text) {
+    text.textContent = passedQuiz
+      ? `Module complete - knowledge check passed (${p.quiz.score}%)`
+      : `${completedCount} of ${TOTAL_LESSONS} lessons complete (${pct}%)`;
+  }
   document.querySelectorAll(".lesson-tile[data-lesson]").forEach(tile => {
     const id = tile.getAttribute("data-lesson");
-    if (p.completed.includes(id)) tile.classList.add("is-complete"); else tile.classList.remove("is-complete");
+    if ((p.completed || []).includes(id)) tile.classList.add("is-complete"); else tile.classList.remove("is-complete");
   });
 }
 function initChecklists() {
   document.querySelectorAll(".checklist").forEach(list => {
-    const key = "dyer_phone_skills_chk_" + (list.getAttribute("data-checklist") || "default");
+    const key = "dyer_customer_comms_chk_" + (list.getAttribute("data-checklist") || "default");
     let state = {};
     try { state = JSON.parse(localStorage.getItem(key) || "{}"); } catch (_) {}
     list.querySelectorAll("li").forEach((li, idx) => {
@@ -122,8 +153,9 @@ function initQuiz() {
     const retake = document.getElementById("quiz-retake");
     if (retake) retake.style.display = "inline-flex";
     const p = loadProgress();
-    p.quiz = { score: pct, right, total: totalQ, when: new Date().toISOString() };
+    p.quiz = { score: pct, right, total: totalQ, passed: pct >= 80, when: new Date().toISOString() };
     saveProgress(p);
+    renderProgress();
     if (window.dyerTraining && window.dyerTraining.recordQuizAttempt) {
       window.dyerTraining.recordQuizAttempt({
         moduleId: "customer-comms", score: pct, totalQuestions: totalQ, correctAnswers: right
@@ -152,7 +184,7 @@ function initRoleplay() {
 function initScorecard() {
   const card = document.getElementById("scorecard");
   if (!card) return;
-  const KEY = "dyer_phone_skills_scorecard";
+  const KEY = "dyer_customer_comms_scorecard";
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (_) {}
   card.querySelectorAll("input[type=radio]").forEach(r => { if (saved[r.name] === r.value) r.checked = true; });

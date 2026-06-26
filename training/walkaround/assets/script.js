@@ -48,16 +48,40 @@ async function hydrateProgressFromDb() {
   // and merge into local state. Server is the source of truth.
   if (!window.dyerTraining || !window.dyerTraining.fetchMyProgress) return;
   try {
-    const res = await window.dyerTraining.fetchMyProgress("walkaround");
+    const [res, quizRes] = await Promise.all([
+      window.dyerTraining.fetchMyProgress("walkaround"),
+      window.dyerTraining.fetchMyQuizAttempts
+        ? window.dyerTraining.fetchMyQuizAttempts("walkaround")
+        : Promise.resolve(null)
+    ]);
+    const p = loadProgress();
+    let changed = false;
     if (res && res.ok && Array.isArray(res.data)) {
-      const p = loadProgress();
       const serverLessons = res.data.map(r => r.lesson_id);
       const merged = Array.from(new Set([...(p.completed || []), ...serverLessons]));
       if (merged.length !== (p.completed || []).length) {
         p.completed = merged;
-        saveProgress(p);
-        renderProgress();
+        changed = true;
       }
+    }
+    if (quizRes && quizRes.ok && Array.isArray(quizRes.data) && quizRes.data.length) {
+      const latest = quizRes.data[0];
+      const latestLocalWhen = p.quiz && p.quiz.when ? new Date(p.quiz.when).getTime() : 0;
+      const latestServerWhen = latest.attempted_at ? new Date(latest.attempted_at).getTime() : 0;
+      if (!p.quiz || latestServerWhen >= latestLocalWhen) {
+        p.quiz = {
+          score: latest.score,
+          right: latest.correct_answers,
+          total: latest.total_questions,
+          passed: !!latest.passed,
+          when: latest.attempted_at
+        };
+        changed = true;
+      }
+    }
+    if (changed) {
+      saveProgress(p);
+      renderProgress();
     }
   } catch (e) { /* ignore */ }
 }
@@ -73,16 +97,22 @@ function resetProgress() {
 }
 function renderProgress() {
   const p = loadProgress();
-  const pct = Math.round((p.completed.length / TOTAL_LESSONS) * 100);
+  const passedQuiz = p.quiz && (p.quiz.passed === true || Number(p.quiz.score) >= 80);
+  const completedCount = Array.isArray(p.completed) ? p.completed.length : 0;
+  const pct = passedQuiz ? 100 : Math.round((completedCount / TOTAL_LESSONS) * 100);
   const fill = document.querySelector(".progress-fill");
   const text = document.querySelector(".progress-text");
   if (fill) fill.style.width = pct + "%";
-  if (text) text.textContent = `${p.completed.length} of ${TOTAL_LESSONS} lessons complete (${pct}%)`;
+  if (text) {
+    text.textContent = passedQuiz
+      ? `Module complete - knowledge check passed (${p.quiz.score}%)`
+      : `${completedCount} of ${TOTAL_LESSONS} lessons complete (${pct}%)`;
+  }
 
   // Update tiles on landing page
   document.querySelectorAll(".lesson-tile[data-lesson]").forEach(tile => {
     const id = tile.getAttribute("data-lesson");
-    if (p.completed.includes(id)) tile.classList.add("is-complete");
+    if ((p.completed || []).includes(id)) tile.classList.add("is-complete");
     else tile.classList.remove("is-complete");
   });
 }
@@ -168,8 +198,9 @@ function initQuiz() {
     if (retake) retake.style.display = "inline-flex";
 
     const p = loadProgress();
-    p.quiz = { score: pct, right, total: totalQ, when: new Date().toISOString() };
+    p.quiz = { score: pct, right, total: totalQ, passed: pct >= 80, when: new Date().toISOString() };
     saveProgress(p);
+    renderProgress();
 
     // Persist quiz attempt to Supabase
     if (window.dyerTraining && window.dyerTraining.recordQuizAttempt) {
