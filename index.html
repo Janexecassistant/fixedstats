@@ -535,6 +535,245 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.08);
         }
 
+        .home-hero {
+            display: flex;
+            justify-content: space-between;
+            gap: 18px;
+            align-items: flex-start;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .home-hero h2 {
+            margin: 0 0 6px 0;
+            color: #111827;
+            font-size: 26px;
+            line-height: 1.1;
+        }
+
+        .home-hero p {
+            margin: 0;
+            color: #374151;
+            max-width: 820px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .home-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .home-summary-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 14px;
+            box-shadow: 0 1px 5px rgba(15, 23, 42, 0.06);
+        }
+
+        .home-summary-card b {
+            display: block;
+            color: #111827;
+            font-size: 26px;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .home-summary-card span {
+            color: #475569;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .home-chart-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 22px;
+        }
+
+        .home-category-section {
+            display: grid;
+            gap: 10px;
+        }
+
+        .home-category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .home-category-title {
+            color: #111827;
+            font-size: 17px;
+            font-weight: 900;
+            letter-spacing: 0;
+        }
+
+        .home-category-sub {
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.45px;
+            white-space: nowrap;
+        }
+
+        .home-category-cards {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+            align-items: stretch;
+        }
+
+        .home-chart-card {
+            background: rgba(255, 255, 255, 0.94);
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid #cc0000;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            min-height: 360px;
+        }
+
+        .home-chart-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .home-chart-title {
+            color: #111827;
+            font-size: 15px;
+            font-weight: 900;
+            line-height: 1.25;
+        }
+
+        .home-chart-category {
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-top: 3px;
+        }
+
+        .home-status-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 24px;
+            border-radius: 999px;
+            padding: 3px 9px;
+            font-size: 11px;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .home-status-pill.good { background: #dcfce7; color: #166534; }
+        .home-status-pill.watch { background: #fef3c7; color: #92400e; }
+        .home-status-pill.bad { background: #fee2e2; color: #991b1b; }
+        .home-status-pill.low { background: #e5e7eb; color: #475569; }
+
+        .home-chart-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .home-chart-stat {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 9px 10px;
+            min-width: 0;
+        }
+
+        .home-chart-stat span {
+            display: block;
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.45px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .home-chart-stat b {
+            display: block;
+            color: #111827;
+            font-size: 14px;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .home-climb-chart {
+            position: relative;
+            height: 170px;
+            margin-top: auto;
+        }
+
+        .home-chart-note {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid #e2e8f0;
+            color: #334155;
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        .home-focus-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .home-focus-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid #cc0000;
+            border-radius: 8px;
+            background: #ffffff;
+            padding: 12px;
+        }
+
+        .home-focus-item strong {
+            display: block;
+            color: #111827;
+            font-size: 13px;
+            margin-bottom: 3px;
+        }
+
+        .home-focus-item span {
+            color: #475569;
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        @media (max-width: 768px) {
+            .home-category-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .home-chart-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .capacity-kpi-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -3069,15 +3308,19 @@
         </div>
         <div class="sidebar-scroll">
             <ul class="nav-tabs">
+                <li class="nav-tab">
+                    <button class="nav-btn active" data-tab="home">Home</button>
+                </li>
+
                 <!-- Enter Numbers group -->
                 <li class="nav-tab nav-dropdown" id="navGroupEntry" data-group="entry">
-                    <button class="nav-btn nav-dropdown-toggle active" type="button" aria-haspopup="true" aria-expanded="false">
+                    <button class="nav-btn nav-dropdown-toggle" type="button" aria-haspopup="true" aria-expanded="false">
                         <span class="nav-label">Enter Numbers</span>
                         <span class="nav-sub" id="navEntrySub">Service</span>
                         <span class="nav-caret">▾</span>
                     </button>
                     <ul class="nav-dropdown-menu">
-                        <li><button class="nav-dropdown-item active" data-tab="daily" data-group="entry" data-sub="Service">Service Daily Entry</button></li>
+                        <li><button class="nav-dropdown-item" data-tab="daily" data-group="entry" data-sub="Service">Service Daily Entry</button></li>
                         <li><button class="nav-dropdown-item" data-tab="partsDaily" data-group="entry" data-sub="Parts">Parts Daily Entry</button></li>
                         <li><button class="nav-dropdown-item" data-tab="collisionDaily" data-group="entry" data-sub="Collision">Collision Daily Entry</button></li>
                     </ul>
@@ -3091,7 +3334,7 @@
                         <span class="nav-caret">▾</span>
                     </button>
                     <ul class="nav-dropdown-menu">
-                        <li><button class="nav-dropdown-item active" data-tab="dashboard" data-group="performance" data-sub="Service">Service Dashboard</button></li>
+                        <li><button class="nav-dropdown-item" data-tab="dashboard" data-group="performance" data-sub="Service">Service Dashboard</button></li>
                         <li><button class="nav-dropdown-item" data-tab="parts" data-group="performance" data-sub="Parts">Parts Dashboard</button></li>
                         <li><button class="nav-dropdown-item" data-tab="collisionDashboard" data-group="performance" data-sub="Collision">Collision Dashboard</button></li>
                         <li><button class="nav-dropdown-item" data-tab="advisor" data-group="performance" data-sub="Advisor">Advisor Scorecard</button></li>
@@ -3112,7 +3355,7 @@
                         <span class="nav-caret">▾</span>
                     </button>
                     <ul class="nav-dropdown-menu">
-                        <li><button class="nav-dropdown-item active" data-tab="accountability" data-group="accountability" data-sub="Service">Service Accountability</button></li>
+                        <li><button class="nav-dropdown-item" data-tab="accountability" data-group="accountability" data-sub="Service">Service Accountability</button></li>
                         <li><button class="nav-dropdown-item" data-tab="partsAccountability" data-group="accountability" data-sub="Parts">Parts Accountability</button></li>
                         <li><button class="nav-dropdown-item" data-tab="collisionAccountability" data-group="accountability" data-sub="Collision">Collision Accountability</button></li>
                     </ul>
@@ -3212,8 +3455,33 @@
     </div>
 
     <div class="container">
+        <!-- HOME: FIRST LOGIN SNAPSHOT -->
+        <div id="home" class="tab-content active">
+            <div class="home-hero">
+                <div>
+                    <h2>Home</h2>
+                    <p>Month-to-date climb charts by category. Each card compares actual MTD and projected month-end pace against the goal for the selected store scope.</p>
+                </div>
+                <div class="controls" style="margin-bottom:0;">
+                    <div class="control-group">
+                        <label>Month / Year</label>
+                        <input type="month" id="homeMonthPicker">
+                    </div>
+                </div>
+            </div>
+
+            <div class="home-summary-grid" id="homeSummaryCards"></div>
+
+            <div class="home-chart-grid" id="homeChartsGrid"></div>
+
+            <div class="card" style="margin-top:24px;">
+                <h3 class="card-title">Manager Focus</h3>
+                <div class="home-focus-list" id="homeFocusList"></div>
+            </div>
+        </div>
+
         <!-- TAB 1: SERVICE DAILY ENTRY (Service Manager) -->
-        <div id="daily" class="tab-content active">
+        <div id="daily" class="tab-content">
             <div class="card">
                 <h2 class="card-title">Service Daily Entry <span style="font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-left:8px;">Service Manager</span></h2>
                 <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Service Manager's daily numbers — Labor + Parts billed on repair orders, advisor / tech / lube performance. Parts Manager enters their full parts numbers separately on the <strong>Parts Daily Entry</strong> tab.</p>
@@ -5883,11 +6151,7 @@
                 if (baysKpiCard) baysKpiCard.style.display = '';
                 showServiceStaffCards(true);
                 showDeptCards(true, true, true, true);
-                // Admins land on no tab — clear the hardcoded default so the app
-                // opens to a blank canvas until they choose a tab from the nav.
-                document.querySelectorAll('.nav-btn, .nav-dropdown-item, .nav-dropdown-toggle').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.nav-dropdown').forEach(d => d.classList.remove('open'));
-                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                setNavActiveState('home');
             } else if (currentUser.role === 'manager') {
                 // Managers can see Admin Console. They can manage user accounts for their
                 // store staff (advisors + technicians only) but cannot create admin/manager/executive users.
@@ -5909,9 +6173,10 @@
                 // Service Manager owns the service-side staff cards; the new department cards aren't theirs.
                 showServiceStaffCards(true);
                 showDeptCards(false, false, false, false);
+                setNavActiveState('home');
             } else if (currentUser.role === 'parts_manager' || currentUser.role === 'collision_manager') {
                 // Parts/Collision Managers — manager-level admin access scoped to their staff.
-                // Full nav access (can drill into any dropdown), default-lands on their daily entry.
+                // Full nav access (can drill into any dropdown), default-lands on the Home snapshot.
                 if (adminTab) adminTab.style.display = '';
                 setNavTabVisible('admin', true);
                 setNavTabVisible('onboarding', false);
@@ -5934,10 +6199,7 @@
                     showDeptCards(false, true, true, true);
                 }
 
-                // Default landing tab: parts_manager → Parts Daily Entry, collision_manager → Collision Daily Entry
-                // Just set the visual active states here — initialize() will run the actual loader.
-                const defaultTab = currentUser.role === 'parts_manager' ? 'partsDaily' : 'collisionDaily';
-                setNavActiveState(defaultTab);
+                setNavActiveState('home');
             } else if (currentUser.role === 'executive') {
                 // Executives: read-only, no admin console
                 if (adminTab) adminTab.style.display = 'none';
@@ -5949,9 +6211,10 @@
                 if (facilityBaysGroup) facilityBaysGroup.style.display = 'none';
                 if (saveFacilityBtn) saveFacilityBtn.style.display = 'none';
                 if (baysKpiCard) baysKpiCard.style.display = 'none';
+                setNavActiveState('home');
                 // Make content read-only
                 document.querySelectorAll('input:not([readonly]), select').forEach(el => {
-                    if (!el.closest('#loginScreen') && !el.closest('#changePwModal') && !el.closest('#quickReferenceModal') && !el.closest('#sops')) {
+                    if (!el.closest('#loginScreen') && !el.closest('.topbar') && !el.closest('#home') && !el.closest('#changePwModal') && !el.closest('#quickReferenceModal') && !el.closest('#sops')) {
                         el.disabled = true;
                     }
                 });
@@ -6042,7 +6305,8 @@
 
             // Reload active tab with selected store
             const activeTab = document.querySelector('.tab-content.active')?.id;
-            if (activeTab === 'daily') loadDailyEntry();
+            if (activeTab === 'home') loadHome();
+            else if (activeTab === 'daily') loadDailyEntry();
         }
 
         function setDefaultStoreForUser() {
@@ -6053,7 +6317,8 @@
                 if (match) {
                     select.value = currentUser.default_store;
                     const activeTab = document.querySelector('.tab-content.active')?.id;
-                    if (activeTab === 'daily') loadDailyEntry();
+                    if (activeTab === 'home') loadHome();
+                    else if (activeTab === 'daily') loadDailyEntry();
                 }
             }
         }
@@ -6897,7 +7162,8 @@
             setNavActiveState(tabId);
 
             // Per-tab data loader
-            if (tabId === 'daily') loadDailyEntry();
+            if (tabId === 'home') loadHome();
+            else if (tabId === 'daily') loadDailyEntry();
             else if (tabId === 'partsDaily') loadPartsDailyEntry();
             else if (tabId === 'collisionDaily') loadCollisionDailyEntry();
             else if (tabId === 'dashboard') loadDashboard();
@@ -8099,7 +8365,10 @@
 
                 // Load the user's default landing tab. Employees who are not go-live
                 // ready land on their onboarding checklist first.
-                if (currentUser && currentUser.role === 'advisor') {
+                if (currentUser && ['admin', 'manager', 'parts_manager', 'collision_manager', 'executive'].includes(currentUser.role)) {
+                    setNavActiveState('home');
+                    await loadHome();
+                } else if (currentUser && currentUser.role === 'advisor') {
                     if (await shouldStartOnEmployeeOnboarding()) {
                         setNavActiveState('onboarding');
                         await loadOnboarding();
@@ -8113,12 +8382,6 @@
                     } else {
                         await loadRoster();
                     }
-                } else if (currentUser && currentUser.role === 'parts_manager') {
-                    await loadPartsDailyEntry();
-                } else if (currentUser && currentUser.role === 'collision_manager') {
-                    loadCollisionDailyEntry();
-                } else if (currentUser && currentUser.role === 'admin') {
-                    // Admins land on no tab — nothing to load until they pick one.
                 } else {
                     await loadDailyEntry();
                 }
@@ -8157,6 +8420,9 @@
                 document.getElementById('dailyDaysInMonth').value = fwd.totalDays;
                 populateStoreSelects();
                 populateAdvisorSelect();
+                applyStoreDefaults();
+                setNavActiveState('home');
+                await loadHome();
                 setupEventListeners();
                 showOfflineBanner('Running in offline mode — changes are NOT being saved to the cloud. Reload the page to retry.');
                 showToast('Running in offline mode — data will NOT be saved to cloud', 'error');
@@ -8279,7 +8545,8 @@
                 }
                 if (activeTab) clearDirty(activeTab);
                 lastStore = gss.value;
-                if (activeTab === 'daily') loadDailyEntry();
+                if (activeTab === 'home') loadHome();
+                else if (activeTab === 'daily') loadDailyEntry();
                 else if (activeTab === 'partsDaily') loadPartsDailyEntry();
                 else if (activeTab === 'collisionDaily') loadCollisionDailyEntry();
                 else if (activeTab === 'dashboard') loadDashboard();
@@ -8443,6 +8710,11 @@
             const dashMP = document.getElementById('dashMonthPicker');
             const now = new Date();
             const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const homeMP = document.getElementById('homeMonthPicker');
+            if (homeMP) {
+                homeMP.value = currentMonthStr;
+                homeMP.addEventListener('change', loadHome);
+            }
             dashMP.value = currentMonthStr;
             dashMP.addEventListener('change', loadDashboard);
 
@@ -10952,6 +11224,549 @@
         function filterByStore(query, storeId) {
             if (storeId && storeId !== 'all') return query.eq('store_id', storeId);
             return query;
+        }
+
+        // ============================================================================
+        // HOME: FIRST LOGIN MTD VS GOAL CLIMB CHARTS
+        // ============================================================================
+        function getHomePeriod() {
+            const picker = document.getElementById('homeMonthPicker');
+            const now = new Date();
+            let year = now.getFullYear();
+            let month = now.getMonth() + 1;
+            if (picker && picker.value) {
+                const parts = picker.value.split('-');
+                year = parseInt(parts[0], 10);
+                month = parseInt(parts[1], 10);
+            }
+            const label = new Date(year, month - 1, 1).toLocaleString('en-US', {
+                month: 'long',
+                year: 'numeric'
+            });
+            return {
+                year,
+                month,
+                label,
+                start: `${year}-${String(month).padStart(2, '0')}-01`,
+                end: dateToString(new Date(year, month, 0))
+            };
+        }
+
+        function getHomeScopedStores(onlyCollision = false) {
+            const selected = getSelectedStore();
+            let scoped;
+            if (selected === 'all') {
+                scoped = (currentUser && currentUser.role !== 'admin' && currentUser.role !== 'executive')
+                    ? getAccessibleStores()
+                    : stores;
+            } else {
+                scoped = stores.filter(s => s.id === selected);
+            }
+            if (onlyCollision) scoped = scoped.filter(s => COLLISION_STORE_IDS.includes(s.id));
+            return scoped;
+        }
+
+        function getHomeWorkingDays(year, month) {
+            const last = new Date(year, month, 0).getDate();
+            const days = [];
+            for (let d = 1; d <= last; d++) {
+                const dt = new Date(year, month - 1, d);
+                if (dt.getDay() === 0 || isCompanyHoliday(dt)) continue;
+                days.push({
+                    index: days.length + 1,
+                    date: dt,
+                    ds: dateToString(dt),
+                    label: `${month}/${d}`
+                });
+            }
+            return days;
+        }
+
+        function homeLatestByStore(entries) {
+            const latest = {};
+            (entries || []).forEach(entry => {
+                if (!entry || !entry.store_id) return;
+                const prev = latest[entry.store_id];
+                if (!prev || entry.entry_date > prev.entry_date) latest[entry.store_id] = entry;
+            });
+            return latest;
+        }
+
+        function homeProjectionFromEntry(actual, entry, year, month) {
+            const value = parseFloat(actual) || 0;
+            if (isClosedMonth(year, month)) return value;
+            const daysInMonth = parseInt(entry?.days_in_month, 10) || getWorkingDaysInMonth(year, month).totalDays || 0;
+            let dayNum = parseInt(entry?.day_number, 10) || 0;
+            if (!dayNum && entry?.entry_date) {
+                dayNum = getWorkingDayOfMonth(new Date(entry.entry_date + 'T12:00:00'));
+            }
+            if (!dayNum) {
+                const asOf = resolveDashboardAsOf(entry?.entry_date || '');
+                dayNum = (year === asOf.getFullYear() && month === (asOf.getMonth() + 1))
+                    ? getWorkingDayOfMonth(asOf)
+                    : daysInMonth;
+            }
+            return (dayNum > 0 && daysInMonth > 0) ? (value / dayNum) * daysInMonth : value;
+        }
+
+        function homeGoalForStores(goalRows, scopedStores, key) {
+            return scopedStores.reduce((sum, store) => {
+                const row = (goalRows || []).find(g => g.store_id === store.id);
+                return sum + (parseFloat(row?.[key]) || 0);
+            }, 0);
+        }
+
+        function homeDailyCumulativeSeries(entries, workingDays, valueFn) {
+            const byDate = {};
+            let latestDate = '';
+            (entries || []).forEach(entry => {
+                if (!entry || !entry.entry_date) return;
+                byDate[entry.entry_date] = (byDate[entry.entry_date] || 0) + (parseFloat(valueFn(entry)) || 0);
+                if (entry.entry_date > latestDate) latestDate = entry.entry_date;
+            });
+            let running = 0;
+            const series = workingDays.map(day => {
+                running += byDate[day.ds] || 0;
+                return latestDate && day.ds <= latestDate ? running : null;
+            });
+            return { series, actual: running, latestDate };
+        }
+
+        function homeSnapshotSeries(entries, scopedStores, workingDays, valueFn) {
+            const storeIds = scopedStores.map(s => s.id);
+            const byStore = {};
+            (entries || []).forEach(entry => {
+                if (!entry || !storeIds.includes(entry.store_id)) return;
+                (byStore[entry.store_id] = byStore[entry.store_id] || []).push(entry);
+            });
+            Object.values(byStore).forEach(rows => rows.sort((a, b) => (a.entry_date || '').localeCompare(b.entry_date || '')));
+            let latestAny = '';
+            Object.values(byStore).forEach(rows => {
+                rows.forEach(row => { if (row.entry_date > latestAny) latestAny = row.entry_date; });
+            });
+            const series = workingDays.map(day => {
+                let total = 0;
+                let hasAny = false;
+                Object.values(byStore).forEach(rows => {
+                    let pick = null;
+                    for (const row of rows) {
+                        if (row.entry_date <= day.ds) pick = row;
+                        else break;
+                    }
+                    if (pick) {
+                        hasAny = true;
+                        total += parseFloat(valueFn(pick)) || 0;
+                    }
+                });
+                return hasAny ? total : null;
+            });
+            return { series, latestDate: latestAny };
+        }
+
+        function partsCounterSalesFromEntry(entry) {
+            let total = 0;
+            const breakdown = counterBreakdownForEntry(entry) || {};
+            Object.values(breakdown).forEach(v => {
+                total += parseFloat(v.sales) || 0;
+            });
+            return total;
+        }
+
+        function partsTotalSalesFromEntry(entry) {
+            const saved = parseFloat(entry?.total_parts_sales) || 0;
+            if (saved) return saved;
+            return (parseFloat(entry?.service_parts) || 0)
+                + (parseFloat(entry?.wholesale) || 0)
+                + partsCounterSalesFromEntry(entry);
+        }
+
+        function homeMetricStatus(metric) {
+            if (!metric.goal || metric.goal <= 0) return { label: 'No Goal', className: 'low', rank: 3 };
+            if (!metric.hasData) return { label: 'Low Data', className: 'low', rank: 2 };
+            if (metric.pct >= 100) return { label: 'On Track', className: 'good', rank: 0 };
+            if (metric.pct >= 90) return { label: 'Watch', className: 'watch', rank: 1 };
+            return { label: 'Off Track', className: 'bad', rank: 0 };
+        }
+
+        function homeMetricAction(metric) {
+            if (!metric.goal || metric.goal <= 0) {
+                return `Set a ${metric.label} goal so managers can see whether the month is pacing correctly.`;
+            }
+            if (!metric.hasData) {
+                return `Enter current ${metric.category.toLowerCase()} numbers or confirm this department has not reported yet.`;
+            }
+            if (metric.status.className === 'good') {
+                return `Pacing at ${metric.pct.toFixed(0)}% of goal. Keep the current process steady and watch for any flat days.`;
+            }
+            if (metric.label.includes('Counter')) {
+                return 'Review counter quote follow-up, discounting, and walk-in capture while there is still time to recover the month.';
+            }
+            if (metric.category === 'Collision') {
+                return 'Review estimator handoffs, supplement capture, production flow, and delivered-not-closed work before the gap widens.';
+            }
+            if (metric.category === 'Parts') {
+                return 'Review wholesale cadence, counter coverage, and service-lane parts pull-through against the daily recovery target.';
+            }
+            return 'Review appointment load, advisor presentation consistency, declined service follow-up, and daily gross target discipline.';
+        }
+
+        function homeValueLabel(value) {
+            return formatCurrency(value || 0);
+        }
+
+        function renderHomeMetricCard(metric) {
+            const pctLabel = metric.goal > 0 ? `${metric.pct.toFixed(0)}%` : '--';
+            const chartId = metric.chartId;
+            return `
+                <div class="home-chart-card" style="border-left-color:${metric.color};">
+                    <div class="home-chart-top">
+                        <div>
+                            <div class="home-chart-title">${accountabilityEscape(metric.label)}</div>
+                            <div class="home-chart-category">${accountabilityEscape(metric.category)}</div>
+                        </div>
+                        <span class="home-status-pill ${metric.status.className}">${metric.status.label}</span>
+                    </div>
+                    <div class="home-chart-stats">
+                        <div class="home-chart-stat">
+                            <span>MTD</span>
+                            <b title="${homeValueLabel(metric.actual)}">${homeValueLabel(metric.actual)}</b>
+                        </div>
+                        <div class="home-chart-stat">
+                            <span>Projected</span>
+                            <b title="${homeValueLabel(metric.projected)}">${homeValueLabel(metric.projected)}</b>
+                        </div>
+                        <div class="home-chart-stat">
+                            <span>Goal</span>
+                            <b title="${metric.goal > 0 ? homeValueLabel(metric.goal) : 'No goal set'}">${metric.goal > 0 ? homeValueLabel(metric.goal) : 'No goal'}</b>
+                        </div>
+                    </div>
+                    <div class="home-climb-chart">
+                        <canvas id="${chartId}"></canvas>
+                    </div>
+                    <div class="home-chart-note">
+                        <strong>${pctLabel} of goal pace.</strong> ${accountabilityEscape(metric.action)}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderHomeCategorySections(metrics) {
+            const order = ['Service', 'Parts', 'Collision'];
+            return order.map(category => {
+                const rows = metrics.filter(metric => metric.category === category);
+                if (!rows.length) return '';
+                const good = rows.filter(metric => metric.status.className === 'good').length;
+                return `
+                    <section class="home-category-section">
+                        <div class="home-category-header">
+                            <div class="home-category-title">${category}</div>
+                            <div class="home-category-sub">${good}/${rows.length} on track</div>
+                        </div>
+                        <div class="home-category-cards">
+                            ${rows.map(renderHomeMetricCard).join('')}
+                        </div>
+                    </section>
+                `;
+            }).join('');
+        }
+
+        function renderHomeClimbCharts(metrics) {
+            metrics.forEach(metric => {
+                const canvas = document.getElementById(metric.chartId);
+                if (!canvas) return;
+                if (charts[metric.chartId]) charts[metric.chartId].destroy();
+                charts[metric.chartId] = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels: metric.labels,
+                        datasets: [
+                            {
+                                label: 'MTD climb',
+                                data: metric.actualSeries,
+                                borderColor: metric.color,
+                                backgroundColor: metric.fill,
+                                borderWidth: 3,
+                                tension: 0.32,
+                                pointRadius: 0,
+                                pointHoverRadius: 4,
+                                fill: true,
+                                spanGaps: false
+                            },
+                            {
+                                label: 'Goal pace',
+                                data: metric.goalSeries,
+                                borderColor: '#111827',
+                                borderDash: [5, 5],
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => `${ctx.dataset.label}: ${homeValueLabel(ctx.parsed.y)}`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { maxTicksLimit: 6, color: '#64748b', font: { size: 10 } }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: '#e2e8f0' },
+                                ticks: {
+                                    maxTicksLimit: 5,
+                                    color: '#64748b',
+                                    font: { size: 10 },
+                                    callback: value => value >= 1000 ? '$' + Math.round(value / 1000) + 'k' : '$' + value
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        function makeHomeMetric({ id, label, category, color, actual, projected, goal, series, goalSeries, labels }) {
+            const metric = {
+                id,
+                chartId: `homeChart_${id}`,
+                label,
+                category,
+                color,
+                fill: color + '22',
+                actual: actual || 0,
+                projected: projected || 0,
+                goal: goal || 0,
+                pct: goal > 0 ? ((projected || 0) / goal) * 100 : 0,
+                hasData: (actual || 0) > 0 || (series || []).some(v => v != null && v > 0),
+                labels,
+                actualSeries: series,
+                goalSeries
+            };
+            metric.status = homeMetricStatus(metric);
+            metric.action = homeMetricAction(metric);
+            return metric;
+        }
+
+        async function loadHome() {
+            const summaryEl = document.getElementById('homeSummaryCards');
+            const gridEl = document.getElementById('homeChartsGrid');
+            const focusEl = document.getElementById('homeFocusList');
+            if (!summaryEl || !gridEl || !focusEl) return;
+
+            try {
+                const period = getHomePeriod();
+                const workingDays = getHomeWorkingDays(period.year, period.month);
+                const labels = workingDays.map(d => d.label);
+                const goalLine = goal => workingDays.map(day => goal > 0 ? (goal / workingDays.length) * day.index : null);
+                const scopedStores = getHomeScopedStores(false);
+                const scopedIds = new Set(scopedStores.map(s => s.id));
+                const collisionStores = getHomeScopedStores(true);
+                const collisionIds = new Set(collisionStores.map(s => s.id));
+
+                if (!scopedStores.length) {
+                    summaryEl.innerHTML = '';
+                    gridEl.innerHTML = '<div class="empty-state">No stores are available for this user.</div>';
+                    focusEl.innerHTML = '<div class="empty-state">No focus items.</div>';
+                    return;
+                }
+
+                const [
+                    dailyRows,
+                    advisorRows,
+                    goalRows,
+                    partsRows,
+                    partsGoalRows,
+                    collisionRows,
+                    collisionGoalRows
+                ] = await Promise.all([
+                    LS.getDailyEntries(),
+                    LS.getAdvisorEntries(),
+                    LS.getEffectiveGoals(period.month, period.year),
+                    LS.getPartsEntries(),
+                    LS.getEffectivePartsGoals(period.month, period.year),
+                    LS.getCollisionEntries(),
+                    LS.getEffectiveCollisionGoals(period.month, period.year)
+                ]);
+
+                const dailyEntries = (dailyRows || []).filter(d =>
+                    d.entry_date >= period.start && d.entry_date <= period.end && scopedIds.has(d.store_id)
+                );
+                const advisorEntries = (advisorRows || []).filter(d =>
+                    d.entry_date >= period.start && d.entry_date <= period.end && scopedIds.has(d.store_id)
+                );
+                const partsEntries = (partsRows || []).filter(d =>
+                    d.entry_date >= period.start && d.entry_date <= period.end && scopedIds.has(d.store_id)
+                );
+                const collisionEntries = (collisionRows || []).filter(d =>
+                    d.entry_date >= period.start && d.entry_date <= period.end && collisionIds.has(d.store_id)
+                );
+
+                const serviceProjected = valueKey => scopedStores.reduce((sum, store) => {
+                    const entries = dailyEntries.filter(d => d.store_id === store.id);
+                    const actual = entries.reduce((s, d) => s + (parseFloat(d[valueKey]) || 0), 0);
+                    const latest = homeLatestByStore(entries)[store.id] || null;
+                    return sum + homeProjectionFromEntry(actual, latest, period.year, period.month);
+                }, 0);
+                const serviceLabor = homeDailyCumulativeSeries(dailyEntries, workingDays, d => d.labor_day || 0);
+                const serviceParts = homeDailyCumulativeSeries(dailyEntries, workingDays, d => d.parts_day || 0);
+                const serviceTotal = homeDailyCumulativeSeries(dailyEntries, workingDays, d => (parseFloat(d.labor_day) || 0) + (parseFloat(d.parts_day) || 0));
+
+                const metrics = [
+                    makeHomeMetric({
+                        id: 'service_labor',
+                        label: 'Service Labor Gross',
+                        category: 'Service',
+                        color: '#2563eb',
+                        actual: serviceLabor.actual,
+                        projected: serviceProjected('labor_day'),
+                        goal: homeGoalForStores(goalRows, scopedStores, 'labor_goal'),
+                        series: serviceLabor.series,
+                        goalSeries: goalLine(homeGoalForStores(goalRows, scopedStores, 'labor_goal')),
+                        labels
+                    }),
+                    makeHomeMetric({
+                        id: 'service_parts',
+                        label: 'Service Parts Gross',
+                        category: 'Service',
+                        color: '#0f766e',
+                        actual: serviceParts.actual,
+                        projected: serviceProjected('parts_day'),
+                        goal: homeGoalForStores(goalRows, scopedStores, 'parts_goal'),
+                        series: serviceParts.series,
+                        goalSeries: goalLine(homeGoalForStores(goalRows, scopedStores, 'parts_goal')),
+                        labels
+                    }),
+                    makeHomeMetric({
+                        id: 'service_total',
+                        label: 'Service Total Gross',
+                        category: 'Service',
+                        color: '#cc0000',
+                        actual: serviceTotal.actual,
+                        projected: scopedStores.reduce((sum, store) => {
+                            const entries = dailyEntries.filter(d => d.store_id === store.id);
+                            const actual = entries.reduce((s, d) => s + (parseFloat(d.labor_day) || 0) + (parseFloat(d.parts_day) || 0), 0);
+                            const latest = homeLatestByStore(entries)[store.id] || null;
+                            return sum + homeProjectionFromEntry(actual, latest, period.year, period.month);
+                        }, 0),
+                        goal: homeGoalForStores(goalRows, scopedStores, 'total_gross_goal'),
+                        series: serviceTotal.series,
+                        goalSeries: goalLine(homeGoalForStores(goalRows, scopedStores, 'total_gross_goal')),
+                        labels
+                    })
+                ];
+
+                const latestParts = homeLatestByStore(partsEntries);
+                const partsMetric = (id, label, color, valueFn, goalKey) => {
+                    const scopedGoal = homeGoalForStores(partsGoalRows, scopedStores, goalKey);
+                    const snap = homeSnapshotSeries(partsEntries, scopedStores, workingDays, valueFn);
+                    const actual = Object.values(latestParts).reduce((s, entry) => s + (parseFloat(valueFn(entry)) || 0), 0);
+                    const projected = scopedStores.reduce((sum, store) => {
+                        const entry = latestParts[store.id] || null;
+                        return sum + homeProjectionFromEntry(entry ? valueFn(entry) : 0, entry, period.year, period.month);
+                    }, 0);
+                    return makeHomeMetric({
+                        id,
+                        label,
+                        category: 'Parts',
+                        color,
+                        actual,
+                        projected,
+                        goal: scopedGoal,
+                        series: snap.series,
+                        goalSeries: goalLine(scopedGoal),
+                        labels
+                    });
+                };
+                metrics.push(
+                    partsMetric('parts_total', 'Parts Total Sales', '#7c3aed', partsTotalSalesFromEntry, 'parts_total_goal'),
+                    partsMetric('parts_wholesale', 'Wholesale Parts', '#0891b2', e => parseFloat(e.wholesale) || 0, 'parts_wholesale_goal'),
+                    partsMetric('parts_counter', 'Counter Parts', '#ea580c', partsCounterSalesFromEntry, 'parts_counter_goal')
+                );
+
+                if (collisionStores.length) {
+                    const latestCollision = homeLatestByStore(collisionEntries);
+                    const collisionMetric = (id, label, color, valueFn, goalKey) => {
+                        const scopedGoal = homeGoalForStores(collisionGoalRows, collisionStores, goalKey);
+                        const snap = homeSnapshotSeries(collisionEntries, collisionStores, workingDays, valueFn);
+                        const actual = Object.values(latestCollision).reduce((s, entry) => s + (parseFloat(valueFn(entry)) || 0), 0);
+                        const projected = collisionStores.reduce((sum, store) => {
+                            const entry = latestCollision[store.id] || null;
+                            return sum + homeProjectionFromEntry(entry ? valueFn(entry) : 0, entry, period.year, period.month);
+                        }, 0);
+                        return makeHomeMetric({
+                            id,
+                            label,
+                            category: 'Collision',
+                            color,
+                            actual,
+                            projected,
+                            goal: scopedGoal,
+                            series: snap.series,
+                            goalSeries: goalLine(scopedGoal),
+                            labels
+                        });
+                    };
+                    metrics.push(
+                        collisionMetric('collision_sales', 'Collision Sales', '#475569', e => parseFloat(e.total_sales) || 0, 'collision_sales_goal'),
+                        collisionMetric('collision_gross', 'Collision Gross', '#b91c1c', e => parseFloat(e.collision_gross) || 0, 'collision_gross_goal')
+                    );
+                }
+
+                const advisorAgg = Object.values(aggregateAdvisorEntries(advisorEntries));
+                const totalRos = advisorAgg.reduce((sum, row) => sum + (parseFloat(row.ros) || 0), 0);
+                const onTrack = metrics.filter(m => m.status.className === 'good').length;
+                const watch = metrics.filter(m => m.status.className === 'watch').length;
+                const offTrack = metrics.filter(m => m.status.className === 'bad').length;
+                const lowData = metrics.filter(m => m.status.className === 'low').length;
+                summaryEl.innerHTML = `
+                    <div class="home-summary-card"><b>${onTrack}</b><span>On Track</span></div>
+                    <div class="home-summary-card"><b>${watch}</b><span>Watch</span></div>
+                    <div class="home-summary-card"><b>${offTrack}</b><span>Off Track</span></div>
+                    <div class="home-summary-card"><b>${lowData}</b><span>No Goal / Low Data</span></div>
+                    <div class="home-summary-card"><b>${totalRos || 0}</b><span>Service ROs MTD</span></div>
+                `;
+
+                gridEl.innerHTML = renderHomeCategorySections(metrics);
+                requestAnimationFrame(() => renderHomeClimbCharts(metrics));
+
+                const focusRows = [...metrics]
+                    .filter(m => m.status.className === 'bad' || m.status.className === 'watch' || m.status.label === 'No Goal')
+                    .sort((a, b) => {
+                        const rank = { bad: 0, watch: 1, low: 2, good: 3 };
+                        return (rank[a.status.className] - rank[b.status.className]) || (a.pct - b.pct);
+                    })
+                    .slice(0, 5);
+                focusEl.innerHTML = focusRows.length
+                    ? focusRows.map(m => `
+                        <div class="home-focus-item">
+                            <div>
+                                <strong>${accountabilityEscape(m.label)} - ${m.status.label}</strong>
+                                <span>${accountabilityEscape(m.action)}</span>
+                            </div>
+                            <span class="home-status-pill ${m.status.className}">${m.goal > 0 ? m.pct.toFixed(0) + '%' : 'No goal'}</span>
+                        </div>
+                    `).join('')
+                    : '<div class="empty-state">All visible categories are pacing at or above goal.</div>';
+            } catch (error) {
+                console.error('Home load error:', error);
+                gridEl.innerHTML = '<div class="empty-state">Home charts could not be loaded.</div>';
+                focusEl.innerHTML = '<div class="empty-state">No focus items available.</div>';
+            }
         }
 
         async function loadDashboard() {
