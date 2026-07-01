@@ -19639,14 +19639,20 @@
             const tbody = document.getElementById(cfg.bodyId);
             if (!tbody) return;
 
-            // Scope to stores the current user can see, then to collision-eligible stores for collision types.
+            // Scope to stores the current user can see, then to the selected store unless All Stores is selected.
             const accessible = getAccessibleStores();
             const accessibleIds = new Set(accessible.map(s => s.id));
+            const selectedStoreId = getSelectedStore();
+            const allMode = isAllStores();
             const isCollision = (type === 'body_tech' || type === 'painter' || type === 'estimator');
-            const storeOptions = isCollision ? getCollisionStores() : accessible;
+            const baseStoreOptions = isCollision ? getCollisionStores() : accessible;
+            const storeOptions = allMode
+                ? baseStoreOptions
+                : baseStoreOptions.filter(st => st.id === selectedStoreId);
 
             const rows = getDeptStaffArray(type)
-                .filter(s => !s.store_id || accessibleIds.has(s.store_id));
+                .filter(s => s.store_id && accessibleIds.has(s.store_id))
+                .filter(s => allMode || s.store_id === selectedStoreId);
 
             if (rows.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="${cfg.emptyCols}" style="text-align:center;color:#888;padding:20px;">No ${cfg.label.toLowerCase()}s added yet — click "+ Add ${cfg.label}" below.</td></tr>`;
@@ -19694,8 +19700,13 @@
             if (tbody.querySelector('td[colspan]')) tbody.innerHTML = '';
 
             const newId = type + '_' + Date.now();
+            const selectedStoreId = getSelectedStore();
+            const allMode = isAllStores();
             const isCollision = (type === 'body_tech' || type === 'painter' || type === 'estimator');
-            const storeOptions = isCollision ? getCollisionStores() : getAccessibleStores();
+            const baseStoreOptions = isCollision ? getCollisionStores() : getAccessibleStores();
+            const storeOptions = allMode
+                ? baseStoreOptions
+                : baseStoreOptions.filter(st => st.id === selectedStoreId);
             // Default-select if there's only one accessible store (very common — collision mgrs only have DCVB)
             const onlyStore = storeOptions.length === 1 ? storeOptions[0].id : '';
 
