@@ -7039,6 +7039,33 @@
             return rounded.toString();
         }
 
+        function numberValue(value) {
+            if (value === null || value === undefined || value === '') return 0;
+            const n = parseFloat(value);
+            return Number.isFinite(n) ? n : 0;
+        }
+
+        function entryRoCount(entry) {
+            if (!entry) return 0;
+            return Math.max(
+                numberValue(entry.total_ros),
+                numberValue(entry.ro_count),
+                numberValue(entry.roCount)
+            );
+        }
+
+        function entryTotalHours(entry) {
+            if (!entry) return 0;
+            return Math.max(
+                numberValue(entry.total_hours),
+                numberValue(entry.hours)
+            );
+        }
+
+        function totalServiceRos(entries) {
+            return (entries || []).reduce((sum, entry) => sum + entryRoCount(entry), 0);
+        }
+
         // Surface the most useful fields out of a Supabase/PostgREST error so "Failed"
         // toasts actually tell you what went wrong.
         function formatDbError(err) {
@@ -7551,8 +7578,22 @@
             async getDailyEntries() {
                 if (useSupabase) {
                     try {
-                        const { data, error } = await db.from('daily_entries').select('*');
-                        if (!error && data) { this._set('dyer_daily_entries', data); return data; }
+                        // Supabase/PostgREST caps a plain select at 1000 rows. Daily
+                        // entries are the department source of truth for RO count, so
+                        // page the table the same way advisor entries are paged.
+                        const PAGE = 1000;
+                        let all = [], from = 0, done = false;
+                        while (!done) {
+                            const { data, error } = await db.from('daily_entries')
+                                .select('*')
+                                .order('entry_date', { ascending: true })
+                                .range(from, from + PAGE - 1);
+                            if (error) throw error;
+                            if (data && data.length) { all = all.concat(data); from += data.length; }
+                            if (!data || data.length < PAGE) done = true;
+                        }
+                        this._set('dyer_daily_entries', all);
+                        return all;
                     } catch(e) { console.warn('Supabase getDailyEntries failed, using cache', e); }
                 }
                 return this._get('dyer_daily_entries');
@@ -9075,7 +9116,7 @@
                 if (dailyData) {
                     document.getElementById('laborDay').value = dailyData.labor_day ?? '';
                     document.getElementById('partsDay').value = dailyData.parts_day ?? '';
-                    document.getElementById('dailyTotalRos').value = dailyData.total_ros ?? '';
+                    document.getElementById('dailyTotalRos').value = entryRoCount(dailyData) || '';
                     document.getElementById('dailyRosClosed').value = dailyData.ros_closed ?? '';
                     document.getElementById('dailyAlignments').value = dailyData.alignments_sold ?? '';
                     document.getElementById('dailyTotalHours').value = dailyData.total_hours ?? '';
@@ -9110,7 +9151,7 @@
                             <td><input type="number" class="input-yellow advisor-labor" data-advisor="${advisor.id}" value="${entry?.labor_gross ?? ''}" placeholder="0"></td>
                             <td><input type="number" class="input-yellow advisor-parts" data-advisor="${advisor.id}" value="${entry?.parts_gross ?? ''}" placeholder="0"></td>
                             <td class="input-gray advisor-gross" data-advisor="${advisor.id}" style="font-weight:700">-</td>
-                            <td><input type="number" class="input-yellow advisor-total-ros" data-advisor="${advisor.id}" value="${entry?.total_ros ?? entry?.ro_count ?? ''}" placeholder="0"></td>
+                            <td><input type="number" class="input-yellow advisor-total-ros" data-advisor="${advisor.id}" value="${entry ? (entryRoCount(entry) || '') : ''}" placeholder="0"></td>
                             <td><input type="number" class="input-yellow advisor-cp" data-advisor="${advisor.id}" value="${entry?.cp_ros ?? ''}" placeholder="0"></td>
                             <td><input type="number" class="input-yellow advisor-cp-labor" data-advisor="${advisor.id}" value="${entry?.cp_labor ?? ''}" placeholder="0"></td>
                             <td><input type="number" class="input-yellow advisor-cp-parts" data-advisor="${advisor.id}" value="${entry?.cp_parts ?? ''}" placeholder="0"></td>
@@ -9254,10 +9295,10 @@
                 dayEntries.forEach(d => {
                     totalLabor += parseFloat(d.labor_day) || 0;
                     totalParts += parseFloat(d.parts_day) || 0;
-                    totalRos += parseInt(d.total_ros) || 0;
+                    totalRos += entryRoCount(d);
                     totalRosClosed += parseInt(d.ros_closed) || 0;
                     totalAlignments += parseInt(d.alignments_sold) || 0;
-                    totalHours += parseFloat(d.total_hours) || 0;
+                    totalHours += entryTotalHours(d);
                     if (d.store_nps) { npsSum += parseFloat(d.store_nps); npsCount++; }
                     if (d.region_nps) { regionNpsSum += parseFloat(d.region_nps); regionNpsCount++; }
                 });
@@ -9318,7 +9359,7 @@
                         const labor = parseFloat(entry?.labor_gross) || 0;
                         const parts = parseFloat(entry?.parts_gross) || 0;
                         const gross = labor + parts;
-                        const ros = parseInt(entry?.total_ros || entry?.ro_count) || 0;
+                        const ros = entryRoCount(entry);
                         const cpRos = parseInt(entry?.cp_ros) || 0;
                         const cpLabor = parseFloat(entry?.cp_labor) || 0;
                         const cpParts = parseFloat(entry?.cp_parts) || 0;
@@ -9393,8 +9434,8 @@
             allDaily.forEach(d => {
                 mtdLabor += parseFloat(d.labor_day) || 0;
                 mtdParts += parseFloat(d.parts_day) || 0;
-                mtdRos += parseInt(d.total_ros) || 0;
-                mtdHours += parseFloat(d.total_hours) || 0;
+                mtdRos += entryRoCount(d);
+                mtdHours += entryTotalHours(d);
             });
 
             const mtdGross = mtdLabor + mtdParts;
@@ -9525,14 +9566,14 @@
             }
 
             // Tracking RO Count — sum total_ros MTD, then project to month
-            const roMtd = monthlyData.reduce((sum, d) => sum + (d.total_ros || 0), 0);
-            const daysWorked = monthlyData.filter(d => (d.labor_day || 0) > 0 || (d.total_ros || 0) > 0).length;
+            const roMtd = monthlyData.reduce((sum, d) => sum + entryRoCount(d), 0);
+            const daysWorked = monthlyData.filter(d => (d.labor_day || 0) > 0 || entryRoCount(d) > 0).length;
             const trackingRos = daysWorked > 0 && daysInMonth > 0 ? Math.round((roMtd / daysWorked) * daysInMonth) : 0;
             document.getElementById('dailyTrackingRos').textContent = trackingRos > 0 ? trackingRos.toLocaleString() : '0';
 
             // Tracking Hours — sum total_hours MTD, then project to month
-            const hoursMtd = monthlyData.reduce((sum, d) => sum + (parseFloat(d.total_hours) || 0), 0);
-            const hoursDaysWorked = monthlyData.filter(d => (parseFloat(d.total_hours) || 0) > 0).length;
+            const hoursMtd = monthlyData.reduce((sum, d) => sum + entryTotalHours(d), 0);
+            const hoursDaysWorked = monthlyData.filter(d => entryTotalHours(d) > 0).length;
             const trackingHours = hoursDaysWorked > 0 && daysInMonth > 0 ? (hoursMtd / hoursDaysWorked) * daysInMonth : 0;
             const trackHoursEl = document.getElementById('dailyTrackingHours');
             if (trackHoursEl) trackHoursEl.textContent = trackingHours > 0 ? trackingHours.toFixed(1) : '0';
@@ -11727,8 +11768,8 @@
                     );
                 }
 
-                const advisorAgg = Object.values(aggregateAdvisorEntries(advisorEntries));
-                const totalRos = advisorAgg.reduce((sum, row) => sum + (parseFloat(row.ros) || 0), 0);
+                const serviceVolume = serviceVolumeDailyFirst(dailyEntries, advisorEntries, period.start);
+                const totalRos = serviceVolume.roCount || 0;
                 const onTrack = metrics.filter(m => m.status.className === 'good').length;
                 const watch = metrics.filter(m => m.status.className === 'watch').length;
                 const offTrack = metrics.filter(m => m.status.className === 'bad').length;
@@ -11819,11 +11860,15 @@
                 if (!allMode) advisorData = advisorData.filter(d => d.store_id === storeId);
 
                 let avgGrossPerRo = 0;
+                const serviceVolumeMtd = serviceVolumeDailyFirst(dailyData, advisorData, monthStart);
                 if (advisorData && advisorData.length > 0) {
                     const aggAll = Object.values(aggregateAdvisorEntries(advisorData));
                     const totalGross = aggAll.reduce((sum, a) => sum + a.gross, 0);
                     const totalRo = aggAll.reduce((sum, a) => sum + a.ros, 0);
                     if (totalRo > 0) avgGrossPerRo = totalGross / totalRo;
+                }
+                if (serviceVolumeMtd.roCount > 0) {
+                    avgGrossPerRo = totalGrossMtd / serviceVolumeMtd.roCount;
                 }
 
                 // Load KPIs
@@ -11900,6 +11945,7 @@
                         const sLabor = sDaily.reduce((s, d) => s + (d.labor_day || 0), 0);
                         const sParts = sDaily.reduce((s, d) => s + (d.parts_day || 0), 0);
                         const sGross = sLabor + sParts;
+                        const sVolume = serviceVolumeDailyFirst(sDaily, sAdv, monthStart);
                         // Use this store's own working-day number (its own as-of date).
                         const sDayNum = workingDayForStore(store.id);
                         const sLaborTrack = (sLabor / sDayNum) * daysInMonth;
@@ -11912,7 +11958,7 @@
                         const sAdvAgg = Object.values(aggregateAdvisorEntries(sAdv));
                         const sAdvGross = sAdvAgg.reduce((s, a) => s + a.gross, 0);
                         const sAdvRo = sAdvAgg.reduce((s, a) => s + a.ros, 0);
-                        const sGpr = sAdvRo > 0 ? sAdvGross / sAdvRo : 0;
+                        const sGpr = sVolume.roCount > 0 ? sGross / sVolume.roCount : (sAdvRo > 0 ? sAdvGross / sAdvRo : 0);
                         laborBreakdowns.push({ code: store.code, tracking: sLaborTrack, goal: sLaborGoal, pct: sLaborGoal > 0 ? (sLaborTrack / sLaborGoal) * 100 : 0 });
                         partsBreakdowns.push({ code: store.code, tracking: sPartsTrack, goal: sPartsGoal, pct: sPartsGoal > 0 ? (sPartsTrack / sPartsGoal) * 100 : 0 });
                         grossBreakdowns.push({ code: store.code, tracking: sGrossTrack, goal: sGrossGoal, pct: sGrossGoal > 0 ? (sGrossTrack / sGrossGoal) * 100 : 0 });
@@ -11977,10 +12023,12 @@
                 // Index daily entries by date for quick lookup
                 const dailyByDate = {};
                 dailyData.forEach(d => {
-                    if (!dailyByDate[d.entry_date]) dailyByDate[d.entry_date] = { labor: 0, parts: 0, gross: 0 };
+                    if (!dailyByDate[d.entry_date]) dailyByDate[d.entry_date] = { labor: 0, parts: 0, gross: 0, roCount: 0, hours: 0 };
                     dailyByDate[d.entry_date].labor += (d.labor_day || d.total_labor || 0);
                     dailyByDate[d.entry_date].parts += (d.parts_day || d.total_parts || 0);
                     dailyByDate[d.entry_date].gross += (d.labor_day || d.total_labor || 0) + (d.parts_day || d.total_parts || 0);
+                    dailyByDate[d.entry_date].roCount += entryRoCount(d);
+                    dailyByDate[d.entry_date].hours += entryTotalHours(d);
                 });
                 // Also aggregate advisor entries by date for RO count and hours.
                 // June 2026+ advisor entries are MTD snapshots — convert to per-day
@@ -11989,10 +12037,11 @@
                 const advByDate = {};
                 advForDaily.forEach(d => {
                     if (!advByDate[d.entry_date]) advByDate[d.entry_date] = { roCount: 0, hours: 0, gross: 0 };
-                    advByDate[d.entry_date].roCount += (d.ro_count || 0);
+                    advByDate[d.entry_date].roCount += entryRoCount(d);
                     advByDate[d.entry_date].hours += (d.hours || 0);
                     advByDate[d.entry_date].gross += (d.total_gross || 0);
                 });
+                const serviceVolumeByDate = serviceVolumeByDateDailyFirst(dailyData, advisorData, monthStart);
 
                 // Calculate daily goal targets (monthly goal / working days)
                 const dailyLaborGoal = (daysInMonth > 0 && laborGoal > 0) ? laborGoal / daysInMonth : 0;
@@ -12028,10 +12077,13 @@
                     // tracking-divisor by 1, dragging projected month-end down.
                     if (!isSunday && !isHoliday) workingDayNum++;
 
-                    const dep = dailyByDate[dateStr] || { labor: 0, parts: 0, gross: 0 };
+                    const dep = dailyByDate[dateStr] || { labor: 0, parts: 0, gross: 0, roCount: 0, hours: 0 };
                     const adv = advByDate[dateStr] || { roCount: 0, hours: 0, gross: 0 };
                     const dayGross = dep.gross || adv.gross || 0;
-                    const grossPerRo = adv.roCount > 0 ? dayGross / adv.roCount : 0;
+                    const volume = serviceVolumeByDate[dateStr] || { roCount: 0, hours: 0 };
+                    const roCount = volume.roCount || 0;
+                    const hours = volume.hours || 0;
+                    const grossPerRo = roCount > 0 ? dayGross / roCount : 0;
                     runningTotal += dayGross;
 
                     // Tracking = (Running Total / Working Day #) * Working Days in Month
@@ -12042,12 +12094,12 @@
                         : ((workingDayNum > 0 && runningTotal > 0) ? (runningTotal / workingDayNum) * daysInMonth : 0);
 
                     totLabor += dep.labor; totParts += dep.parts; totGross += dayGross;
-                    totRo += adv.roCount; totHours += adv.hours;
+                    totRo += roCount; totHours += hours;
 
                     const dayType = isSunday ? 'Closed' : isHoliday ? 'Holiday' : isSaturday ? 'Saturday' : 'Weekday';
                     // Holidays are treated like Sundays — dimmed row, no working day counted.
                     const rowStyle = isSunday ? 'opacity:0.35;' : isHoliday ? 'opacity:0.35;background:#fef3c7;' : isToday ? 'background:#fff3cd;font-weight:700;' : isFuture ? 'opacity:0.4;' : '';
-                    const hasData = dep.labor > 0 || dep.parts > 0 || adv.roCount > 0;
+                    const hasData = dep.labor > 0 || dep.parts > 0 || roCount > 0;
 
                     // Color code labor, parts, gross, and gross/RO vs daily goals
                     const laborStyle = hasData ? goalColor(dep.labor, dailyLaborGoal) : '';
@@ -12062,8 +12114,8 @@
                         <td style="${laborStyle}">${hasData ? formatCurrency(dep.labor) : '—'}</td>
                         <td style="${partsStyle}">${hasData ? formatCurrency(dep.parts) : '—'}</td>
                         <td style="${grossStyle}">${hasData ? formatCurrency(dayGross) : '—'}</td>
-                        <td>${hasData ? adv.roCount : '—'}</td>
-                        <td>${hasData ? adv.hours.toFixed(1) : '—'}</td>
+                        <td>${hasData ? roCount : '—'}</td>
+                        <td>${hasData ? hours.toFixed(1) : '—'}</td>
                         <td style="${grossRoStyle}">${hasData && grossPerRo > 0 ? formatCurrency(grossPerRo) : '—'}</td>
                         <td style="font-weight:600;">${runningTotal > 0 ? formatCurrency(runningTotal) : '—'}</td>
                         <td style="font-weight:700;color:#cc0000;">${trackingValue > 0 ? formatCurrency(trackingValue) : '—'}</td>
@@ -12968,8 +13020,11 @@
                     const storeAdvAgg = Object.values(aggregateAdvisorEntries(storeAdvisors));
                     const totalGrossAdvisors = storeAdvAgg.reduce((s, a) => s + a.gross, 0);
                     const totalRoAdvisors = storeAdvAgg.reduce((s, a) => s + a.ros, 0);
+                    const storeVolume = serviceVolumeDailyFirst(storeDaily, storeAdvisors, monthStart);
 
-                    const avgGrossRo = totalRoAdvisors > 0 ? totalGrossAdvisors / totalRoAdvisors : 0;
+                    const avgGrossRo = storeVolume.roCount > 0
+                        ? totalGross / storeVolume.roCount
+                        : (totalRoAdvisors > 0 ? totalGrossAdvisors / totalRoAdvisors : 0);
                     // Store CSI = average of advisors' standing (latest-entry) CSI values
                     const avgCsi = avgLastByAdvisor(storeAdvisors, 'csi_score');
                     const goal = storeGoals?.total_gross_goal || 0;
@@ -15683,8 +15738,9 @@
                     a.labor    += parseFloat(d.labor_gross) || 0;
                     a.parts    += parseFloat(d.parts_gross) || 0;
                     a.gross    += parseFloat(d.total_gross) || 0;
-                    a.ros      += parseInt(d.ro_count)      || 0;
-                    a.totalRos += parseInt(d.total_ros ?? d.ro_count) || 0;
+                    const ros = entryRoCount(d);
+                    a.ros      += ros;
+                    a.totalRos += ros;
                     a.cpRos    += parseInt(d.cp_ros)        || 0;
                     a.cpLabor  += parseFloat(d.cp_labor)    || 0;
                     a.cpParts  += parseFloat(d.cp_parts)    || 0;
@@ -15716,8 +15772,8 @@
                         labor_gross: f(d.labor_gross) - (prev ? f(prev.labor_gross) : 0),
                         parts_gross: f(d.parts_gross) - (prev ? f(prev.parts_gross) : 0),
                         total_gross: f(d.total_gross) - (prev ? f(prev.total_gross) : 0),
-                        ro_count:    f(d.ro_count)    - (prev ? f(prev.ro_count)    : 0),
-                        total_ros:   f(d.total_ros ?? d.ro_count) - (prev ? f(prev.total_ros ?? prev.ro_count) : 0),
+                        ro_count:    entryRoCount(d) - (prev ? entryRoCount(prev) : 0),
+                        total_ros:   entryRoCount(d) - (prev ? entryRoCount(prev) : 0),
                         cp_ros:      f(d.cp_ros)      - (prev ? f(prev.cp_ros)      : 0),
                         cp_labor:    f(d.cp_labor)    - (prev ? f(prev.cp_labor)    : 0),
                         cp_parts:    f(d.cp_parts)    - (prev ? f(prev.cp_parts)    : 0),
@@ -15727,6 +15783,51 @@
                 });
             });
             return out;
+        }
+
+        function serviceVolumeByDateDailyFirst(dailyEntries, advisorEntries, periodStart) {
+            const dailyByKey = {};
+            const advisorByKey = {};
+            const add = (map, entry, ros, hours) => {
+                if (!entry || !entry.entry_date || !entry.store_id) return;
+                const key = entry.entry_date + '|' + entry.store_id;
+                if (!map[key]) map[key] = { entry_date: entry.entry_date, store_id: entry.store_id, roCount: 0, hours: 0 };
+                map[key].roCount += ros || 0;
+                map[key].hours += hours || 0;
+            };
+
+            (dailyEntries || []).forEach(entry => {
+                add(dailyByKey, entry, entryRoCount(entry), entryTotalHours(entry));
+            });
+
+            const advisorRows = advisorEntriesAreMtd(periodStart)
+                ? advisorDailyDeltas(advisorEntries || [])
+                : (advisorEntries || []);
+            advisorRows.forEach(entry => {
+                add(advisorByKey, entry, entryRoCount(entry), numberValue(entry.hours));
+            });
+
+            const byDate = {};
+            const keys = new Set(Object.keys(dailyByKey).concat(Object.keys(advisorByKey)));
+            keys.forEach(key => {
+                const daily = dailyByKey[key] || {};
+                const advisor = advisorByKey[key] || {};
+                const useDailyRos = (daily.roCount || 0) > 0;
+                const useDailyHours = (daily.hours || 0) > 0;
+                const date = (daily.entry_date || advisor.entry_date || key.split('|')[0]);
+                if (!byDate[date]) byDate[date] = { roCount: 0, hours: 0 };
+                byDate[date].roCount += useDailyRos ? daily.roCount : (advisor.roCount || 0);
+                byDate[date].hours += useDailyHours ? daily.hours : (advisor.hours || 0);
+            });
+            return byDate;
+        }
+
+        function serviceVolumeDailyFirst(dailyEntries, advisorEntries, periodStart) {
+            const byDate = serviceVolumeByDateDailyFirst(dailyEntries, advisorEntries, periodStart);
+            return Object.values(byDate).reduce((sum, row) => ({
+                roCount: sum.roCount + (row.roCount || 0),
+                hours: sum.hours + (row.hours || 0)
+            }), { roCount: 0, hours: 0 });
         }
 
         function lastByAdvisor(entries, field) {
@@ -16244,7 +16345,7 @@
 
                 // Build staffing cards — hide bays for non-admin
                 const isAdmin = currentUser && currentUser.role === 'admin';
-                const staffColCount = isAdmin ? 6 : 5;
+                const staffColCount = isAdmin ? 7 : 6;
                 document.getElementById('rosterStaffingCards').style.gridTemplateColumns = `repeat(${staffColCount}, 1fr)`;
                 document.getElementById('rosterStaffingCards').innerHTML = `
                     <div class="capacity-kpi-card">
@@ -16345,6 +16446,18 @@
                 const avgRegionNps = regionNpsEntries.length > 0
                     ? regionNpsEntries.reduce((s, d) => s + parseFloat(d.region_nps), 0) / regionNpsEntries.length
                     : null;
+                const periodDailyRos = totalServiceRos(weeklyDailyData);
+                const periodDailyHours = weeklyDailyData.reduce((s, d) => s + entryTotalHours(d), 0);
+                const rosterCardsEl = document.getElementById('rosterStaffingCards');
+                if (rosterCardsEl) {
+                    rosterCardsEl.insertAdjacentHTML('beforeend', `
+                        <div class="capacity-kpi-card" id="serviceRosKpiCard">
+                            <div class="kpi-label">Service ROs</div>
+                            <div class="kpi-value">${periodDailyRos > 0 ? periodDailyRos.toLocaleString() : '—'}</div>
+                            <div class="kpi-subtext">${periodDailyRos > 0 ? advPeriodLabel + ' · from Service Daily Entry' : 'No Total ROs saved for ' + advPeriodLabel}</div>
+                        </div>
+                    `);
+                }
 
                 // Prior-period advisor data for trend calculation.
                 // Primary: equal-length window immediately preceding current period (April MTD → March 12–31).
@@ -16414,7 +16527,7 @@
                     const dAgg = weeklyAdvAgg[advisor.id] || {};
                     // Daily aggregates take priority, manual roster entry as fallback
                     const gross = dAgg.gross || parseFloat(rEntry.gross_total) || 0;
-                    const roCount = dAgg.ros || parseInt(rEntry.ro_count) || 0;
+                    const roCount = dAgg.ros || entryRoCount(rEntry);
                     const labor = dAgg.labor || 0;
                     const parts = dAgg.parts || 0;
                     const cpRos = dAgg.cpRos || 0;
@@ -16533,8 +16646,10 @@
 
                 // Total labor gross across all advisors for the period — feeds
                 // the NCM "Labor Gross per Stall" KPI (stalls = bays in our config).
-                const periodLaborGross = Object.values(weeklyAdvAgg)
+                const advisorPeriodLaborGross = Object.values(weeklyAdvAgg)
                     .reduce((s, a) => s + (a.labor || 0), 0);
+                const dailyPeriodLaborGross = weeklyDailyData.reduce((s, d) => s + (parseFloat(d.labor_day || d.total_labor) || 0), 0);
+                const periodLaborGross = advisorPeriodLaborGross || dailyPeriodLaborGross;
 
                 // Advisor-level period totals for the NCM reference panel.
                 // Counts only advisors with activity so vacant roster slots don't
@@ -16551,6 +16666,10 @@
                         t.hours    += a.hours    || 0;
                         t.labor    += a.labor    || 0;
                     });
+                    const advisorRosTotal = t.totalRos || 0;
+                    if (t.totalRos <= 0 && periodDailyRos > 0) t.totalRos = periodDailyRos;
+                    if (t.hours <= 0 && periodDailyHours > 0) t.hours = periodDailyHours;
+                    if (t.labor <= 0 && periodLaborGross > 0) t.labor = periodLaborGross;
                     // Working days (Mon–Sat) elapsed in the aggregation range, capped at today —
                     // matches the goal-pacing working-day math used elsewhere.
                     const endCap = new Date(Math.min(aggEnd.getTime(), Date.now()));
@@ -16560,10 +16679,12 @@
                         if (dow >= 1 && dow <= 6) wdElapsed++;
                     }
                     const wdMonth = getWorkingDaysInMonth(endCap.getFullYear(), endCap.getMonth() + 1).totalDays;
+                    const advisorsWithData = vals.length || (periodDailyRos > 0 ? storeAdvisors.length : 0);
                     return Object.assign(t, {
-                        advisorsWithData: vals.length,
+                        advisorsWithData,
                         workingDaysElapsed: wdElapsed,
-                        workingDaysInMonth: wdMonth
+                        workingDaysInMonth: wdMonth,
+                        rosSource: advisorRosTotal > 0 ? 'advisor' : (periodDailyRos > 0 ? 'department' : 'none')
                     });
                 })();
 
@@ -17330,14 +17451,17 @@
             const cpHoursPerCpRo = (periodElr && (adv.cpRos || 0) > 0 && (adv.cpLabor || 0) > 0)
                 ? (adv.cpLabor / periodElr) / adv.cpRos
                 : null;
+            const dailyRoNote = adv.rosSource === 'department'
+                ? 'Using department Total ROs from Service Daily Entry'
+                : 'Needs advisor or department Total ROs in daily entry';
 
             // KPIs to display, in the order they appear in the NCM sheet.
             const rows = [
                 { code: 'hours_billed_per_tech',           actual: hoursPerTech, unit: 'hours' },
                 { code: 'cp_hours_per_cp_ro',              actual: cpHoursPerCpRo, unit: 'hours', note: 'Needs CP Labor $ in daily entry' },
                 { code: 'techs_per_advisor',               actual: ratio,        unit: 'ratio' },
-                { code: 'daily_ros_per_advisor',           actual: dailyRosPerAdvisor, unit: 'count', note: 'Needs advisor Total ROs in daily entry' },
-                { code: 'daily_customers_per_advisor',     actual: dailyRosPerAdvisor, unit: 'count', note: 'Needs advisor Total ROs in daily entry' },
+                { code: 'daily_ros_per_advisor',           actual: dailyRosPerAdvisor, unit: 'count', note: dailyRoNote },
+                { code: 'daily_customers_per_advisor',     actual: dailyRosPerAdvisor, unit: 'count', note: dailyRoNote },
                 { code: 'monthly_labor_hours_per_advisor', actual: monthlyHoursPerAdvisor, unit: 'hours', note: 'Needs advisor Hours in daily entry' },
                 { code: 'cp_labor_per_ro',                 actual: cpLaborPerRo, unit: 'dollars', note: 'Needs CP Labor $ in daily entry' },
                 { code: 'cp_parts_per_ro',                 actual: cpPartsPerRo, unit: 'dollars', note: 'Needs CP Parts $ in daily entry' },
