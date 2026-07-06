@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 4: MPI and Parts Handoff | Dyer Automotive</title>
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <div class="brand">
+      <div class="brand-mark">D</div>
+      <div>
+        <div class="brand-name">Dyer Automotive</div>
+        <div class="brand-sub">Fixed Operations Training</div>
+      </div>
+    </div>
+    <div class="module-tag">Module 08 · Lesson 4 of 7</div>
+  </div>
+</header>
+
+<div class="progress-wrap">
+  <div class="progress-inner">
+    <span class="progress-label">Your Progress</span>
+    <div class="progress-bar"><div class="progress-fill"></div></div>
+    <span class="progress-text">0 of 7 lessons complete (0%)</span>
+  </div>
+</div>
+
+<main class="page page-narrow">
+
+  <div class="eyebrow">Lesson 4 · Workflow · 8 min read</div>
+  <h1>MPI and Parts Handoff</h1>
+  <p class="lead">Once the RO leaves the drive, Suite becomes the handoff between advisor, technician, and Parts. The system can route the work, but the advisor still owns watching the queue and calling the customer on time.</p>
+
+  <div class="card card-accent">
+    <div class="callout-title">Lesson Objective</div>
+    <p class="mb-0">Understand the Suite flow from dispatch to technician MPI to Parts pricing to advisor review, with the 15-minute callback standard protected.</p>
+  </div>
+
+  <h2>The Suite MPI Flow</h2>
+  <ol>
+    <li>RO is dispatched to the technician.</li>
+    <li>Technician performs the MPI and records the video.</li>
+    <li>Applicable lines are diagnosed before the MPI is sent forward.</li>
+    <li>MPI routes to Parts for pricing.</li>
+    <li>Parts completes parts pricing and availability notes.</li>
+    <li>Advisor reviews video, pricing, coverage, and history.</li>
+    <li>Advisor contacts the customer within 15 minutes of the MPI being sent.</li>
+  </ol>
+
+  <h2>What the Advisor Owns</h2>
+  <table class="grid">
+    <thead><tr><th>Moment</th><th>Advisor ownership</th></tr></thead>
+    <tbody>
+      <tr><td>Before dispatch</td><td>Clean complaint, history, coverage notes, promised update time.</td></tr>
+      <tr><td>While tech has vehicle</td><td>Watch status; do not let the RO disappear from view.</td></tr>
+      <tr><td>After MPI</td><td>Watch the video before calling. Never be surprised by the same video the customer saw.</td></tr>
+      <tr><td>After Parts</td><td>Verify pricing and availability before quoting.</td></tr>
+      <tr><td>Before customer call</td><td>Confirm warranty/aftermarket coverage if applicable.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-blue">
+    <div class="callout-title">Queue Discipline</div>
+    <p class="mb-0">The clock starts when the MPI is sent, not when you happen to notice it. Your Suite queue is part of the job.</p>
+  </div>
+
+  <h2>MPI Review Checklist</h2>
+  <ul class="checklist" data-checklist="mpi">
+    <li><input type="checkbox"><label>Video watched before customer call.</label></li>
+    <li><input type="checkbox"><label>Findings match the customer concern and write-up notes.</label></li>
+    <li><input type="checkbox"><label>Parts pricing and availability reviewed.</label></li>
+    <li><input type="checkbox"><label>Warranty or aftermarket coverage verified before quoting.</label></li>
+    <li><input type="checkbox"><label>Menu prepared before calling the customer.</label></li>
+    <li><input type="checkbox"><label>Customer contacted within 15 minutes of MPI sent time.</label></li>
+  </ul>
+
+  <h2>The Dyer Standard</h2>
+  <div class="card card-navy">
+    <p class="mb-0" style="font-size:18px; line-height:1.5;">Trust the Suite routing, but verify the result. The customer call should happen from a complete picture, not a rushed glance.</p>
+  </div>
+
+  <div class="lesson-nav">
+    <div class="nav-side">
+      <a href="03-records-history-coverage.html" class="btn btn-secondary">&larr; Previous</a>
+    </div>
+    <div class="nav-side">
+      <button id="mark-complete" data-lesson="lesson4" class="btn">Mark Lesson Complete</button>
+      <a href="05-menus-approvals-declines.html" class="btn">Next: Menus and Approvals &rarr;</a>
+    </div>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  Dyer Automotive · Fixed Operations Training · Built for the team, by the team.
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/training/shared/training-auth.js"></script>
+<script src="assets/script.js"></script>
+</body>
+</html>

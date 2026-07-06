@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roleplay Scenarios | CDK Service Suite</title>
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <div class="brand">
+      <div class="brand-mark">D</div>
+      <div>
+        <div class="brand-name">Dyer Automotive</div>
+        <div class="brand-sub">Fixed Operations Training</div>
+      </div>
+    </div>
+    <div class="module-tag">Module 08 · Roleplay Practice</div>
+  </div>
+</header>
+
+<div class="progress-wrap">
+  <div class="progress-inner">
+    <span class="progress-label">Your Progress</span>
+    <div class="progress-bar"><div class="progress-fill"></div></div>
+    <span class="progress-text">0 of 7 lessons complete (0%)</span>
+  </div>
+</div>
+
+<main class="page page-narrow">
+
+  <div class="eyebrow">Practice · 3 scenarios · 10 min</div>
+  <h1>Roleplay Scenarios</h1>
+  <p class="lead">Three Suite workflow situations. Pick the response that protects the Dyer process and the RO trail.</p>
+
+  <div class="roleplay">
+    <div class="roleplay-header">
+      <div class="roleplay-num">1</div>
+      <h3 class="roleplay-title">The Vague Concern</h3>
+    </div>
+    <p><strong>Scenario:</strong> A customer says, "It makes a noise sometimes." The drive is busy and there are three cars waiting.</p>
+    <p><strong>Pick your Suite write-up response:</strong></p>
+    <ul class="choice-list">
+      <li><button class="choice" data-kind="bad" data-feedback="rp1-a">Enter "noise while driving" and move on.</button></li>
+      <li><button class="choice" data-kind="good" data-feedback="rp1-b">Ask when, where, what it sounds like, how long it has happened, then capture their words in Suite.</button></li>
+      <li><button class="choice" data-kind="bad" data-feedback="rp1-c">Tell the technician verbally and skip the note.</button></li>
+    </ul>
+    <div id="rp1-a" class="choice-feedback"><strong>Too vague.</strong> The tech cannot diagnose from that.</div>
+    <div id="rp1-b" class="choice-feedback good"><strong>Correct.</strong> Busy drive or not, the complaint line has to be usable.</div>
+    <div id="rp1-c" class="choice-feedback"><strong>Not enough.</strong> Verbal context can help, but Suite must hold the record.</div>
+  </div>
+
+  <div class="roleplay">
+    <div class="roleplay-header">
+      <div class="roleplay-num">2</div>
+      <h3 class="roleplay-title">The MPI Is Back</h3>
+    </div>
+    <p><strong>Scenario:</strong> The MPI came back 11 minutes ago. Parts pricing is complete. You have not watched the video yet, but the customer is calling in.</p>
+    <p><strong>Pick your response:</strong></p>
+    <ul class="choice-list">
+      <li><button class="choice" data-kind="bad" data-feedback="rp2-a">Answer and quote from the line items without watching the video.</button></li>
+      <li><button class="choice" data-kind="good" data-feedback="rp2-b">Answer, set a tight callback expectation, watch the video/pricing, then call back inside the 15-minute standard.</button></li>
+      <li><button class="choice" data-kind="bad" data-feedback="rp2-c">Let it go to voicemail until you are ready.</button></li>
+    </ul>
+    <div id="rp2-a" class="choice-feedback"><strong>Risky.</strong> The customer may ask about something in the video you have not seen.</div>
+    <div id="rp2-b" class="choice-feedback good"><strong>Correct.</strong> Protects responsiveness and accuracy.</div>
+    <div id="rp2-c" class="choice-feedback"><strong>Missed ownership.</strong> The customer is engaged right now.</div>
+  </div>
+
+  <div class="roleplay">
+    <div class="roleplay-header">
+      <div class="roleplay-num">3</div>
+      <h3 class="roleplay-title">Partial Approval</h3>
+    </div>
+    <p><strong>Scenario:</strong> The customer approves front brakes and brake fluid but declines rear brakes from the Better tier. You are about to move on to the next call.</p>
+    <p><strong>Pick your Suite action:</strong></p>
+    <ul class="choice-list">
+      <li><button class="choice" data-kind="bad" data-feedback="rp3-a">Leave the full Better tier approved and remember to fix it later.</button></li>
+      <li><button class="choice" data-kind="bad" data-feedback="rp3-b">Remove the rear brakes completely so the customer does not see them.</button></li>
+      <li><button class="choice" data-kind="good" data-feedback="rp3-c">Adjust approved work exactly, create/confirm declined repair op for rear brakes, and note the conversation.</button></li>
+    </ul>
+    <div id="rp3-a" class="choice-feedback"><strong>Dangerous.</strong> The RO no longer matches approval.</div>
+    <div id="rp3-b" class="choice-feedback"><strong>Incomplete.</strong> Declined work should stay visible for follow-up.</div>
+    <div id="rp3-c" class="choice-feedback good"><strong>Correct.</strong> Approved, declined, and notes all match the conversation.</div>
+  </div>
+
+  <div class="card card-navy" style="margin-top:36px;">
+    <h2 style="margin-top:0;">Roleplays Complete</h2>
+    <p>Three patterns: <strong>capture usable concerns</strong>, <strong>protect the MPI callback standard</strong>, and <strong>make Suite match the customer decision before moving on</strong>.</p>
+    <div style="margin-top:14px;"><a href="10-scorecard.html" class="btn">Open Manager Scorecard &rarr;</a></div>
+  </div>
+
+  <div class="lesson-nav">
+    <div class="nav-side"><a href="08-knowledge-check.html" class="btn btn-secondary">&larr; Knowledge Check</a></div>
+    <div class="nav-side"><a href="10-scorecard.html" class="btn">Manager Scorecard &rarr;</a></div>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  Dyer Automotive · Fixed Operations Training · Built for the team, by the team.
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/training/shared/training-auth.js"></script>
+<script src="assets/script.js"></script>
+</body>
+</html>

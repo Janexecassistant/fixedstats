@@ -182,7 +182,7 @@
   <div id="admin-content" style="display:none;">
     <div class="eyebrow">Admin Dashboard</div>
     <h1>Team Training Progress</h1>
-    <p class="lead">Where every team member stands across the seven core modules, and the last time each was active in training. Use this with the fixedstats roster as the onboarding go-live check before service employees work independently. Click any row for the module-by-module breakdown.</p>
+    <p class="lead">Where every team member stands across the eight core modules, and the last time each was active in training. Use this with the fixedstats roster as the onboarding go-live check before service employees work independently. Click any row for the module-by-module breakdown.</p>
 
     <div class="kpi-grid" id="kpi-grid"></div>
 
@@ -209,7 +209,7 @@
       <div class="loading">Loading team training records…</div>
     </div>
 
-    <p class="note">"Last training activity" = the most recent lesson completion or knowledge-check attempt. Lesson totals cover the seven core modules (49 lessons). All required modules should be complete before a service employee is marked go-live ready. The Flat Rate Frenzy game tracks separately and isn't counted here.</p>
+    <p class="note">"Last training activity" = the most recent lesson completion or knowledge-check attempt. Lesson totals cover the eight core modules (56 lessons). All required modules should be complete before a service employee is marked go-live ready. The Flat Rate Frenzy game tracks separately and isn't counted here.</p>
 
     <div style="margin-top:36px; text-align:center;">
       <a href="/training/" class="btn">← Back to Training Library</a>
@@ -245,7 +245,8 @@
     { id: "menu-sales",     name: "Menu Sales",                      audience: "Advisor",    totalLessons: 7 },
     { id: "phone-skills",   name: "Phone Skills",                    audience: "Advisor",    totalLessons: 7 },
     { id: "customer-comms", name: "Customer Communication (Numa)",   audience: "Advisor",    totalLessons: 7 },
-    { id: "bg-services",    name: "BG Maintenance Services",         audience: "Advisor",    totalLessons: 7 }
+    { id: "bg-services",    name: "BG Maintenance Services",         audience: "Advisor",    totalLessons: 7 },
+    { id: "cdk-suite",      name: "CDK Service Suite",               audience: "Advisor",    totalLessons: 7 }
   ];
   const TOTAL_LESSONS = MODULES.reduce((s, m) => s + m.totalLessons, 0);
   const MODULE_NAME = {}; MODULES.forEach(m => MODULE_NAME[m.id] = m.name);
@@ -426,7 +427,7 @@
     const cards = [
       { num: active.length, label: "Team Members" },
       { num: started, label: "Started Training", accent: true },
-      { num: finishedAll, label: "Completed All 7 Modules", accent: true },
+      { num: finishedAll, label: "Completed All 8 Modules", accent: true },
       { num: last7, label: "Active in Last 7 Days" },
       { num: teamPct + "%", label: "Team Module Progress" }
     ];
