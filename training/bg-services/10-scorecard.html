@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manager Scorecard | BG Maintenance Services</title>
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <div class="brand">
+      <div class="brand-mark">D</div>
+      <div>
+        <div class="brand-name">Dyer Automotive</div>
+        <div class="brand-sub">Fixed Operations Training</div>
+      </div>
+    </div>
+    <div class="module-tag">Module 07 · BG Scorecard</div>
+  </div>
+</header>
+
+<div class="progress-wrap">
+  <div class="progress-inner">
+    <span class="progress-label">Your Progress</span>
+    <div class="progress-bar"><div class="progress-fill"></div></div>
+    <span class="progress-text">0 of 7 lessons complete (0%)</span>
+  </div>
+</div>
+
+<main class="page page-narrow">
+
+  <div class="eyebrow">Coaching Tool · BG Recommendation Review</div>
+  <h1>BG Maintenance Scorecard</h1>
+  <p class="lead">Use this when reviewing a BG recommendation call, live RO, or declined-service follow-up. 1-5 scale across the full workflow, from trigger quality through documentation.</p>
+
+  <div class="card no-print" style="margin-bottom:20px;">
+    <strong>How to use:</strong> Listen to the call or inspect the RO. Score each category. Use notes for exact wording and the specific service involved. Review with the advisor within 48 hours.
+  </div>
+
+  <div id="scorecard" class="scorecard">
+
+    <div class="scorecard-meta">
+      <div class="scorecard-field">
+        <label for="advisor-name">Advisor</label>
+        <input type="text" id="advisor-name" name="advisor" placeholder="Advisor name">
+      </div>
+      <div class="scorecard-field">
+        <label for="manager-name">Reviewed By</label>
+        <input type="text" id="manager-name" name="manager" placeholder="Manager name">
+      </div>
+      <div class="scorecard-field">
+        <label for="obs-date">Date</label>
+        <input type="date" id="obs-date" name="date">
+      </div>
+      <div class="scorecard-field">
+        <label for="ro-number">RO # / Call ID</label>
+        <input type="text" id="ro-number" name="ro" placeholder="Reference">
+      </div>
+    </div>
+
+    <h2 style="margin-top:0;">BG Recommendation Categories</h2>
+
+    <div class="score-row">
+      <div class="score-cat">1. Clear Trigger
+        <small>Recommendation tied to mileage, time, fluid condition, symptoms, repair context, or unknown history</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s1" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s1" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s1" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s1" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s1" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">2. Correct Service Match
+        <small>Selected BG service matches the system and finding, not a generic add-on</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s2" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s2" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s2" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s2" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s2" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">3. Plain-English Explanation
+        <small>Explained what the service protects without jargon, fear, or overpromising</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s3" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s3" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s3" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s3" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s3" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">4. Customer Context
+        <small>Connected recommendation to the customer's concern, visit reason, vehicle history, or usage</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s4" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s4" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s4" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s4" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s4" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">5. Menu Placement
+        <small>BG service placed logically in Good/Better/Best and not randomly padded into the estimate</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s5" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s5" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s5" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s5" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s5" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">6. Value Framing
+        <small>Compared maintenance cost to the protected system or downstream repair risk in a calm way</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s6" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s6" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s6" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s6" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s6" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">7. Protection Coverage Accuracy
+        <small>Did not promise BG coverage unless eligibility and limits were verified</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s7" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s7" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s7" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s7" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s7" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">8. Objection Handling
+        <small>Used LARR, distinguished required repairs from recommended maintenance, respected customer choice</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s8" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s8" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s8" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s8" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s8" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">9. RO Documentation
+        <small>Declined service note includes service, trigger, reason, and follow-up path</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s9" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s9" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s9" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s9" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s9" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-cat">10. Professional Tone
+        <small>Calm, factual, optional, confident; no guilt, scare tactics, or "manager wants us to sell it" language</small>
+      </div>
+      <div class="score-scale">
+        <label><input type="radio" name="s10" value="1"><span class="score-pill">1</span></label>
+        <label><input type="radio" name="s10" value="2"><span class="score-pill">2</span></label>
+        <label><input type="radio" name="s10" value="3"><span class="score-pill">3</span></label>
+        <label><input type="radio" name="s10" value="4"><span class="score-pill">4</span></label>
+        <label><input type="radio" name="s10" value="5"><span class="score-pill">5</span></label>
+      </div>
+    </div>
+
+    <div class="score-total">
+      <div>
+        <div class="total-label">Total Score</div>
+        <div id="score-rating" class="score-rating">—</div>
+      </div>
+      <div id="score-total-num" class="total-num">0 / 50</div>
+    </div>
+
+    <h3>Coaching Notes</h3>
+    <textarea class="notes" name="notes-strengths" placeholder="What did the advisor do well? Quote the exact wording or RO note."></textarea>
+    <textarea class="notes" name="notes-improve" placeholder="Top 1-2 BG coaching points: trigger, wording, menu placement, objection handling, or documentation."></textarea>
+    <textarea class="notes" name="notes-followup" placeholder="Follow-up: which BG service should they practice next, and when will you review again?"></textarea>
+
+    <div style="font-size:12px; color:var(--dyer-text-muted); margin-top:18px;">
+      <strong>Scoring guide:</strong> 5 = excellent, coach others · 4 = strong, minor opportunities · 3 = meets standard ·
+      2 = below standard, needs coaching · 1 = not meeting expectations
+    </div>
+  </div>
+
+  <div class="lesson-nav no-print">
+    <div class="nav-side">
+      <a href="09-roleplays.html" class="btn btn-secondary">&larr; Roleplays</a>
+      <a href="index.html" class="btn btn-secondary">Module Map</a>
+    </div>
+    <div class="nav-side">
+      <button id="score-clear" class="btn btn-secondary">Clear Scorecard</button>
+      <button id="score-print" class="btn">Print Scorecard</button>
+    </div>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  Dyer Automotive · Fixed Operations Training · Built for the team, by the team.
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/training/shared/training-auth.js"></script>
+<script src="assets/script.js"></script>
+</body>
+</html>
