@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Q&amp;A Reference Lab | BG Maintenance Services</title>
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <div class="brand">
+      <div class="brand-mark">D</div>
+      <div>
+        <div class="brand-name">Dyer Automotive</div>
+        <div class="brand-sub">Fixed Operations Training</div>
+      </div>
+    </div>
+    <div class="module-tag">Module 07 · Q&amp;A Reference</div>
+  </div>
+</header>
+
+<div class="progress-wrap">
+  <div class="progress-inner">
+    <span class="progress-label">Your Progress</span>
+    <div class="progress-bar"><div class="progress-fill"></div></div>
+    <span class="progress-text">0 of 7 lessons complete (0%)</span>
+  </div>
+</div>
+
+<main class="page">
+  <div class="reference-heading">
+    <div>
+      <div class="eyebrow">Searchable advisor aid · source date 2026-07-16</div>
+      <h1>BG Q&amp;A Reference Lab</h1>
+      <p class="lead">Find a customer-safe answer, check the confidence label, and open the authenticated source when you need the original material.</p>
+    </div>
+    <span class="pill pill-amber">Verify before promising</span>
+  </div>
+
+  <div class="callout callout-amber" role="note">
+    <div class="callout-title">Training aid, not an eligibility decision</div>
+    <p class="mb-0">Always verify the current BG program, the vehicle record, the exact qualifying service and interval, exclusions, coverage limit, manufacturer information, and local store procedure before making a customer promise.</p>
+  </div>
+
+  <div id="reference-load-status" class="callout callout-blue" role="status" aria-live="polite">
+    Loading the reference library…
+  </div>
+
+  <section id="reference-app" hidden>
+    <section id="eligibility-card" class="eligibility-card" aria-labelledby="eligibility-heading">
+      <div class="eligibility-icon" aria-hidden="true">LPP</div>
+      <div>
+        <div class="eyebrow">Initial screen only</div>
+        <h2 id="eligibility-heading"></h2>
+        <ul id="eligibility-facts"></ul>
+        <p id="eligibility-guardrail" class="eligibility-guardrail"></p>
+      </div>
+    </section>
+
+    <section class="reference-search-card" aria-labelledby="search-heading">
+      <div>
+        <div class="eyebrow">Fast lookup</div>
+        <h2 id="search-heading">Search advisor questions</h2>
+      </div>
+      <div class="reference-filters">
+        <label for="qa-search">
+          <span>Search questions and answers</span>
+          <input id="qa-search" type="search" placeholder="Try coverage, owner's manual, lease, price…" autocomplete="off">
+        </label>
+        <label for="qa-category">
+          <span>Category</span>
+          <select id="qa-category">
+            <option value="all">All categories</option>
+          </select>
+        </label>
+        <button id="qa-clear" class="btn btn-secondary" type="button">Clear search</button>
+      </div>
+      <p id="qa-result-count" class="result-count" role="status" aria-live="polite"></p>
+    </section>
+
+    <div id="qa-results" class="qa-results"></div>
+    <div id="qa-empty" class="card center" hidden>
+      <h3 class="mt-0">No matching reference found</h3>
+      <p class="muted">Try a shorter search or reset the category. If the answer affects coverage, eligibility, or a manufacturer requirement, verify it in the current source instead of guessing.</p>
+      <button id="qa-empty-clear" class="btn btn-secondary" type="button">Show all questions</button>
+    </div>
+
+    <section aria-labelledby="service-catalog-heading">
+      <div class="section-heading-row">
+        <div>
+          <div class="eyebrow">Instruction-library map</div>
+          <h2 id="service-catalog-heading">Service Systems in the Staged Catalog</h2>
+        </div>
+        <span class="pill">Procedure and application must be verified</span>
+      </div>
+      <p class="muted">This is a catalog map, not a universal menu. The technician and store process determine the correct service and equipment for the vehicle.</p>
+      <div id="service-catalog" class="service-catalog-grid"></div>
+    </section>
+
+    <section aria-labelledby="source-library-heading">
+      <div class="section-heading-row">
+        <div>
+          <div class="eyebrow">Authenticated originals</div>
+          <h2 id="source-library-heading">BG Source Library</h2>
+        </div>
+        <span id="source-date" class="pill pill-green"></span>
+      </div>
+      <p class="muted">These links open BG's authenticated Brandfolder cards. The raw videos and PDFs remain outside the public training deployment.</p>
+      <div id="source-library" class="source-library-grid"></div>
+    </section>
+  </section>
+
+  <div class="lesson-nav">
+    <div class="nav-side">
+      <a href="09-roleplays.html" class="btn btn-secondary">&larr; Roleplay Lab</a>
+      <a href="index.html" class="btn btn-secondary">Module Map</a>
+    </div>
+    <div class="nav-side">
+      <a href="10-scorecard.html" class="btn">Manager Scorecard &rarr;</a>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  Dyer Automotive · Fixed Operations Training · Built for the team, by the team.
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/training/shared/training-auth.js"></script>
+<script src="assets/script.js"></script>
+<script src="assets/reference-lab.js"></script>
+</body>
+</html>

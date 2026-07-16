@@ -1,0 +1,282 @@
+{
+  "schemaVersion": 1,
+  "title": "BG Objection Practice Lab",
+  "sourceDate": "2026-07-16",
+  "disclaimer": "These scenarios and coaching prompts are Dyer practice guidance. They are not transcripts or verbatim BG scripts.",
+  "sourceReference": {
+    "title": "BG Objection Ball training collection",
+    "authenticatedUrl": "https://brandfolder.com/bg-products/shop-assets/#!asset/pz69fm-bz9yew-665ngt"
+  },
+  "scenarios": [
+    {
+      "id": "cant-afford-it",
+      "title": "Can't Afford It",
+      "service": "Cooling system service",
+      "difficulty": "Foundation",
+      "vehicle": "2019 midsize SUV · 72,400 miles · no coolant exchange history",
+      "customerContext": "The customer approved the safety work but says the remaining maintenance is outside today's budget.",
+      "customerQuote": "I understand why you're recommending it, but I can't afford anything else today.",
+      "practiceGoal": "Protect the relationship, learn the actual constraint, and offer a practical next step without discount pressure.",
+      "framework": {
+        "acknowledge": "Recognize that the customer has already made a spending decision today.",
+        "clarify": "Ask whether the concern is the total amount today or the priority of this service.",
+        "connect": "Restate the coolant finding and the system it helps protect, without predicting a failure.",
+        "ask": "Offer to document it and agree on a specific revisit point if today is not workable."
+      },
+      "coachFor": "Calm prioritization and a clear follow-up path.",
+      "avoid": "Do not shame the customer, invent urgency, or promise that the service prevents every repair."
+    },
+    {
+      "id": "does-it-really-work",
+      "title": "Does It Really Work?",
+      "service": "Fuel induction service",
+      "difficulty": "Foundation",
+      "vehicle": "2021 direct-injection crossover · 46,800 miles · reduced fuel economy noted at write-up",
+      "customerContext": "The technician documented a maintenance opportunity, but the customer is skeptical of chemical services.",
+      "customerQuote": "Does that treatment really work, or is it just something dealerships sell?",
+      "practiceGoal": "Answer the skepticism directly with the vehicle-specific reason for the recommendation.",
+      "framework": {
+        "acknowledge": "Treat the question as reasonable rather than defensive.",
+        "clarify": "Ask whether the customer wants to understand the procedure, the expected benefit, or both.",
+        "connect": "Tie the service to the engine design, the mileage, and the customer's fuel-economy concern.",
+        "ask": "Confirm whether the explanation gives enough information to make a decision."
+      },
+      "coachFor": "Evidence-first language that explains purpose without exaggerated performance claims.",
+      "avoid": "Do not guarantee a mileage increase or describe the service as a cure-all."
+    },
+    {
+      "id": "dont-have-time",
+      "title": "Don't Have Time",
+      "service": "Brake fluid service",
+      "difficulty": "Foundation",
+      "vehicle": "2020 sedan · 54,100 miles · front brake work already approved · fluid test indicates contamination",
+      "customerContext": "The customer has a hard pickup deadline and assumes the added service will keep the vehicle all day.",
+      "customerQuote": "I don't have time for another service. I need the car back by four.",
+      "practiceGoal": "Separate the schedule concern from the value decision and give an honest timing answer.",
+      "framework": {
+        "acknowledge": "Repeat the pickup commitment so the customer knows it was heard.",
+        "clarify": "Confirm the firm deadline and check the actual shop time before answering.",
+        "connect": "Explain why the fluid recommendation fits the approved brake work and current test result.",
+        "ask": "Offer the realistic options: complete it within the confirmed window or schedule it for a defined return visit."
+      },
+      "coachFor": "Accurate timing, no guessing, and a clean reschedule path.",
+      "avoid": "Do not say it will only take a few minutes unless the shop has confirmed that."
+    },
+    {
+      "id": "talk-to-spouse",
+      "title": "Need to Talk to My Spouse",
+      "service": "Transmission service",
+      "difficulty": "Foundation",
+      "vehicle": "2018 pickup · 68,900 miles · no transmission service in available history",
+      "customerContext": "Both spouses make maintenance decisions, and the person on the phone wants clear information to share.",
+      "customerQuote": "I need to talk to my spouse before I approve that.",
+      "practiceGoal": "Respect shared decision-making and make the recommendation easy to relay accurately.",
+      "framework": {
+        "acknowledge": "Agree that a shared decision is reasonable.",
+        "clarify": "Ask what information would help the customer explain the recommendation at home.",
+        "connect": "Summarize the vehicle history, why fluid condition matters, and what the service does in plain language.",
+        "ask": "Offer a text or written estimate and set a no-pressure follow-up time."
+      },
+      "coachFor": "A concise, shareable explanation and permission-based follow-up.",
+      "avoid": "Do not try to route around the spouse or create a false deadline."
+    },
+    {
+      "id": "under-warranty",
+      "title": "Is That Under Warranty?",
+      "service": "Engine performance service",
+      "difficulty": "Intermediate",
+      "vehicle": "2023 compact SUV · 31,600 miles · factory powertrain coverage may still apply",
+      "customerContext": "The customer is mixing up repair coverage, routine maintenance, and BG protection-plan eligibility.",
+      "customerQuote": "If this is important, shouldn't it be covered under my warranty?",
+      "practiceGoal": "Distinguish preventive maintenance from a covered failure and avoid promising any protection coverage.",
+      "framework": {
+        "acknowledge": "Confirm that checking coverage before spending money is smart.",
+        "clarify": "Ask whether the customer means the factory warranty, a service contract, or BG protection coverage.",
+        "connect": "Explain that today's item is preventive maintenance, not a diagnosed failed component.",
+        "ask": "Offer to verify the applicable coverage and eligibility before making any promise."
+      },
+      "coachFor": "Precise use of the words maintenance, repair, warranty, and eligibility.",
+      "avoid": "Do not claim factory or BG coverage without confirming the current program and vehicle record."
+    },
+    {
+      "id": "never-needed-before",
+      "title": "Never Had to Do That Before",
+      "service": "Fuel system service",
+      "difficulty": "Intermediate",
+      "vehicle": "2020 turbocharged direct-injection sedan · 58,200 miles · first visit to Dyer",
+      "customerContext": "The customer's previous vehicle and previous shop never presented this service.",
+      "customerQuote": "I've owned cars for thirty years and I've never had to do that before.",
+      "practiceGoal": "Honor the customer's experience while returning the conversation to this vehicle and this finding.",
+      "framework": {
+        "acknowledge": "Recognize the customer's long ownership experience.",
+        "clarify": "Ask about previous maintenance history and whether a similar service may have had a different name.",
+        "connect": "Explain the relevant engine design, mileage, symptoms, or inspection evidence on this vehicle.",
+        "ask": "Invite the customer to decide based on today's facts, not a blanket rule."
+      },
+      "coachFor": "Respectful contrast between past experience and current evidence.",
+      "avoid": "Do not imply older advice was wrong or that every newer vehicle needs the same service."
+    },
+    {
+      "id": "no-issues",
+      "title": "Not Having Any Issues",
+      "service": "Driveline service",
+      "difficulty": "Intermediate",
+      "vehicle": "2019 AWD crossover · 64,700 miles · original driveline fluid in available history",
+      "customerContext": "The vehicle drives normally, so the customer sees no reason to maintain the fluid.",
+      "customerQuote": "It's running fine. I'm not having any issues with it.",
+      "practiceGoal": "Explain preventive timing without using fear or suggesting a problem that was not diagnosed.",
+      "framework": {
+        "acknowledge": "Confirm that there is no current symptom or diagnosed failure.",
+        "clarify": "Ask whether the customer prefers maintenance before symptoms or only after a problem appears.",
+        "connect": "Explain that the recommendation is based on fluid service history and protecting a working system.",
+        "ask": "Present the choice clearly and document a follow-up interval if declined."
+      },
+      "coachFor": "A clean distinction between preventive service and repair.",
+      "avoid": "Do not turn normal operation into a hidden-failure story."
+    },
+    {
+      "id": "do-i-really-need-it",
+      "title": "Do I Really Need It?",
+      "service": "Power steering service",
+      "difficulty": "Intermediate",
+      "vehicle": "2017 SUV · 83,300 miles · dark hydraulic steering fluid documented",
+      "customerContext": "The customer wants a direct answer about urgency and priority.",
+      "customerQuote": "Be honest with me. Do I really need this today?",
+      "practiceGoal": "Give an honest priority statement and let the documented condition carry the recommendation.",
+      "framework": {
+        "acknowledge": "Thank the customer for asking for a straight answer.",
+        "clarify": "Separate a safety-critical repair from a preventive maintenance recommendation.",
+        "connect": "Reference the observed fluid condition and the components the fluid supports.",
+        "ask": "Recommend a timing window and confirm the customer's decision without pressure."
+      },
+      "coachFor": "Direct priority language: required now, recommended now, or plan soon.",
+      "avoid": "Do not label optional maintenance as required."
+    },
+    {
+      "id": "owners-manual",
+      "title": "It's Not in the Owner's Manual",
+      "service": "Climate system service",
+      "difficulty": "Advanced",
+      "vehicle": "2022 minivan · 42,500 miles · musty odor reported when A/C starts",
+      "customerContext": "The customer checked the maintenance schedule and did not find the exact branded service name.",
+      "customerQuote": "I looked in the owner's manual and it doesn't say I need this.",
+      "practiceGoal": "Agree with what the manual does and does not say, then explain the symptom-based recommendation.",
+      "framework": {
+        "acknowledge": "Confirm that the customer is right to consult the manufacturer schedule.",
+        "clarify": "Ask whether the concern is schedule compliance or the odor reported today.",
+        "connect": "Explain that this recommendation responds to the documented cabin-air concern, not a claim that the manufacturer requires BG branding.",
+        "ask": "Offer the service as an option and explain what outcome the shop is trying to address."
+      },
+      "coachFor": "Honest manufacturer-language boundaries and symptom-based value.",
+      "avoid": "Never say the manufacturer requires a branded service unless verified in current manufacturer information."
+    },
+    {
+      "id": "need-to-think",
+      "title": "Need to Think About It",
+      "service": "Brake fluid service",
+      "difficulty": "Foundation",
+      "vehicle": "2021 crossover · 49,000 miles · fluid test result recorded on MPI",
+      "customerContext": "The customer is not saying no, but needs a pause before deciding.",
+      "customerQuote": "Let me think about that before I add anything else.",
+      "practiceGoal": "Give the customer space while making sure the decision is informed and follow-up is specific.",
+      "framework": {
+        "acknowledge": "Accept the pause without immediately repeating the pitch.",
+        "clarify": "Ask whether a missing fact, cost, timing, or priority is causing uncertainty.",
+        "connect": "Restate the single strongest reason for the recommendation and then stop talking.",
+        "ask": "Agree on when the customer wants to decide and how the advisor should follow up."
+      },
+      "coachFor": "One useful clarification, one concise recap, and no pressure loop.",
+      "avoid": "Do not treat 'think about it' as permission to restart the entire presentation."
+    },
+    {
+      "id": "manufacturer-require",
+      "title": "Does the Manufacturer Require It?",
+      "service": "Transmission service",
+      "difficulty": "Advanced",
+      "vehicle": "2020 pickup · 59,600 miles · severe-use towing history documented",
+      "customerContext": "The customer wants to know whether the recommendation is a manufacturer requirement or dealership advice.",
+      "customerQuote": "Does the manufacturer require this, or is this just your recommendation?",
+      "practiceGoal": "Answer the exact question and distinguish schedule information from condition- and use-based advice.",
+      "framework": {
+        "acknowledge": "Say it is a fair distinction.",
+        "clarify": "Check the current manufacturer schedule and the vehicle's actual use before stating a requirement.",
+        "connect": "Explain whether the recommendation comes from the schedule, towing use, fluid condition, service history, or a combination.",
+        "ask": "Offer to show the documented basis and let the customer choose."
+      },
+      "coachFor": "Source accuracy and a clear line between required and recommended.",
+      "avoid": "Do not invent a manufacturer interval or imply BG branding is manufacturer-required."
+    },
+    {
+      "id": "sounds-expensive",
+      "title": "Sounds Expensive",
+      "service": "Engine performance package",
+      "difficulty": "Intermediate",
+      "vehicle": "2018 luxury SUV · 76,100 miles · multiple maintenance items due for review",
+      "customerContext": "The customer reacted to the package name before hearing the actual price or included work.",
+      "customerQuote": "An 'engine performance package' sounds expensive.",
+      "practiceGoal": "Replace package jargon with a clear scope, price, and priority explanation.",
+      "framework": {
+        "acknowledge": "Agree that the name alone does not explain the value.",
+        "clarify": "Ask whether the concern is the total price or uncertainty about what is included.",
+        "connect": "Break down the included services, the trigger for each, and which items can be prioritized separately.",
+        "ask": "Present the exact price and ask which option best fits the customer's plan."
+      },
+      "coachFor": "Transparent scope and price without defensive value stacking.",
+      "avoid": "Do not compare maintenance cost to an unverified worst-case repair bill."
+    },
+    {
+      "id": "not-interested",
+      "title": "Not Interested",
+      "service": "Fuel system service",
+      "difficulty": "Advanced",
+      "vehicle": "2022 sedan · 38,700 miles · no urgent repair; maintenance recommendation only",
+      "customerContext": "The customer gives a firm, brief decline and appears ready to end the conversation.",
+      "customerQuote": "No, I'm not interested in that.",
+      "practiceGoal": "Respect a clear decline, preserve trust, and document the recommendation correctly.",
+      "framework": {
+        "acknowledge": "Accept the decision immediately.",
+        "clarify": "Only if tone allows, ask one permission-based question to identify whether cost, timing, or value was the concern.",
+        "connect": "If permission is not given, do not repeat the recommendation; document the original trigger.",
+        "ask": "Confirm what is approved today and whether the customer wants the item revisited later."
+      },
+      "coachFor": "Knowing when to stop and keeping the approved work moving.",
+      "avoid": "Do not challenge a firm no or hide the decline from the RO."
+    },
+    {
+      "id": "no-thanks",
+      "title": "No Thanks",
+      "service": "Cooling system service",
+      "difficulty": "Foundation",
+      "vehicle": "2019 sedan · 67,200 miles · coolant service due for history review",
+      "customerContext": "The customer declines politely before hearing the inspection evidence.",
+      "customerQuote": "No thanks. Just do what I came in for.",
+      "practiceGoal": "Honor the boundary while checking whether the customer wants one factual sentence for the record.",
+      "framework": {
+        "acknowledge": "Confirm the original visit work will stay on track.",
+        "clarify": "Ask permission to share the single inspection fact that prompted the recommendation.",
+        "connect": "If permission is granted, explain the finding briefly; if not, stop.",
+        "ask": "Confirm the approved work and document a respectful follow-up note."
+      },
+      "coachFor": "Permission-based communication after an early decline.",
+      "avoid": "Do not treat politeness as uncertainty that needs to be overcome."
+    },
+    {
+      "id": "lease",
+      "title": "It's a Lease",
+      "service": "Brake fluid service",
+      "difficulty": "Intermediate",
+      "vehicle": "2023 leased SUV · 34,800 miles · return planned in about nine months · fluid test result documented",
+      "customerContext": "The customer believes any maintenance that outlasts the lease has no personal value.",
+      "customerQuote": "No thanks, it's a lease. I won't own it long enough for that to matter.",
+      "practiceGoal": "Use the remaining term, current condition, and lease obligations rather than long-term ownership language.",
+      "framework": {
+        "acknowledge": "Agree that the remaining ownership horizon changes the decision.",
+        "clarify": "Ask about the planned return date and whether the customer has lease-maintenance requirements to verify.",
+        "connect": "Explain only the current operational or documented maintenance value that applies during the remaining term.",
+        "ask": "Offer to verify requirements and let the customer decide based on the actual remaining use."
+      },
+      "coachFor": "Customer-specific value instead of lifetime-ownership assumptions.",
+      "avoid": "Do not claim the lease requires the service without checking the customer's agreement and current manufacturer information."
+    }
+  ]
+}

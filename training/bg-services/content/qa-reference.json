@@ -1,0 +1,253 @@
+{
+  "schemaVersion": 1,
+  "title": "BG Advisor Q&A and Source Reference",
+  "sourceDate": "2026-07-16",
+  "notice": "Internal Dyer training aid. Verify current BG program rules, vehicle eligibility, manufacturer information, and store procedure before making a customer promise.",
+  "eligibilitySummary": {
+    "heading": "LPP initial-eligibility checkpoint",
+    "facts": [
+      "The staged 2026 quick-reference card describes initial qualification below 75,000 miles / 120,000 km.",
+      "The same source describes the vehicle as under 20 years old and under 14,000 GVW.",
+      "Qualifying services have required intervals and plan-specific conditions."
+    ],
+    "guardrail": "These facts are a screening checkpoint, not a coverage promise. Verify the current program, the vehicle record, the exact qualifying service, the required interval, exclusions, and coverage limit before discussing eligibility as confirmed."
+  },
+  "references": [
+    {
+      "id": "overview",
+      "title": "Dealership Overview Brochure",
+      "type": "PDF · authenticated source",
+      "assetId": "mxfwb3ww2h8xhnm3qhp7bn6",
+      "url": "https://brandfolder.com/bg-products/shop-assets/#!asset/mxfwb3ww2h8xhnm3qhp7bn6",
+      "supports": "Program overview, training ecosystem, sales tools, service categories, and retention programs."
+    },
+    {
+      "id": "lpp",
+      "title": "LPP Quick Reference Card",
+      "type": "PDF · authenticated source",
+      "assetId": "nk8ncxjnqkczxzmx3xpzrxf3",
+      "url": "https://brandfolder.com/bg-products/shop-assets/#!asset/nk8ncxjnqkczxzmx3xpzrxf3",
+      "supports": "Initial eligibility screen, qualifying service intervals, plans, and coverage-limit reference."
+    },
+    {
+      "id": "service-videos",
+      "title": "BG Service Instruction Videos",
+      "type": "13-video collection · authenticated source",
+      "assetId": "pycgwx-ewor2g-bx01nq",
+      "url": "https://brandfolder.com/bg-products/shop-assets/#!asset/pycgwx-ewor2g-bx01nq",
+      "supports": "Service-system catalog and procedure-learning inventory."
+    },
+    {
+      "id": "objections",
+      "title": "BG Objection Ball Training Collection",
+      "type": "15-video collection · authenticated source",
+      "assetId": "pz69fm-bz9yew-665ngt",
+      "url": "https://brandfolder.com/bg-products/shop-assets/#!asset/pz69fm-bz9yew-665ngt",
+      "supports": "Objection categories used to organize Dyer roleplay practice."
+    },
+    {
+      "id": "advisor-app",
+      "title": "BG Advisor App Walkthrough",
+      "type": "Video · authenticated source",
+      "assetId": "ckj6b8tnh9crfv59cbpgnnjh",
+      "url": "https://brandfolder.com/bg-products/shop-assets/#!asset/ckj6b8tnh9crfv59cbpgnnjh",
+      "supports": "Advisor app workflow and service-presentation coaching reference."
+    },
+    {
+      "id": "mpi-example",
+      "title": "MPI Example Video",
+      "type": "15-minute video · authenticated source",
+      "assetId": "5frvgrfwrvqqm425f5xt56m",
+      "url": "https://brandfolder.com/bg-products/shop-assets/#!asset/5frvgrfwrvqqm425f5xt56m",
+      "supports": "Example multi-point inspection video for manager review and MPVI coaching."
+    }
+  ],
+  "serviceCatalog": [
+    {
+      "system": "Engine performance",
+      "sourceTitles": ["Engine Performance Service"],
+      "advisorFocus": "Connect the recommendation to oil/fuel maintenance evidence, engine operation, and service history."
+    },
+    {
+      "system": "Fuel and air induction",
+      "sourceTitles": ["Induction Service", "Injection Service"],
+      "advisorFocus": "Identify the engine design or documented performance concern before explaining cleaning-service value."
+    },
+    {
+      "system": "Brake hydraulics",
+      "sourceTitles": ["Brake Service"],
+      "advisorFocus": "Use fluid condition, test results, time/mileage, and brake-repair context."
+    },
+    {
+      "system": "Cooling",
+      "sourceTitles": ["CT2 - Upper Radiator Hose", "CT2 - Reservoir", "CT4"],
+      "advisorFocus": "Use coolant condition, testing, service history, or related repair context; follow the correct equipment procedure."
+    },
+    {
+      "system": "Transmission",
+      "sourceTitles": ["PXT2 Transmission Service", "PF5 Transmission Service"],
+      "advisorFocus": "Verify vehicle/application fit, service history, use conditions, and current procedure before recommending."
+    },
+    {
+      "system": "Driveline",
+      "sourceTitles": ["Driveline Service"],
+      "advisorFocus": "Explain fluid maintenance for the applicable differential/transfer components without implying a current failure."
+    },
+    {
+      "system": "Power steering",
+      "sourceTitles": ["Power Steering Service"],
+      "advisorFocus": "Confirm the vehicle has a serviceable hydraulic system and use fluid condition/history as the trigger."
+    },
+    {
+      "system": "Climate and cabin air",
+      "sourceTitles": ["Frigi-Clean and Fresh Service", "Frigi-Quiet Service"],
+      "advisorFocus": "Tie the option to a documented odor, cabin-air, or system-operation concern rather than a blanket interval."
+    }
+  ],
+  "items": [
+    {
+      "id": "lpp-initial-screen",
+      "category": "LPP & eligibility",
+      "question": "What is the quick initial screen for LPP eligibility?",
+      "answer": "The staged 2026 quick-reference card uses an initial screen below 75,000 miles / 120,000 km, with the vehicle under 20 years old and under 14,000 GVW. That is only the first checkpoint. The exact service, plan, interval, vehicle history, exclusions, and current rules still need verification.",
+      "advisorWording": "This may qualify for BG protection coverage. Let me verify the vehicle, service history, required interval, and current program before I promise coverage.",
+      "confidence": "High · direct source",
+      "sourceIds": ["lpp"]
+    },
+    {
+      "id": "lpp-promise",
+      "category": "LPP & eligibility",
+      "question": "Can I tell the customer the service automatically comes with coverage?",
+      "answer": "No. A vehicle can pass the mileage/age/GVW screen and still fail another requirement. Coverage terms and limits can also differ by qualifying service and plan. Verify before describing the customer as enrolled or covered.",
+      "advisorWording": "There is a protection program tied to qualifying services, but eligibility is not automatic. I will check the current requirements for your vehicle first.",
+      "confidence": "High · direct source plus Dyer guardrail",
+      "sourceIds": ["lpp"]
+    },
+    {
+      "id": "lpp-interval",
+      "category": "LPP & eligibility",
+      "question": "Why do qualifying intervals matter?",
+      "answer": "The quick-reference card ties qualifying services to required intervals. An initial qualifying service does not remove the need to follow the applicable maintenance interval. The advisor should verify the exact service and due window rather than quote one interval for every system.",
+      "advisorWording": "The protection program has service-specific timing requirements, so I need to verify which interval applies to this system and your vehicle history.",
+      "confidence": "High · direct source",
+      "sourceIds": ["lpp"]
+    },
+    {
+      "id": "service-systems",
+      "category": "Service knowledge",
+      "question": "Which service systems are represented in the staged instruction library?",
+      "answer": "The catalog includes engine performance; induction and injection; brake hydraulics; cooling; transmission; driveline; power steering; and climate/cabin-air service. Some systems have multiple equipment or application procedures.",
+      "advisorWording": "Let me match the recommendation to the system we inspected and the correct service procedure for your vehicle.",
+      "confidence": "High · cataloged source titles",
+      "sourceIds": ["service-videos"]
+    },
+    {
+      "id": "procedure-choice",
+      "category": "Service knowledge",
+      "question": "Why are there multiple cooling and transmission instruction videos?",
+      "answer": "The source library includes different equipment/application procedures. Advisors should not assume every vehicle receives the same machine process. The technician and store procedure determine the correct application.",
+      "advisorWording": "The technician will confirm the correct process and equipment for this vehicle before the service is performed.",
+      "confidence": "High · catalog structure; application must be verified",
+      "sourceIds": ["service-videos"]
+    },
+    {
+      "id": "first-sentence",
+      "category": "Advisor wording",
+      "question": "What should come first in a BG recommendation?",
+      "answer": "Lead with the vehicle-specific trigger: mileage/time, fluid condition or test result, symptom, repair context, usage, or a documented gap in service history. Explain the protected system next. Product names should support the explanation, not replace it.",
+      "advisorWording": "We found [specific evidence]. That matters because [plain-language system impact]. I recommend [service] as preventive maintenance.",
+      "confidence": "Dyer training standard · source-supported",
+      "sourceIds": ["overview", "service-videos"]
+    },
+    {
+      "id": "required-vs-recommended",
+      "category": "Advisor wording",
+      "question": "How should I answer, ‘Is this required?’",
+      "answer": "State the priority honestly. A failed or unsafe condition may require repair; a BG maintenance service is often a preventive recommendation. If manufacturer schedule language is part of the reason, verify the current vehicle information before citing it.",
+      "advisorWording": "This is not a failed part. I recommend it as preventive maintenance because of [documented trigger]. You can decide whether to address it today or plan it.",
+      "confidence": "Dyer training standard · verify vehicle facts",
+      "sourceIds": ["objections", "service-videos"]
+    },
+    {
+      "id": "no-symptoms",
+      "category": "Objection handling",
+      "question": "What if the customer says the vehicle is not having any issues?",
+      "answer": "Agree that no failure or symptom is present if that is true. Then explain that the recommendation is preventive and name the actual evidence. Never create a hidden problem to make the recommendation sound urgent.",
+      "advisorWording": "You're right—the vehicle is not showing a failure. I brought this up because [condition/history/mileage], while the system is still operating normally.",
+      "confidence": "Dyer practice guidance",
+      "sourceIds": ["objections"]
+    },
+    {
+      "id": "owners-manual-answer",
+      "category": "Objection handling",
+      "question": "What if the customer says the service is not in the owner's manual?",
+      "answer": "Do not claim that the manufacturer requires a branded BG service. Check the current manufacturer schedule and explain whether the recommendation comes from a schedule, severe-use conditions, a test result, a symptom, repair context, or store maintenance guidance.",
+      "advisorWording": "You're right to check the manual. Let me show you whether this recommendation comes from the current schedule or from the condition we documented today.",
+      "confidence": "Dyer guardrail · manufacturer information must be verified",
+      "sourceIds": ["objections"]
+    },
+    {
+      "id": "price-objection",
+      "category": "Objection handling",
+      "question": "How do I handle ‘That sounds expensive’?",
+      "answer": "Give the exact price and scope. Ask whether the concern is total budget, timing, or uncertainty about what is included. If multiple services are bundled, explain which item is tied to which finding and prioritize honestly.",
+      "advisorWording": "The total is [price], and it includes [scope]. Is the concern the amount today, or would it help to separate the priorities?",
+      "confidence": "Dyer practice guidance",
+      "sourceIds": ["objections"]
+    },
+    {
+      "id": "time-objection",
+      "category": "Objection handling",
+      "question": "How do I handle a hard pickup deadline?",
+      "answer": "Confirm the deadline and get an accurate time commitment from the shop. If the service cannot be completed without risking the promise, schedule a defined return visit. Do not guess at procedure time.",
+      "advisorWording": "I have your [time] deadline. Let me confirm the shop time before I tell you whether we can add this today.",
+      "confidence": "Dyer practice guidance · local workflow applies",
+      "sourceIds": ["objections", "service-videos"]
+    },
+    {
+      "id": "lease-objection",
+      "category": "Objection handling",
+      "question": "How should the value explanation change for a leased vehicle?",
+      "answer": "Use the customer's remaining term, current vehicle condition, current driving experience, and verified lease/manufacturer requirements. Long-term ownership language may not fit. Do not claim the lease requires a service without checking the agreement and current vehicle guidance.",
+      "advisorWording": "Since you plan to return it in [time], let's focus on what matters during your remaining use and verify any maintenance requirements before you decide.",
+      "confidence": "Dyer practice guidance · lease terms must be verified",
+      "sourceIds": ["objections"]
+    },
+    {
+      "id": "firm-no",
+      "category": "Objection handling",
+      "question": "What is the right response to a firm ‘No thanks’ or ‘Not interested’?",
+      "answer": "Accept it. If the customer's tone allows, ask permission for one short clarification; otherwise move to the approved work. Document the service, trigger, decline, and sensible follow-up point without judgment.",
+      "advisorWording": "Understood. We'll keep the approved work moving. I'll document what we found so you have it for a future visit.",
+      "confidence": "Dyer practice guidance",
+      "sourceIds": ["objections"]
+    },
+    {
+      "id": "advisor-app-walkthrough",
+      "category": "Workflow & MPI",
+      "question": "Where can I review the BG Advisor app presentation workflow?",
+      "answer": "The authenticated source library includes the BG Advisor App Walkthrough V6. Use it as a workflow and coaching reference, then verify the current app screens and Dyer process before turning its sequence into a required standard.",
+      "advisorWording": "I'll use the inspection evidence to walk you through the recommendation clearly, then give you room to decide.",
+      "confidence": "High · direct source; current app must be verified",
+      "sourceIds": ["advisor-app"]
+    },
+    {
+      "id": "mpi-example",
+      "category": "Workflow & MPI",
+      "question": "Is there an example video MPI managers can use for coaching?",
+      "answer": "Yes. The authenticated library includes a roughly 15-minute MPI Example Video. Treat it as a coaching example, not a universal script. Compare it with Dyer's current MPVI standards, required inspection evidence, customer language, and store workflow.",
+      "advisorWording": "I'm sending a short inspection video so you can see what we found and why I am recommending the next step.",
+      "confidence": "High · direct source; Dyer standard still applies",
+      "sourceIds": ["mpi-example"]
+    },
+    {
+      "id": "source-use",
+      "category": "Source use",
+      "question": "Where should a manager go for the original BG materials?",
+      "answer": "Use the authenticated Brandfolder source cards on this page. The Dyer training app summarizes and organizes the material but does not publish the privately staged raw videos or PDFs.",
+      "advisorWording": "Managers: open the authenticated source card when you need to verify the original material or current program document.",
+      "confidence": "High · source-control note",
+      "sourceIds": ["overview", "lpp", "service-videos", "objections", "advisor-app", "mpi-example"]
+    }
+  ]
+}
