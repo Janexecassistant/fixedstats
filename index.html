@@ -7115,6 +7115,9 @@
         function formatDbError(err) {
             if (!err) return 'unknown error';
             if (typeof err === 'string') return err;
+            if (err.code === '23514' && String(err.message || '').includes('app_users_role_check')) {
+                return 'This user role is not enabled in the database yet. Please contact an administrator.';
+            }
             const parts = [];
             if (err.message) parts.push(err.message);
             if (err.details && err.details !== err.message) parts.push(err.details);
