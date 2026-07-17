@@ -70,6 +70,7 @@
       collision_manager: "Collision Manager",
       advisor: "Service Advisor",
       technician: "Technician",
+      parts_counter: "Parts Counter",
       user: "Team Member"
     };
 

@@ -5347,6 +5347,7 @@
                                 <option value="executive" data-admin-only>Executive</option>
                                 <option value="advisor">Advisor (Advisor + Daily Pulse)</option>
                                 <option value="technician">Technician (Roster tab only)</option>
+                                <option value="parts_counter">Parts Counter</option>
                             </select>
                         </div>
                         <div class="control-group">
@@ -6036,7 +6037,8 @@
                 collision_manager: 'COLLISION MGR',
                 executive: 'EXECUTIVE',
                 advisor: 'ADVISOR',
-                technician: 'TECHNICIAN'
+                technician: 'TECHNICIAN',
+                parts_counter: 'PARTS COUNTER'
             };
             document.getElementById('navbarUserRole').textContent = roleLabels[currentUser.role] || currentUser.role.toUpperCase();
         }
@@ -6057,6 +6059,7 @@
             const bodyTechCard     = document.getElementById('staffBodyTechCard');
             const painterCard      = document.getElementById('staffPainterCard');
             const estimatorCard    = document.getElementById('staffEstimatorCard');
+            const partsCounterUserRoleOption = document.querySelector('#formRole option[value="parts_counter"]');
 
             // Service-side staff cards (Manage Advisors / Technicians / Lube Techs / Apprentices)
             const advisorMgmtCard    = document.getElementById('staffAdvisorTable')?.closest('.card');
@@ -6076,6 +6079,11 @@
                 if (painterCard)      painterCard.style.display      = paint ? '' : 'none';
                 if (estimatorCard)    estimatorCard.style.display    = est   ? '' : 'none';
             };
+            const showPartsCounterUserRole = (visible) => {
+                if (!partsCounterUserRoleOption) return;
+                partsCounterUserRoleOption.hidden = !visible;
+                partsCounterUserRoleOption.style.display = visible ? '' : 'none';
+            };
 
             const resetNavVisibility = () => {
                 document.querySelectorAll('.nav-tab, .nav-dropdown-menu > li').forEach(el => {
@@ -6087,6 +6095,7 @@
                 document.querySelectorAll('#formRole option[data-admin-only]').forEach(opt => {
                     opt.style.display = '';
                 });
+                showPartsCounterUserRole(true);
             };
 
             const setNavTabVisible = (tabId, visible) => {
@@ -6166,6 +6175,7 @@
                 document.querySelectorAll('#formRole option[data-admin-only]').forEach(opt => {
                     opt.style.display = 'none';
                 });
+                showPartsCounterUserRole(false);
                 // Hide bays config and card for non-admins
                 if (facilityBaysGroup) facilityBaysGroup.style.display = 'none';
                 if (saveFacilityBtn) saveFacilityBtn.style.display = 'none';
@@ -6187,6 +6197,7 @@
                 document.querySelectorAll('#formRole option[data-admin-only]').forEach(opt => {
                     opt.style.display = 'none';
                 });
+                showPartsCounterUserRole(currentUser.role === 'parts_manager');
                 if (facilityBaysGroup) facilityBaysGroup.style.display = 'none';
                 if (saveFacilityBtn) saveFacilityBtn.style.display = 'none';
                 if (baysKpiCard) baysKpiCard.style.display = 'none';
@@ -6248,6 +6259,22 @@
                 // Technicians are read-only except for their Daily Pulse check-in.
                 document.querySelectorAll('input:not([readonly]), select, textarea').forEach(el => {
                     if (!el.closest('#loginScreen') && !el.closest('.navbar') && !el.closest('#changePwModal') && !el.closest('#quickReferenceModal') && !el.closest('#dailyPulseCard') && !el.closest('#sops') && !el.closest('#onboarding')) {
+                        el.disabled = true;
+                    }
+                });
+            } else if (currentUser.role === 'parts_counter') {
+                // Parts Counter: read-only Parts performance plus personal Daily Pulse,
+                // Training, and Parts SOP access. No Admin Console or department entry.
+                if (adminTab) adminTab.style.display = 'none';
+                if (facilityBaysGroup) facilityBaysGroup.style.display = 'none';
+                if (saveFacilityBtn) saveFacilityBtn.style.display = 'none';
+                if (baysKpiCard) baysKpiCard.style.display = 'none';
+                restrictNavTo(['parts', 'partsAdvisor', 'partsRoster', 'accountability', 'sops'], ['training']);
+
+                setNavActiveState('partsRoster');
+
+                document.querySelectorAll('input:not([readonly]), select, textarea').forEach(el => {
+                    if (!el.closest('#loginScreen') && !el.closest('.navbar') && !el.closest('#changePwModal') && !el.closest('#quickReferenceModal') && !el.closest('#dailyPulseCard') && !el.closest('#parts') && !el.closest('#partsAdvisor') && !el.closest('#partsRoster') && !el.closest('#sops')) {
                         el.disabled = true;
                     }
                 });
@@ -6407,18 +6434,28 @@
             updateAdvisorRosterLinkVisibility();
         }
 
+        function managerManagedUserRoles() {
+            if (!currentUser) return [];
+            if (currentUser.role === 'admin') return null;
+            if (currentUser.role === 'parts_manager') return ['advisor', 'technician', 'parts_counter'];
+            if (currentUser.role === 'manager' || currentUser.role === 'collision_manager') return ['advisor', 'technician'];
+            return [];
+        }
+
         function isManagerScopedUser(user) {
-            if (!currentUser || !['manager', 'parts_manager', 'collision_manager'].includes(currentUser.role)) return true;
-            if (!user || (user.role !== 'advisor' && user.role !== 'technician')) return false;
+            const allowedRoles = managerManagedUserRoles();
+            if (!allowedRoles) return true;
+            if (!user || !allowedRoles.includes(user.role)) return false;
             const myStores = new Set(getCurrentUserStoreAccessIds());
             const theirStores = (user.user_store_access || []).map(a => String(a.store_id));
             return theirStores.some(storeId => myStores.has(storeId));
         }
 
         function getHiddenUserReason(user) {
-            if (!currentUser || !['manager', 'parts_manager', 'collision_manager'].includes(currentUser.role)) return '';
-            if (user && user.role !== 'advisor' && user.role !== 'technician') {
-                return 'Manager accounts are only visible to admin users.';
+            const allowedRoles = managerManagedUserRoles();
+            if (!allowedRoles) return '';
+            if (user && !allowedRoles.includes(user.role)) {
+                return 'This account type is only visible to an authorized manager or admin.';
             }
             return 'This account is not assigned to one of your stores.';
         }
@@ -6440,7 +6477,8 @@
                 collision_manager: 'Collision Manager',
                 executive: 'Executive',
                 advisor: 'Advisor',
-                technician: 'Technician'
+                technician: 'Technician',
+                parts_counter: 'Parts Counter'
             };
             return labels[role] || role || 'User';
         }
@@ -6647,9 +6685,10 @@
                 defaultStore = advisorRosterStore;
             }
 
-            if (storeAccess.length === 0 && (role === 'manager' || role === 'parts_manager' || role === 'collision_manager' || role === 'advisor' || role === 'technician')) {
+            if (storeAccess.length === 0 && (role === 'manager' || role === 'parts_manager' || role === 'collision_manager' || role === 'advisor' || role === 'technician' || role === 'parts_counter')) {
                 const msg = role === 'advisor' ? 'Advisors must have at least one store assigned'
                           : role === 'technician' ? 'Technicians must have at least one store assigned'
+                          : role === 'parts_counter' ? 'Parts Counter users must have at least one store assigned'
                           : role === 'parts_manager' ? 'Parts Managers must have at least one store assigned'
                           : role === 'collision_manager' ? 'Collision Managers must have at least one store assigned'
                           : 'Managers must have at least one store assigned';
@@ -6657,10 +6696,15 @@
                 return;
             }
 
-            // Managers (incl. Parts/Collision Managers) can only create/edit advisor and technician accounts
-            const isAnyManager = currentUser && (currentUser.role === 'manager' || currentUser.role === 'parts_manager' || currentUser.role === 'collision_manager');
-            if (isAnyManager && role !== 'advisor' && role !== 'technician') {
-                showToast('Managers can only create Advisor or Technician accounts', 'error');
+            // Managers can only create/edit frontline roles appropriate to their scope.
+            const managerRoleAllowlist = managerManagedUserRoles();
+            if (managerRoleAllowlist && !managerRoleAllowlist.includes(role)) {
+                if (!managerRoleAllowlist.length) {
+                    showToast('You do not have permission to create or edit user accounts', 'error');
+                    return;
+                }
+                const allowedLabels = managerRoleAllowlist.map(roleLabel).join(', ');
+                showToast(`Managers can only create ${allowedLabels} accounts`, 'error');
                 return;
             }
 
@@ -6819,13 +6863,13 @@
                 const tbody = document.getElementById('userManagementBody');
                 tbody.innerHTML = '';
 
-                // Managers (incl. Parts/Collision Mgr) only see advisor/technician users within their own store access
+                // Managers only see permitted frontline users within their own store access.
                 let visibleUsers = allUsers;
-                const _isAnyMgr = currentUser && (currentUser.role === 'manager' || currentUser.role === 'parts_manager' || currentUser.role === 'collision_manager');
-                if (_isAnyMgr) {
+                const managerRoleAllowlist = managerManagedUserRoles();
+                if (managerRoleAllowlist) {
                     const myStores = new Set(getCurrentUserStoreAccessIds());
                     visibleUsers = allUsers.filter(u => {
-                        if (u.role !== 'advisor' && u.role !== 'technician') return false;
+                        if (!managerRoleAllowlist.includes(u.role)) return false;
                         const theirStores = (u.user_store_access || []).map(a => String(a.store_id));
                         return theirStores.some(s => myStores.has(s));
                     });
@@ -6868,7 +6912,7 @@
                         <td>${user.display_name}</td>
                         <td>${user.username}</td>
                         <td>${user.email || '-'}</td>
-                        <td><span style="text-transform:capitalize;">${user.role}</span></td>
+                        <td><span>${accountabilityEscape(roleLabel(user.role))}</span></td>
                         <td style="font-size:12px;color:${rosterLinkColor};font-weight:${rosterLinkLabel === 'Needs link' ? '800' : '600'};">${accountabilityEscape(rosterLinkLabel)}</td>
                         <td style="font-size:12px;">${storeLabels}</td>
                         <td style="font-size:12px;">${defaultStoreLabel}</td>
@@ -7176,6 +7220,10 @@
             }
             if (currentUser && currentUser.role === 'technician' && !['roster', 'accountability', 'onboarding', 'sops'].includes(tabId)) {
                 showToast('Technicians only have access to Roster, Daily Pulse, Onboarding, and SOPs', 'error');
+                return false;
+            }
+            if (currentUser && currentUser.role === 'parts_counter' && !['parts', 'partsAdvisor', 'partsRoster', 'accountability', 'sops'].includes(tabId)) {
+                showToast('Parts Counter users only have access to Parts performance, Daily Pulse, Training, and SOPs', 'error');
                 return false;
             }
 
@@ -8423,6 +8471,9 @@
                     } else {
                         await loadRoster();
                     }
+                } else if (currentUser && currentUser.role === 'parts_counter') {
+                    setNavActiveState('partsRoster');
+                    await loadPartsRosterPerf();
                 } else {
                     await loadDailyEntry();
                 }
@@ -13737,7 +13788,7 @@
         }
 
         function isDailyPulseFrontlineUser() {
-            return currentUser && (currentUser.role === 'advisor' || currentUser.role === 'technician');
+            return currentUser && (currentUser.role === 'advisor' || currentUser.role === 'technician' || currentUser.role === 'parts_counter');
         }
 
         function dailyPulseRoleLabel(role) {
@@ -13814,6 +13865,9 @@
                 roleEl.disabled = true;
             } else if (currentUser.role === 'technician') {
                 roleEl.value = 'technician';
+                roleEl.disabled = true;
+            } else if (currentUser.role === 'parts_counter') {
+                roleEl.value = 'parts_counter';
                 roleEl.disabled = true;
             } else if (currentUser.role === 'parts_manager') {
                 roleEl.value = 'parts_counter';
