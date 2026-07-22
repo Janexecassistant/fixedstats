@@ -3690,7 +3690,7 @@
         <div id="partsDaily" class="tab-content">
             <div class="card">
                 <h2 class="card-title">Parts Daily Entry <span style="font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-left:8px;">Parts Manager</span></h2>
-                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Parts Manager's full daily numbers across every channel — Service-RO Parts ("Total Parts"), Wholesale, Counter (per person), and Obsolescence. Independent of the Service Manager's entry. <strong>Total Parts (auto) = Total Parts + Wholesale only</strong> — counter people are tracked separately for coaching.</p>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Parts Manager's full daily numbers across every channel — Parts excluding Wholesale and Tires, Wholesale, Tires, Counter (per person), and Obsolescence. Independent of the Service Manager's entry. <strong>Total Parts (auto) = Parts excluding Wholesale and Tires + Wholesale + Tires</strong> — counter people are tracked separately for coaching.</p>
                 <div class="controls">
                     <div class="control-group">
                         <label>Date</label>
@@ -3728,7 +3728,7 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td style="font-weight:600;">Total Parts</td>
+                                <td style="font-weight:600;">Parts (excluding Wholesale &amp; Tires)</td>
                                 <td><input type="number" id="partsServiceDay" class="input-yellow parts-channel-sales" data-channel="service" placeholder="0"></td>
                                 <td><input type="number" id="partsServiceGrossDay" class="input-yellow parts-channel-gross" data-channel="service" placeholder="0"></td>
                                 <td class="input-gray parts-channel-gp" id="partsServiceGp" style="text-align:right;">—</td>
@@ -3738,6 +3738,12 @@
                                 <td><input type="number" id="partsWholesaleDay" class="input-yellow parts-channel-sales" data-channel="wholesale" placeholder="0"></td>
                                 <td><input type="number" id="partsWholesaleGrossDay" class="input-yellow parts-channel-gross" data-channel="wholesale" placeholder="0"></td>
                                 <td class="input-gray parts-channel-gp" id="partsWholesaleGp" style="text-align:right;">—</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight:600;">Tires</td>
+                                <td><input type="number" id="partsTiresDay" class="input-yellow parts-channel-sales" data-channel="tires" placeholder="0"></td>
+                                <td><input type="number" id="partsTiresGrossDay" class="input-yellow parts-channel-gross" data-channel="tires" placeholder="0"></td>
+                                <td class="input-gray parts-channel-gp" id="partsTiresGp" style="text-align:right;">—</td>
                             </tr>
                             <tr style="background-color:#eef2ff;">
                                 <td colspan="4" style="font-weight:700;color:#475569;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;padding:6px 8px;">Counter People — pulled from Admin Console → Department Staff</td>
@@ -4794,7 +4800,7 @@
             <!-- Channel mix card -->
             <div class="card" id="partsChannelMixCard">
                 <h3 class="card-title">Channel Mix — <span id="partsChannelMixSubtitle"></span></h3>
-                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Where parts sales and gross are coming from this month. Service / Wholesale / Counter as a share of Total Parts Sales, with gross dollars and gross % shown for each channel.</p>
+                <p style="font-size:12px;color:#666;margin:-6px 0 12px 0;">Where parts sales and gross are coming from this month. Parts excluding Wholesale and Tires / Wholesale / Tires / Counter are shown separately, with each channel's own gross dollars and gross %.</p>
                 <div id="partsChannelMixGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;"></div>
             </div>
 
@@ -8068,9 +8074,11 @@
                             // Sales per non-counter channel
                             service_parts: entry.service_parts || 0,
                             wholesale: entry.wholesale || 0,
+                            tires: entry.tires || 0,
                             // Gross per non-counter channel
                             service_parts_gross: entry.service_parts_gross || 0,
                             wholesale_gross: entry.wholesale_gross || 0,
+                            tires_gross: entry.tires_gross || 0,
                             // Per-counter-person breakdown — keyed by parts_counter staff_id
                             counter_breakdown: entry.counter_breakdown || {},
                             // Inventory + obso for obso% calc
@@ -8735,11 +8743,12 @@
             if (savePartsDailyBtn) {
                 savePartsDailyBtn.addEventListener('click', savePartsDailyEntry);
             }
-            // Wire auto-sum + dirty tracking on the static parts inputs (Service / Wholesale / Inventory / Obso).
+            // Wire auto-sum + dirty tracking on the static parts inputs.
             // Counter person rows are dynamic — their listeners are wired in renderPartsCounterRows().
             const partsInputIds = [
                 'partsServiceDay', 'partsServiceGrossDay',
                 'partsWholesaleDay', 'partsWholesaleGrossDay',
+                'partsTiresDay', 'partsTiresGrossDay',
                 'partsInventoryDay', 'partsObsoDay'
             ];
             partsInputIds.forEach(id => {
@@ -9647,7 +9656,8 @@
             const num = (id) => parseFloat(document.getElementById(id)?.value) || 0;
             const channels = {
                 service:   { sales: num('partsServiceDay'),   gross: num('partsServiceGrossDay') },
-                wholesale: { sales: num('partsWholesaleDay'), gross: num('partsWholesaleGrossDay') }
+                wholesale: { sales: num('partsWholesaleDay'), gross: num('partsWholesaleGrossDay') },
+                tires:     { sales: num('partsTiresDay'),     gross: num('partsTiresGrossDay') }
             };
             // Per-counter-person rows
             const counterBreakdown = {};
@@ -9661,9 +9671,9 @@
                 counterGross += gross;
             });
             // Counter people are tracked for coaching but NOT included in the headline
-            // "Total Parts" auto-sum. Total Parts = Service-RO Parts + Wholesale only.
-            const totalSales = channels.service.sales + channels.wholesale.sales;
-            const totalGross = channels.service.gross + channels.wholesale.gross;
+            // Gross percentages stay channel-specific; only the dollar columns roll up.
+            const totalSales = channels.service.sales + channels.wholesale.sales + channels.tires.sales;
+            const totalGross = channels.service.gross + channels.wholesale.gross + channels.tires.gross;
             return {
                 channels,
                 counterBreakdown,
@@ -9680,9 +9690,10 @@
             const fmtPct = (sales, gross) => sales > 0 ? ((gross / sales) * 100).toFixed(1) + '%' : '—';
             const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
 
-            // Per-channel gross % (Service / Wholesale)
+            // Per-channel gross % (each channel's gross divided by that channel's sales)
             setText('partsServiceGp',   fmtPct(snap.channels.service.sales,   snap.channels.service.gross));
             setText('partsWholesaleGp', fmtPct(snap.channels.wholesale.sales, snap.channels.wholesale.gross));
+            setText('partsTiresGp',     fmtPct(snap.channels.tires.sales,     snap.channels.tires.gross));
 
             // Per-counter-person gross % cells — also red/green vs the 42% goal
             document.querySelectorAll('#partsCounterRowsBody tr[data-counter-id]').forEach(tr => {
@@ -9815,6 +9826,7 @@
             const editableIds = [
                 'partsServiceDay', 'partsServiceGrossDay',
                 'partsWholesaleDay', 'partsWholesaleGrossDay',
+                'partsTiresDay', 'partsTiresGrossDay',
                 'partsInventoryDay', 'partsObsoDay'
             ];
             editableIds.forEach(id => {
@@ -9846,6 +9858,8 @@
                 document.getElementById('partsWholesaleDay').value      = partsData?.wholesale           ?? '';
                 document.getElementById('partsServiceGrossDay').value   = partsData?.service_parts_gross ?? '';
                 document.getElementById('partsWholesaleGrossDay').value = partsData?.wholesale_gross     ?? '';
+                document.getElementById('partsTiresDay').value          = partsData?.tires               ?? '';
+                document.getElementById('partsTiresGrossDay').value     = partsData?.tires_gross         ?? '';
                 document.getElementById('partsInventoryDay').value      = partsData?.inventory ?? '';
                 document.getElementById('partsObsoDay').value           = partsData?.obso      ?? '';
                 updatePartsDailyCalculations();
@@ -9868,7 +9882,8 @@
                 // Aggregate Service / Wholesale / Inventory / Obso across all stores
                 const agg = {
                     service:   { sales: 0, gross: 0 },
-                    wholesale: { sales: 0, gross: 0 }
+                    wholesale: { sales: 0, gross: 0 },
+                    tires:     { sales: 0, gross: 0 }
                 };
                 // Aggregate counter breakdown by counter person id (or legacy slot key) across all stores
                 const counterAgg = {}; // key -> { sales, gross }
@@ -9878,6 +9893,8 @@
                     agg.service.gross   += parseFloat(p.service_parts_gross) || 0;
                     agg.wholesale.sales += parseFloat(p.wholesale)           || 0;
                     agg.wholesale.gross += parseFloat(p.wholesale_gross)     || 0;
+                    agg.tires.sales     += parseFloat(p.tires)               || 0;
+                    agg.tires.gross     += parseFloat(p.tires_gross)         || 0;
                     invTotal  += parseFloat(p.inventory) || 0;
                     obsoTotal += parseFloat(p.obso)      || 0;
                     const breakdown = counterBreakdownForEntry(p) || {};
@@ -9894,6 +9911,8 @@
                     partsServiceGrossDay:   agg.service.gross,
                     partsWholesaleDay:      agg.wholesale.sales,
                     partsWholesaleGrossDay: agg.wholesale.gross,
+                    partsTiresDay:          agg.tires.sales,
+                    partsTiresGrossDay:     agg.tires.gross,
                     partsInventoryDay:      invTotal,
                     partsObsoDay:           obsoTotal
                 };
@@ -9997,11 +10016,13 @@
                     entry_date: ds,
                     day_number: dayNum,
                     days_in_month: daysInMonth,
-                    // Static channels: Service Parts + Wholesale
+                    // Static channels: Parts excluding Wholesale/Tires + Wholesale + Tires
                     service_parts:       snap.channels.service.sales,
                     wholesale:           snap.channels.wholesale.sales,
                     service_parts_gross: snap.channels.service.gross,
                     wholesale_gross:     snap.channels.wholesale.gross,
+                    tires:               snap.channels.tires.sales,
+                    tires_gross:         snap.channels.tires.gross,
                     // Counter people: per-staff-id breakdown {id: {sales, gross}}
                     counter_breakdown: snap.counterBreakdown,
                     // Inventory + obso for the obso% calc
@@ -11472,7 +11493,7 @@
             if (saved) return saved;
             return (parseFloat(entry?.service_parts) || 0)
                 + (parseFloat(entry?.wholesale) || 0)
-                + partsCounterSalesFromEntry(entry);
+                + (parseFloat(entry?.tires) || 0);
         }
 
         function homeMetricStatus(metric) {
@@ -12569,18 +12590,20 @@
                     if (!prev || p.entry_date > prev.entry_date) latestPerStore[p.store_id] = p;
                 });
 
-                let mtdSvc = 0, mtdWhs = 0, mtdObso = 0, mtdTotalSales = 0;
-                let mtdSvcG = 0, mtdWhsG = 0, mtdTotalGross = 0;
+                let mtdSvc = 0, mtdWhs = 0, mtdTires = 0, mtdObso = 0, mtdTotalSales = 0;
+                let mtdSvcG = 0, mtdWhsG = 0, mtdTiresG = 0, mtdTotalGross = 0;
                 let mtdCounterTotal = 0, mtdCounterTotalGross = 0;
                 let mtdInventory = 0, mtdInventorySamples = 0;
                 Object.values(latestPerStore).forEach(p => {
                     // Sales
                     mtdSvc        += parseFloat(p.service_parts) || 0;
                     mtdWhs        += parseFloat(p.wholesale)     || 0;
+                    mtdTires      += parseFloat(p.tires)         || 0;
                     mtdObso       += parseFloat(p.obso)          || 0;
                     // Gross
                     mtdSvcG       += parseFloat(p.service_parts_gross) || 0;
                     mtdWhsG       += parseFloat(p.wholesale_gross)     || 0;
+                    mtdTiresG     += parseFloat(p.tires_gross)         || 0;
                     // Counter — sum from breakdown (handles legacy via counterBreakdownForEntry fallback)
                     const breakdown = counterBreakdownForEntry(p) || {};
                     let cSales = 0, cGross = 0;
@@ -12591,9 +12614,9 @@
                     mtdCounterTotal      += cSales;
                     mtdCounterTotalGross += cGross;
                     mtdTotalSales += parseFloat(p.total_parts_sales)
-                                   || ((parseFloat(p.service_parts)||0)+(parseFloat(p.wholesale)||0));
+                                   || ((parseFloat(p.service_parts)||0)+(parseFloat(p.wholesale)||0)+(parseFloat(p.tires)||0));
                     mtdTotalGross += parseFloat(p.total_parts_gross)
-                                   || ((parseFloat(p.service_parts_gross)||0)+(parseFloat(p.wholesale_gross)||0));
+                                   || ((parseFloat(p.service_parts_gross)||0)+(parseFloat(p.wholesale_gross)||0)+(parseFloat(p.tires_gross)||0));
                     // Inventory — point-in-time snapshot, take latest store's value
                     const inv = parseFloat(p.inventory) || 0;
                     if (inv > 0) { mtdInventory += inv; mtdInventorySamples++; }
@@ -12672,7 +12695,7 @@
                         pctThresholdCard('Obsolescence %',  obsoPct,      obsoPctGoal,   'down', obsoSub);
                 }
 
-                // Channel Mix — % share of MTD total per channel (Service-RO / Wholesale / Counter / Obso)
+                // Channel Mix — sales/gross by channel. Gross percentages are not added together.
                 const subt = document.getElementById('partsChannelMixSubtitle');
                 if (subt) {
                     const mLabel = new Date(year, month - 1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
@@ -12684,6 +12707,7 @@
                     const channels = [
                         { label: 'Service Parts', sales: mtdSvc,             gross: mtdSvcG,             color: '#2563eb' },
                         { label: 'Wholesale',     sales: mtdWhs,             gross: mtdWhsG,             color: '#0891b2' },
+                        { label: 'Tires',         sales: mtdTires,           gross: mtdTiresG,           color: '#ea580c' },
                         { label: 'Counter',       sales: mtdCounterTotal,    gross: mtdCounterTotalGross, color: '#7c3aed' }
                     ];
                     mixGrid.innerHTML = channels.map(c => {
