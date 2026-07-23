@@ -8056,15 +8056,27 @@
                 if (useSupabase) {
                     try {
                         const { data, error } = await db.from('parts_entries').select('*');
-                        if (!error && data) { this._set('dyer_parts_entries', data); return data; }
-                    } catch(e) { /* table may not exist; fall back to LS */ }
+                        if (error) throw error;
+                        if (data) {
+                            // A failed save is kept locally until it can be retried. Do
+                            // not overwrite that pending entry with an older cloud read
+                            // when the user changes tabs or returns to this page.
+                            const cached = this._get('dyer_parts_entries');
+                            const remoteKeys = new Set(data.map(row => `${row.store_id}|${row.entry_date}`));
+                            const pending = cached.filter(row => row?.local_only || !remoteKeys.has(`${row.store_id}|${row.entry_date}`));
+                            const merged = [...data, ...pending];
+                            this._set('dyer_parts_entries', merged);
+                            return merged;
+                        }
+                    } catch(e) { console.warn('Supabase getPartsEntries failed, using cache', e); }
                 }
                 return this._get('dyer_parts_entries');
             },
             async savePartsEntry(entry) {
                 const all = this._get('dyer_parts_entries');
                 const idx = all.findIndex(d => d.store_id === entry.store_id && d.entry_date === entry.entry_date);
-                if (idx >= 0) all[idx] = entry; else all.push(entry);
+                const cachedEntry = { ...entry, local_only: !!useSupabase };
+                if (idx >= 0) all[idx] = cachedEntry; else all.push(cachedEntry);
                 this._set('dyer_parts_entries', all);
                 if (useSupabase) {
                     try {
@@ -8092,8 +8104,22 @@
                             updated_at: new Date().toISOString(),
                             updated_by: currentUser ? currentUser.id : null
                         };
-                        await db.from('parts_entries').upsert(row, { onConflict: 'store_id,entry_date' });
-                    } catch(e) { /* offline / table missing or new columns missing — already in LS */ }
+                        const { data, error } = await db.from('parts_entries')
+                            .upsert(row, { onConflict: 'store_id,entry_date' })
+                            .select('*');
+                        if (error) throw error;
+
+                        // Replace the pending cache value with the accepted cloud row.
+                        const saved = (data && data[0]) ? { ...data[0], local_only: false } : { ...entry, local_only: false };
+                        const latest = this._get('dyer_parts_entries');
+                        const latestIndex = latest.findIndex(d => d.store_id === entry.store_id && d.entry_date === entry.entry_date);
+                        if (latestIndex >= 0) latest[latestIndex] = saved; else latest.push(saved);
+                        this._set('dyer_parts_entries', latest);
+                        return { ok: true };
+                    } catch(e) {
+                        console.error('Supabase savePartsEntry failed; retained local copy', e);
+                        return { ok: false, localOnly: true, error: e };
+                    }
                 }
                 return { ok: true };
             },
@@ -10033,7 +10059,7 @@
                     total_parts_gross: snap.totalGross
                 });
                 if (result && result.ok === false) {
-                    showToast('Save FAILED for parts department — please try again', 'error');
+                    showToast('Cloud save failed — your numbers are retained on this device. Please retry after the database update.', 'error');
                 } else if (!useSupabase) {
                     showToast('Saved locally only — cloud is offline, reload to retry', 'error');
                 } else {
