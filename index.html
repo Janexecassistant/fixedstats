@@ -11248,6 +11248,8 @@
 
                 // Save advisor entries
                 const advRows = document.querySelectorAll('#dailyAdvisorBody tr');
+                const advisorHistory = await LS.getAdvisorEntries();
+                let advisorValuesSaved = 0;
                 for (const row of advRows) {
                     const advisorId = row.querySelector('.advisor-labor')?.dataset.advisor;
                     if (!advisorId) continue;
@@ -11274,26 +11276,56 @@
                         continue;
                     }
 
+                    // Advisor entries are running MTD snapshots. A manager may update
+                    // CSI or MPVI without retyping the financial fields; preserve the
+                    // advisor's most recent MTD figures instead of creating a newer
+                    // zero-dollar snapshot that hides their ranking and scorecard.
+                    const hasFinancialInput = laborGross !== 0 || partsGross !== 0 || totalRos !== 0 ||
+                        cpRos !== 0 || cpLabor !== 0 || cpParts !== 0 || hours !== 0;
+                    let carried = null;
+                    if (!hasFinancialInput && (csiScore !== null || mpviPct !== null)) {
+                        carried = advisorHistory
+                            .filter(entry => String(entry.advisor_id) === String(advisorId) &&
+                                entry.store_id === storeId && entry.entry_date < ds &&
+                                ((parseFloat(entry.total_gross) || 0) !== 0 || entryRoCount(entry) !== 0))
+                            .sort((a, b) => String(b.entry_date).localeCompare(String(a.entry_date)))[0] || null;
+                    }
+
+                    const savedLabor = carried ? (parseFloat(carried.labor_gross) || 0) : laborGross;
+                    const savedParts = carried ? (parseFloat(carried.parts_gross) || 0) : partsGross;
+                    const savedRos = carried ? entryRoCount(carried) : totalRos;
+                    const savedCpRos = carried ? (parseFloat(carried.cp_ros) || 0) : cpRos;
+                    const savedCpLabor = carried ? (parseFloat(carried.cp_labor) || 0) : cpLabor;
+                    const savedCpParts = carried ? (parseFloat(carried.cp_parts) || 0) : cpParts;
+                    const savedHours = carried ? (parseFloat(carried.hours) || 0) : hours;
+                    const savedCsi = csiScore === null && carried ? carried.csi_score : csiScore;
+                    const savedMpvi = mpviPct === null && carried ? carried.mpvi_pct : mpviPct;
+
                     const advResult = await LS.saveAdvisorEntry({
                         store_id: storeId,
                         advisor_id: parseInt(advisorId),
                         entry_date: ds,
-                        labor_gross: laborGross,
-                        parts_gross: partsGross,
-                        total_gross: totalGross,
-                        ro_count: totalRos,
-                        total_ros: totalRos,
-                        cp_ros: cpRos,
-                        cp_labor: cpLabor,
-                        cp_parts: cpParts,
-                        hours: hours,
-                        csi_score: csiScore,
-                        mpvi_pct: mpviPct
+                        labor_gross: savedLabor,
+                        parts_gross: savedParts,
+                        total_gross: savedLabor + savedParts,
+                        ro_count: savedRos,
+                        total_ros: savedRos,
+                        cp_ros: savedCpRos,
+                        cp_labor: savedCpLabor,
+                        cp_parts: savedCpParts,
+                        hours: savedHours,
+                        csi_score: savedCsi,
+                        mpvi_pct: savedMpvi
                     });
+                    advisorValuesSaved++;
                     if (advResult && advResult.ok === false) {
                         const advName = row.querySelector('td')?.textContent || `advisor ${advisorId}`;
                         failedSaves.push(advName);
                     }
+                }
+
+                if (advRows.length > 0 && advisorValuesSaved === 0) {
+                    showToast('Department totals saved, but no advisor values were entered. Rankings and scorecards will remain blank until advisor rows are completed.', 'error');
                 }
 
                 // Technician / Lube Tech entry is monthly — saved as ONE row per tech
