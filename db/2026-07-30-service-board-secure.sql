@@ -44,7 +44,7 @@ begin
   select * into v_session from user_sessions where token=p_token and expires_at>now();
   if v_session is null then raise exception 'Session expired'; end if;
   select * into v_user from app_users where id=v_session.user_id and is_active=true;
-  if v_user is null or not exists(select 1 from user_store_access where user_id=v_user.id and store_id=p_store_id) then raise exception 'Store access denied'; end if;
+  if v_user is null or (v_user.default_store is distinct from p_store_id and not exists(select 1 from user_store_access where user_id=v_user.id and store_id=p_store_id)) then raise exception 'Store access denied'; end if;
   if p_write and coalesce(v_user.role,'') not in ('admin','owner','fixed_ops','service_manager','dispatcher','advisor') then raise exception 'Write access denied'; end if;
   return v_user.id;
 end $$;
