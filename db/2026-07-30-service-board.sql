@@ -18,6 +18,7 @@ create table if not exists public.service_board_ros (
     technician text not null default '',
     technician_user_id uuid references public.app_users(id) on delete set null,
     estimated_hours numeric(5,2) not null default 1.00,
+    closed_hours numeric(7,2) not null default 0,
     job_type text not null default 'repair',
     required_skill text not null default '',
     priority text not null default 'standard',
@@ -43,6 +44,7 @@ create table if not exists public.service_board_ros (
 -- board into a dispatch desk while retaining the original intake records.
 alter table public.service_board_ros add column if not exists technician_user_id uuid references public.app_users(id) on delete set null;
 alter table public.service_board_ros add column if not exists estimated_hours numeric(5,2) not null default 1.00;
+alter table public.service_board_ros add column if not exists closed_hours numeric(7,2) not null default 0;
 alter table public.service_board_ros add column if not exists job_type text not null default 'repair';
 alter table public.service_board_ros add column if not exists required_skill text not null default '';
 alter table public.service_board_ros add column if not exists priority text not null default 'standard';

@@ -1,20 +1,13 @@
--- Dispatch Board status aging support.
--- Tracks when an RO actually entered its current status so 24-hour alerts are
--- not reset by unrelated edits to notes, technician, parts, or promise time.
-
-alter table public.service_board_ros
-  add column if not exists status_changed_at timestamptz;
-
-update public.service_board_ros
-set status_changed_at = coalesce(updated_at, created_at, now())
-where status_changed_at is null;
-
-alter table public.service_board_ros
-  alter column status_changed_at set default now(),
-  alter column status_changed_at set not null;
+-- Technician closed-hour scorecards for the Dispatch Board.
+-- Weekly totals are calculated Saturday-Friday from completed_at; monthly
+-- totals use the calendar month. No destructive reset job is required.
 
 alter table public.service_board_ros
   add column if not exists closed_hours numeric(7,2) not null default 0;
+
+update public.service_board_ros
+set closed_hours = greatest(coalesce(estimated_hours,0),0)
+where status='completed' and coalesce(closed_hours,0)=0;
 
 create or replace function public.service_board_save(p_token text,p_row jsonb)
 returns public.service_board_ros language plpgsql security definer set search_path=public as $$
