@@ -28,6 +28,7 @@ create table if not exists public.service_board_ros (
     started_at timestamptz,
     hold_reason text not null default '',
     status text not null default 'checked_in',
+    status_changed_at timestamptz not null default now(),
     notes text not null default '',
     source text not null default 'manual',
     created_by uuid references public.app_users(id) on delete set null,
@@ -51,6 +52,7 @@ alter table public.service_board_ros add column if not exists dispatched_at time
 alter table public.service_board_ros add column if not exists dispatched_by uuid references public.app_users(id) on delete set null;
 alter table public.service_board_ros add column if not exists started_at timestamptz;
 alter table public.service_board_ros add column if not exists hold_reason text not null default '';
+alter table public.service_board_ros add column if not exists status_changed_at timestamptz not null default now();
 
 create table if not exists public.service_board_events (
     id uuid primary key default gen_random_uuid(),
