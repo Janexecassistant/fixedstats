@@ -250,6 +250,129 @@
             display: none;
         }
 
+        /* Legacy-site transition screen — shown before the existing sign-in. */
+        .transition-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 24px;
+            background:
+                linear-gradient(135deg, rgba(17,17,17,0.84) 0%, rgba(26,26,26,0.9) 50%, rgba(42,42,42,0.84) 100%),
+                url('/assets/dyer-brand-collage.png') center / cover no-repeat;
+            background-color: #111111;
+        }
+
+        .transition-card {
+            width: 100%;
+            max-width: 520px;
+            padding: 46px 40px;
+            text-align: center;
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .transition-card h1 {
+            margin: 0 0 12px;
+            font-size: 30px;
+            line-height: 1.15;
+        }
+
+        .transition-card p {
+            margin: 0 0 28px;
+            color: rgba(255, 255, 255, 0.76);
+            font-size: 16px;
+            line-height: 1.55;
+        }
+
+        .transition-primary-link {
+            display: block;
+            box-sizing: border-box;
+            width: 100%;
+            padding: 15px;
+            color: #ffffff;
+            text-decoration: none;
+            background: linear-gradient(135deg, #cc0000, #a30000);
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 14px rgba(204, 0, 0, 0.35);
+        }
+
+        .transition-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 28px 0 20px;
+            color: rgba(255, 255, 255, 0.42);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .transition-divider::before,
+        .transition-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .legacy-access-form {
+            display: flex;
+            gap: 10px;
+        }
+
+        .legacy-access-form input {
+            min-width: 0;
+            flex: 1;
+            padding: 13px 14px;
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 8px;
+            font-size: 16px;
+            letter-spacing: 4px;
+            text-align: center;
+        }
+
+        .legacy-access-form button {
+            padding: 0 18px;
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.13);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .legacy-access-form input:focus {
+            outline: none;
+            border-color: rgba(204, 0, 0, 0.8);
+            box-shadow: 0 0 0 3px rgba(204, 0, 0, 0.16);
+        }
+
+        .legacy-access-error {
+            min-height: 18px;
+            margin: 10px 0 0;
+            color: #ff8a8a;
+            font-size: 13px;
+        }
+
+        @media (max-width: 520px) {
+            .transition-card { padding: 36px 24px; }
+            .legacy-access-form { flex-direction: column; }
+            .legacy-access-form button { min-height: 48px; }
+        }
+
         .nav-tabs {
             display: flex;
             flex: 1;
@@ -3278,8 +3401,24 @@
     </style>
 </head>
 <body>
+    <!-- New platform handoff shown before the legacy Fixedstats sign-in. -->
+    <div id="transitionScreen" class="transition-screen">
+        <div class="transition-card">
+            <div class="login-logo-pill"><img src="assets/dyerlogo.png" alt="Dyer Auto"></div>
+            <h1>Fixed Ops has moved</h1>
+            <p>Going forward, please use DrivePoint Fixed Ops for your daily work.</p>
+            <a class="transition-primary-link" href="https://drivepointfixedops.carsondyer.tech">Open DrivePoint Fixed Ops</a>
+            <div class="transition-divider">Legacy access only</div>
+            <form class="legacy-access-form" id="legacyAccessForm" onsubmit="handleLegacyAccess(event)">
+                <input id="legacyAccessCode" type="password" inputmode="numeric" autocomplete="one-time-code" placeholder="Enter access code" aria-label="Legacy site access code" required>
+                <button type="submit">Continue</button>
+            </form>
+            <div id="legacyAccessError" class="legacy-access-error" role="alert" aria-live="polite"></div>
+        </div>
+    </div>
+
     <!-- Login Screen -->
-    <div id="loginScreen" class="login-screen">
+    <div id="loginScreen" class="login-screen" style="display: none;">
         <div class="login-card">
             <div class="login-logo-pill"><img src="assets/dyerlogo.png" alt="Dyer Auto"></div>
             <p>Fixed Operations</p>
@@ -5700,12 +5839,53 @@
         // ============================================================================
         // AUTHENTICATION & USER MANAGEMENT
         // ============================================================================
+        const LEGACY_ACCESS_CODE = '5230';
+        const LEGACY_ACCESS_SESSION_KEY = 'fixedstats_legacy_access_granted';
+
+        function hasLegacyAccess() {
+            try {
+                return sessionStorage.getItem(LEGACY_ACCESS_SESSION_KEY) === 'true';
+            } catch (_) {
+                return false;
+            }
+        }
+
+        function showTransitionScreen() {
+            document.getElementById('transitionScreen').style.display = 'flex';
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('appContent').style.display = 'none';
+        }
+
         function showLoginScreen() {
+            if (!hasLegacyAccess()) {
+                showTransitionScreen();
+                return;
+            }
+            document.getElementById('transitionScreen').style.display = 'none';
             document.getElementById('loginScreen').style.display = 'flex';
             document.getElementById('appContent').style.display = 'none';
         }
 
+        function handleLegacyAccess(event) {
+            event.preventDefault();
+            const input = document.getElementById('legacyAccessCode');
+            const error = document.getElementById('legacyAccessError');
+            if (input.value.trim() !== LEGACY_ACCESS_CODE) {
+                error.textContent = 'That access code is not valid.';
+                input.select();
+                return;
+            }
+            try { sessionStorage.setItem(LEGACY_ACCESS_SESSION_KEY, 'true'); } catch (_) {}
+            error.textContent = '';
+            showLoginScreen();
+            document.getElementById('loginEmail').focus();
+            validateSession().then(isValid => {
+                if (isValid && currentUser) initialize();
+            });
+        }
+
         function hideLoginScreen() {
+            document.getElementById('transitionScreen').style.display = 'none';
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('appContent').style.display = 'block';
         }
@@ -20112,12 +20292,9 @@
         // ============================================================================
         // APP START
         // ============================================================================
-        // Check for existing session on page load
-        validateSession().then(isValid => {
-            if (isValid && currentUser) {
-                initialize();
-            }
-        });
+        // Every browser session enters through the new-platform handoff first.
+        // The legacy login/session is checked only after its access code is entered.
+        showTransitionScreen();
 
         // Goals is loaded via the central activateTab() switcher (data-tab="goals" → loadGoals).
     </script>
